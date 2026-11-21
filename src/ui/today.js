@@ -1,0 +1,92 @@
+import { getState, updateSettings } from '../store.js';
+import { dayInfo, jdFromDate, canChiYear } from '../lib/lunar.js';
+import { listEvents, describeDate } from '../lib/events.js';
+import { esc, ICON, nav, MONTH_SHORT } from './common.js';
+import { Capacitor } from '@capacitor/core';
+import { APK_URL } from '../config.js';
+
+export function upcomingEvents(now, days = 120) {
+  const st = getState();
+  const todayJd = jdFromDate(now.getDate(), now.getMonth() + 1, now.getFullYear());
+  const ev = listEvents(todayJd, days, st.gios.filter((g) => g.enabled !== false));
+  return { todayJd, ev };
+}
+
+export function eventRow(e, todayJd, { right = '', href = '' } = {}) {
+  const d = describeDate(e, todayJd);
+  const tileCls = e.kind === 'gio' ? 'tile ink' : e.kind === 'moon' ? 'tile gold' : 'tile';
+  const sub = e.kind === 'gio'
+    ? `${d.weekday} · ${d.lunarText}${e.gio.rel ? ' · ' + esc(e.gio.rel) : ''}`
+    : `${d.weekday} · ${d.lunarText}`;
+  const tag = href ? 'a' : 'div';
+  return `<${tag} class="item" ${href ? `href="${href}"` : ''}>
+    <div class="${tileCls}"><b>${e.solar.day}</b><span>${MONTH_SHORT(e.solar.month)}</span></div>
+    <div class="col grow"><span class="t">${esc(e.title)}</span><span class="s">${sub}</span></div>
+    ${right || `<span class="count" style="color:${d.diff <= 3 ? 'var(--accent)' : 'var(--muted)'}">${d.count}</span>`}
+  </${tag}>`;
+}
+
+export function renderToday() {
+  const now = new Date();
+  const info = dayInfo(now.getDate(), now.getMonth() + 1, now.getFullYear());
+  const { todayJd, ev } = upcomingEvents(now);
+  const st = getState();
+  const soon = ev.filter((e) => !st.disabled[e.key]).slice(0, 4);
+  const hasSoon = ev.some((e) => e.jd - todayJd <= 3);
+  const hourNow = now.getHours();
+  const inHour = (h) => (h.from === 23 ? hourNow >= 23 || hourNow < 1 : hourNow >= h.from && hourNow < h.to);
+  const l = info.lunar;
+  const greet = hourNow < 11 ? 'Chào buổi sáng' : hourNow < 14 ? 'Chào buổi trưa' : hourNow < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+
+  return `<div class="screen has-fab" data-screen="today">
+  <header class="top">
+    <div class="grow"><span class="sub">${greet}, hôm nay là</span><h1 tabindex="-1" style="font-size:1.35rem">${info.weekday}, ${now.getDate()}/${now.getMonth() + 1}</h1></div>
+    <a class="icon-btn" href="#/settings" aria-label="Cài đặt">${ICON.gear(22)}</a>
+    <a class="icon-btn" href="#/reminders" aria-label="Xem nhắc việc">${ICON.bell(22)}${hasSoon ? '<span class="dot"></span>' : ''}</a>
+  </header>
+  <main class="body">
+    <section class="card sheet" aria-label="Tờ lịch hôm nay">
+      <div class="sheet-band"><span>THÁNG ${now.getMonth() + 1} · ${now.getFullYear()}</span><span>${info.weekday.toUpperCase()}</span></div>
+      <div class="sheet-day">${now.getDate()}</div>
+      <div class="center"><span class="pill ${info.spirit.good ? '' : 'neutral'}">Ngày ${info.spirit.good ? 'Hoàng đạo' : 'Hắc đạo'} · ${info.spirit.name}</span></div>
+      <div class="sheet-foot">
+        <div class="col"><span class="muted small">Âm lịch</span>
+          <span class="big-lunar" data-test="lunar">${l.day}<span class="muted" style="font-size:1.1rem">/${l.month}${l.leap ? ' nhuận' : ''}</span></span>
+          <b style="font-size:.9rem">Năm ${canChiYear(l.year)}</b></div>
+        <div class="r"><span>Ngày <b>${info.canChi.day}</b></span><span>Tháng <b>${info.canChi.month}</b></span><span>Tiết <b>${info.solarTerm}</b></span></div>
+      </div>
+    </section>
+
+    <section aria-label="Giờ hoàng đạo" class="col" style="gap:8px">
+      <div class="h2row"><h2 class="h">Giờ hoàng đạo</h2><span class="muted small">Tuổi xung ngày: ${info.xung}</span></div>
+      <div class="hours">${info.hours.map((h) => `<div class="hour ${inHour(h) ? 'now' : ''}"><b>${h.chi}</b><span>${h.label}</span></div>`).join('')}</div>
+    </section>
+
+    <section aria-label="Sắp tới" class="col" style="gap:8px">
+      <div class="h2row"><h2 class="h">Sắp tới</h2><a class="link" href="#/reminders">Xem tất cả</a></div>
+      <div class="card list">${soon.length ? soon.map((e) => eventRow(e, todayJd, { href: e.kind === 'gio' ? `#/edit/${e.gio.id}` : '' })).join('') : '<div class="empty">Chưa có sự kiện</div>'}</div>
+    </section>
+
+    ${st.gios.length ? '' : `<a class="card pad row" href="#/add" style="text-decoration:none;color:var(--ink)">
+      <div class="tile ink">${ICON.plus(22)}</div>
+      <div class="col grow"><b>Thêm ngày giỗ đầu tiên</b><span class="muted small">App sẽ tự đổi sang dương lịch và nhắc trước cho bạn</span></div></a>`}
+
+    ${!Capacitor.isNativePlatform() && !st.settings.webTipHidden ? `<section class="card pad col" style="gap:8px" aria-label="Cài ứng dụng">
+      <div class="row" style="align-items:flex-start"><div class="col grow"><b>Bản web không tự gửi thông báo nhắc</b>
+        <span class="small muted" style="line-height:1.5">Để được nhắc giỗ, rằm đúng giờ, hãy cài app Android. Trên iPhone: bấm nút Chia sẻ → <b>Thêm vào MH chính</b> để mở nhanh như app.</span></div>
+        <button type="button" class="icon-btn plain" data-act="hide-tip" aria-label="Ẩn gợi ý" style="width:40px;height:40px">${ICON.close()}</button></div>
+      ${APK_URL ? `<a class="btn" style="height:46px" href="${esc(APK_URL)}" rel="noopener">${ICON.down()} Tải app Android (.apk)</a>` : ''}
+    </section>` : ''}
+
+    <a href="#/donate" class="center small muted" style="text-decoration:none;padding:4px 0">Miễn phí, không quảng cáo · <b style="color:var(--accent)">Mời tác giả ly cà phê</b></a>
+  </main>
+  <a class="fab" href="#/add">${ICON.plus()} Thêm ngày giỗ</a>
+  ${nav('today')}
+</div>`;
+}
+
+export function mountToday(root) {
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act="hide-tip"]')) updateSettings({ webTipHidden: true });
+  });
+}

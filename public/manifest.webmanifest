@@ -1,0 +1,16 @@
+{
+  "name": "Lịch Âm & Nhắc Giỗ",
+  "short_name": "Lịch Âm",
+  "description": "Lịch âm, nhắc giỗ, rằm, mùng 1, lễ Tết — chạy ngay trên máy, không quảng cáo.",
+  "lang": "vi",
+  "start_url": "./index.html#/today",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F8F4EC",
+  "theme_color": "#A3201A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

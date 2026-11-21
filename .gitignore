@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+ios/App/App/public/
+android/app/src/main/assets/public/
+build/
+Payload/
+out/
+
+# Khóa ký Android — KHÔNG đưa lên GitHub (dùng GitHub Secrets)
+android/app/release.jks
+android/keystore.properties
+*.jks

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_sheet_desc">Tờ lịch hôm nay: ngày dương, ngày âm, can chi</string>
+    <string name="widget_agenda_desc">Tờ lịch và các ngày giỗ, rằm, lễ sắp tới</string>
+    <string name="widget_month_desc">Lịch tháng có ngày âm, đánh dấu rằm, mùng 1, ngày giỗ</string>
+    <string name="widget_countdown_desc">Đếm ngược tới Tết hoặc ngày giỗ bạn chọn</string>
+</resources>

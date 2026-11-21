@@ -1,0 +1,11 @@
+{
+  "appId": "vn.lichamnhacgio.app",
+  "appName": "Lịch Âm Nhắc Giỗ",
+  "webDir": "dist",
+  "backgroundColor": "#F8F4EC",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" },
+  "plugins": {
+    "LocalNotifications": { "smallIcon": "ic_stat_notify", "iconColor": "#A3201A" }
+  }
+}

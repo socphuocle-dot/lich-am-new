@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_bg" android:orientation="vertical" android:gravity="center" android:padding="10dp">
+    <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
+        android:maxLines="2" android:ellipsize="end" android:text="Tết Nguyên Đán" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
+    <TextView android:id="@+id/number" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:gravity="center" android:fontFamily="@font/noto_serif_digits" android:text="77" android:textColor="@color/widget_accent" android:textSize="44sp"
+        android:includeFontPadding="false" android:maxLines="1"
+        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="20sp" android:autoSizeMaxTextSize="60sp" />
+    <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/unit" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
+        android:text="ngày nữa" android:textColor="@color/widget_muted" android:textSize="12sp" />
+    <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/date" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
+        android:maxLines="1" android:ellipsize="end" android:paddingTop="2dp"
+        android:text="Thứ Bảy, 6/2 · 1/1 Âm" android:textColor="@color/widget_muted" android:textSize="11sp" />
+</LinearLayout>
