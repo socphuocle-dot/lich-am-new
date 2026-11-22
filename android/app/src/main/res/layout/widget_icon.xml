@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_lacquer_bg" android:padding="7dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+        android:background="@drawable/widget_icon_card" android:gravity="center" android:paddingBottom="2dp">
+        <TextView android:id="@+id/weekday" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
+            android:text="TH 7" android:textColor="@color/widget_lacquer" android:textSize="9sp" android:textStyle="bold" android:letterSpacing="0.08" />
+        <TextView android:id="@+id/day" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fontFamily="@font/noto_serif_digits"
+            android:gravity="center" android:includeFontPadding="false" android:maxLines="1" android:text="21" android:textColor="@color/widget_lacquer"
+            android:textSize="26sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="14sp" android:autoSizeMaxTextSize="40sp" />
+        <TextView android:id="@+id/lunar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
+            android:text="13/10" android:textColor="#7A5108" android:textSize="9sp" android:textStyle="bold" />
+    </LinearLayout>
+</FrameLayout>

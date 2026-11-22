@@ -17,6 +17,18 @@ export const ICON = {
   shield: (w = 16) => svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>', w),
   trash: (w = 20) => svg('<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/>', w),
   down: (w = 20) => svg('<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/>', w),
+  users: (w = 20) => svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>', w),
+  cloud: (w = 20) => svg('<path d="M7 18h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.2 4.5 4.5 0 0 0 7 18Z"/><path d="M12 15V10M9.8 12.2 12 10l2.2 2.2"/>', w),
+  sync: (w = 20) => svg('<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/>', w),
+  grid: (w = 20) => svg('<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><circle cx="17" cy="17" r="3.5"/>', w),
+  phone: (w = 20) => svg('<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>', w),
+  book: (w = 20) => svg('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 7h7M9 11h5"/>', w),
+  star: (w = 20) => svg('<path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6-4.5-4.2 6.1-.8z"/>', w),
+  swap: (w = 20) => svg('<path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/>', w),
+  tray: (w = 20) => svg('<path d="M3 13h18"/><path d="M5 13c0 4 3 7 7 7s7-3 7-7"/><path d="M8 9c0-1 .5-2 1.5-2.5M12 9V5M16 9c0-1-.5-2-1.5-2.5"/>', w),
+  card: (w = 20) => svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><path d="M8 14h4"/>', w),
+  share: (w = 20) => svg('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/>', w),
+  search: (w = 20) => svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', w),
   up: (w = 20) => svg('<path d="M12 21V9M7 14l5-5 5 5"/><path d="M5 3h14"/>', w),
   copy: (w = 18) => svg('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', w),
   close: (w = 18) => svg('<path d="M18 6 6 18M6 6l12 12"/>', w, 'stroke-width="2.2"'),
@@ -24,10 +36,9 @@ export const ICON = {
 };
 
 export function nav(active) {
-  const culture = getState().settings.culture;
   const tabs = [
     ['today', 'Hôm nay', ICON.sun], ['calendar', 'Lịch', ICON.cal], ['reminders', 'Nhắc việc', ICON.bell],
-    ...(culture ? [['culture', 'Văn hóa', ICON.taiji]] : []), ['donate', 'Ủng hộ', ICON.heart]
+    ['tienich', 'Tiện ích', ICON.grid], ['donate', 'Ủng hộ', ICON.heart]
   ];
   return `<nav class="nav" aria-label="Điều hướng chính">${tabs.map(([id, label, ic]) =>
     `<a href="#/${id}" ${id === active ? 'aria-current="page"' : ''}>${ic(24)}${label}</a>`).join('')}</nav>`;
@@ -70,3 +81,12 @@ export function toast(msg, action = null, ms = 2600) {
 }
 
 export const MONTH_SHORT = (m) => 'TH ' + m;
+
+/** Ô chọn giờ kiểu 24 giờ (thay input type=time vì máy có thể hiện SA/CH hoặc AM/PM) */
+export function timeSelect(value, attrs = '', style = '') {
+  const v = /^\d{2}:\d{2}$/.test(value || '') ? value : '07:00';
+  const opts = [];
+  for (let h = 0; h < 24; h++) for (let m = 0; m < 60; m += 15) opts.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  if (!opts.includes(v)) { opts.push(v); opts.sort(); }
+  return `<select class="input time-sel" ${attrs} ${style ? `style="${style}"` : ''}>${opts.map((o) => `<option value="${o}" ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+}

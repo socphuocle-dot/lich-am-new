@@ -77,7 +77,7 @@ Link gửi khách:
 ## Cập nhật về sau
 
 Sửa code → GitHub Desktop: Commit → Push → trang web tự cập nhật.
-Muốn khách Android nhận bản mới: tạo release mới với tag lớn hơn (`v1.0.1`, `v1.1.0`…). Link tải APK cũ tự trỏ sang bản mới.
+Muốn khách Android nhận bản mới: tạo release mới với tag lớn hơn (`v1.0.1`, `v1.4.0`…). Link tải APK cũ tự trỏ sang bản mới.
 
 ## Lưu ý quan trọng
 
@@ -86,3 +86,47 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 - **Bản web không tự gửi thông báo nhắc** khi đóng (giới hạn của trình duyệt). App Android thì nhắc đầy đủ.
 - **Google Play** (25 USD, trả một lần): giúp khách tìm thấy app dễ hơn. Phải build bản cửa hàng (ẩn mã QR) theo README mục 4, nộp file `.aab`.
 - Tên miền riêng (vd. `licham.vn`): mua tên miền rồi khai ở **Settings → Pages → Custom domain**.
+
+---
+
+## Cập nhật lên phiên bản mới (ví dụ 1.4.0)
+
+1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.4.0` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.4.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.4.0` → **Publish release**.
+4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.4.0
+- **Người mới mất**: bật khi thêm ngày giỗ → app tự tính và nhắc cúng tuần đầu (7 ngày), 49 ngày, 100 ngày, giỗ đầu (tiểu tường), giỗ hết (đại tường).
+- **9 bài văn khấn mới**: cúng tuần / 49 ngày, 100 ngày, giỗ đầu, giỗ hết, nhập trạch, động thổ, khai trương, đầy tháng, thôi nôi (tổng 24 bài, kèm mâm cúng). Chọn người đã khuất ngay trong bài khấn.
+- **Xem ngày tốt chi tiết**: thêm Nhị thập bát tú, sao Thiên Đức, Nguyệt Đức, hướng xuất hành (Hỷ thần, Tài thần); trực và sao hiện luôn ở màn Lịch. Ngày tốt khai trương / động thổ / về nhà mới có nút mở văn khấn tương ứng.
+- **Góp ý & báo lỗi** (Cài đặt): gửi qua Zalo, email hoặc GitHub, tự kèm phiên bản app và đời máy.
+- **Tab Tiện ích** thay tab Văn hóa: danh mục dịch vụ gom 5 nhóm (Ngày của gia đình, Cúng lễ, Xem ngày, Kết nối gia đình, Văn hóa), biểu tượng 3D đổ bóng; liên hệ tác giả 0903 545 334 (gọi / Zalo).
+- Nhắc việc có bộ lọc riêng **Sinh nhật, kỷ niệm**; ô ngày sinh nhật màu hồng để dễ phân biệt.
+
+## Có gì mới ở 1.3.0
+- **Báo có bản mới** ngay trong app (bản APK): mỗi ngày hỏi GitHub 1 lần, có thẻ "Tải bản mới" trên màn Hôm nay; tắt được trong Cài đặt → Cập nhật.
+- **Chia sẻ cho cả họ**: chọn ngày giỗ → gửi link qua Zalo hoặc cho quét mã QR; người nhận bấm link là thấy danh sách, nhập 1 chạm, tự bỏ qua ngày đã có.
+- **Đọc to văn khấn** bằng giọng tiếng Việt có sẵn trên máy (không cần mạng), chỉnh tốc độ, tô sáng đoạn đang đọc.
+- **Widget mở thẳng văn khấn** vào ngày rằm, mùng 1, lễ, ngày giỗ.
+- **Trang chính sách quyền riêng tư**: https://socphuocle-dot.github.io/lich-am-new/privacy.html
+- **Sẵn sàng lên Google Play**: mỗi bản phát hành có thêm file `LichAm-NhacGio-GooglePlay.aab`; hướng dẫn và ảnh cửa hàng trong `GOOGLE-PLAY.md`, `store-assets/`.
+- Sửa iPhone: widget nay nhận được dữ liệu ngày giỗ từ app.
+
+## Có gì mới ở 1.2.0
+- **Văn khấn** 15 dịp (giỗ, tiên thường, mùng 1, rằm, Thần Tài, ông Táo, tất niên, giao thừa, mùng 1 Tết, hóa vàng, rằm tháng Giêng, Thanh Minh, Đoan Ngọ, Vu Lan, cúng chúng sinh) — tự điền ngày âm, năm can chi, tên, địa chỉ, người mất; chữ to nhỏ, giữ màn hình sáng, sao chép / gửi.
+- **Mâm cúng** từng dịp, đánh dấu đồ đã chuẩn bị.
+- **Xem ngày tốt** cho 7 việc (cưới hỏi, khai trương, động thổ, về nhà mới, xuất hành, ký kết, mua xe) theo hoàng đạo, 12 trực, Tam nương, Nguyệt kỵ, tuổi xung; cảnh báo Kim lâu, Tam tai, Hoang ốc.
+- **Thiệp mời giỗ** dạng ảnh, gửi Zalo / Messenger.
+- **Đổi ngày âm ↔ dương** ngay trên màn Hôm nay; hàng tiện ích 4 nút.
+- **Nhấn giữ một ngày** trên Lịch để thêm nhanh giỗ / sinh nhật / kỷ niệm.
+- Thông báo có nút **Xem văn khấn** và **Nhắc lại sau 1 giờ**; bấm thông báo mở thẳng bài khấn.
+- Tìm kiếm, nhóm **Bên Nội / Bên Ngoại**, sắp xếp theo ngày gần nhất.
+- Màn chào có bước bật đồng bộ Google Calendar.
+- Sửa: giờ 24h (19:00 thay 07:00 PM), nút Thêm thu gọn khi cuộn, chữ không còn vỡ dòng, ngày mặc định là hôm nay.
+
+## Có gì mới ở 1.1.0
+- Widget **Ngày hôm nay 1×1** (Android) — trông như icon, tự đổi ngày theo máy lúc nửa đêm.
+- Icon mới, màu sơn mài đỏ son – vàng kim, đổ bóng nổi khối; widget thiết kế lại.
+- Thêm loại **Sinh nhật** và **Kỷ niệm** bên cạnh Ngày giỗ.
+- **Đồng bộ & sao lưu** (Cài đặt): ghi vào Google Calendar / Lịch iPhone, nhập ngày sinh từ danh bạ, sao lưu lên Google Drive / iCloud Drive, tự khôi phục khi cài lại máy mới.

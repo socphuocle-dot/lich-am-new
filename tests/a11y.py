@@ -18,7 +18,7 @@ SEED = {
   'gios': [{'id': 'g1', 'name': 'Ông nội', 'rel': 'Ông', 'cal': 'am', 'day': 18, 'month': 10, 'year': '', 'leap': False, 'remind': [0, 3], 'time': '07:00', 'repeat': 'yearly', 'note': '', 'enabled': True}],
   'disabled': {}, 'settings': {}
 }
-SCREENS = ['today', 'calendar', 'reminders', 'add', 'edit/g1', 'culture', 'profile', 'tuvi', 'numerology', 'iching', 'donate', 'settings']
+SCREENS = ['today', 'calendar', 'reminders', 'add', 'edit/g1', 'culture', 'profile', 'tuvi', 'numerology', 'iching', 'donate', 'settings', 'contacts', 'add?type=sinhnhat', 'vankhan', 'vankhan/gio?gid=g1', 'vankhan/ram?tab=mam', 'ngaytot', 'thiep/g1', 'chiase', 'nhap', 'gopy', 'vankhan/daythang', 'vankhan/giohet', 'tienich', 'doingay', 'thiep']
 MIN_PX = 12
 
 def run():

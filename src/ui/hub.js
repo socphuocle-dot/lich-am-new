@@ -1,0 +1,81 @@
+// Tab "Tiện ích": danh mục dịch vụ, gom theo nhóm như một "siêu ứng dụng" — dễ tìm, bấm một chạm.
+import { getState } from '../store.js';
+import { ICON, nav } from './common.js';
+import { CONTACT_PHONE, ZALO_URL, CHANNEL } from '../config.js';
+import { isNative } from '../notify.js';
+
+export const fmtPhone = (p) => p.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
+
+// Biểu tượng riêng cho dịch vụ (nét 1.9, nền trong ô 3D)
+const svg = (d, w = 26) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const I = {
+  incense: svg('<path d="M12 21v-7M8 21h8"/><path d="M6 14h12l-1.5 3h-9z"/><path d="M12 10c-1.5-1.5 0-3 0-4.5S10.5 3 10.5 3M15 10c-1-1 0-2 0-3"/>'),
+  cake: svg('<path d="M4 21h16M5 21v-7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7"/><path d="M5 16c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 5 0"/><path d="M12 12V8"/><path d="M12 5.5c.8-.7.8-1.7 0-2.5-.8.8-.8 1.8 0 2.5z"/>'),
+  rings: svg('<circle cx="9" cy="14" r="5"/><circle cx="15" cy="14" r="5"/><path d="m10 5 2-2 2 2-2 2z"/>'),
+  lotus: svg('<path d="M12 20c-4 0-8-2-9-6 3 0 5 1 6 2"/><path d="M12 20c4 0 8-2 9-6-3 0-5 1-6 2"/><path d="M12 20c-2.5-2-3.5-5-3-9 1.5.8 2.6 2 3 3.5.4-1.5 1.5-2.7 3-3.5.5 4-.5 7-3 9z"/>'),
+  book: ICON.book(26), tray: ICON.tray(26), card: ICON.card(26), bell: ICON.bell(26), star: ICON.star(26), swap: ICON.swap(26), cal: ICON.cal(26),
+  sun: ICON.sun(26), share: ICON.share(26), users: ICON.users(26), sync: ICON.sync(26), cloud: ICON.cloud(26), taiji: ICON.taiji(26), face: ICON.face(26),
+  num: svg('<path d="M9 4 7 20M17 4l-2 16M4 9h16M3.5 15h16"/>'),
+  coin: svg('<circle cx="12" cy="12" r="8.5"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/>')
+};
+
+const tile = (href, icon, label, tone) => `<a class="svc ${tone}" href="${href}"><span class="ico3d">${icon}</span><span class="lbl">${label}</span></a>`;
+
+function group(title, sub, tone, tiles) {
+  return `<section class="svc-group" aria-label="${title}">
+    <div class="svc-head"><span class="svc-dot ${tone}" aria-hidden="true"></span><div class="col"><h2>${title}</h2><span class="svc-sub">${sub}</span></div></div>
+    <div class="svc-grid">${tiles.join('')}</div></section>`;
+}
+
+export function renderHub() {
+  const st = getState();
+  const culture = st.settings.culture;
+  const firstGio = st.gios.find((g) => (g.type || 'gio') === 'gio');
+  const count = (t) => st.gios.filter((g) => (g.type || 'gio') === t).length;
+  return `<div class="screen" data-screen="hub">
+  <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div></header>
+  <main class="body" style="gap:16px">
+    ${group('Ngày của gia đình', `${count('gio')} giỗ · ${count('sinhnhat')} sinh nhật · ${count('kyniem')} kỷ niệm`, 'red', [
+      tile('#/add?type=gio', I.incense, 'Ngày giỗ', 'red'),
+      tile('#/add?type=sinhnhat', I.cake, 'Sinh nhật', 'red'),
+      tile('#/add?type=kyniem', I.rings, 'Kỷ niệm', 'red'),
+      tile('#/add?type=gio&tang=1', I.lotus, 'Người mới mất', 'red')
+    ])}
+    ${group('Cúng lễ', 'Văn khấn, đồ lễ, mời họ hàng', 'gold', [
+      tile('#/vankhan', I.book, 'Văn khấn', 'gold'),
+      tile('#/vankhan?tab=mam', I.tray, 'Mâm cúng', 'gold'),
+      tile(firstGio ? `#/thiep/${firstGio.id}` : '#/thiep', I.card, 'Thiệp mời giỗ', 'gold'),
+      tile('#/vankhan/thantai', I.coin, 'Thần Tài', 'gold')
+    ])}
+    ${group('Xem ngày', 'Tốt xấu, đổi ngày, giờ hoàng đạo', 'jade', [
+      tile('#/ngaytot', I.star, 'Ngày tốt', 'jade'),
+      tile('#/doingay', I.swap, 'Đổi ngày', 'jade'),
+      tile('#/calendar', I.cal, 'Lịch tháng', 'jade'),
+      tile('#/today', I.sun, 'Giờ hoàng đạo', 'jade')
+    ])}
+    ${group('Kết nối gia đình', 'Chia sẻ, đồng bộ, sao lưu', 'ink', [
+      tile('#/chiase', I.share, 'Chia sẻ cả họ', 'ink'),
+      tile('#/nhap', I.users, 'Nhập từ người thân', 'ink'),
+      tile('#/contacts', I.cake, 'Sinh nhật danh bạ', 'ink'),
+      tile('#/settings', I.cloud, 'Đồng bộ, sao lưu', 'ink')
+    ])}
+    ${culture ? group('Văn hóa', 'Tử Vi, Thần số, Kinh Dịch', 'violet', [
+      tile('#/tuvi', I.taiji, 'Tử Vi', 'violet'),
+      tile('#/numerology', I.num, 'Thần số học', 'violet'),
+      tile('#/iching', I.taiji, 'Kinh Dịch', 'violet'),
+      tile('#/culture', I.face, 'Hồ sơ của bạn', 'violet')
+    ]) : ''}
+    <section class="card pad col contact" style="gap:12px" aria-label="Liên hệ tác giả">
+      <div class="row" style="gap:12px"><span class="ico3d red sm">${ICON.phone(22)}</span>
+        <div class="col grow"><b>Liên hệ tác giả · Lê Hữu Phước</b><span class="small muted">Hỏi cách dùng, báo lỗi, đặt làm app theo yêu cầu</span></div></div>
+      <div class="row" style="gap:8px">
+        <a class="btn" style="flex:1;height:46px" href="tel:${CONTACT_PHONE}" aria-label="Gọi ${fmtPhone(CONTACT_PHONE)}">${ICON.phone(18)} ${fmtPhone(CONTACT_PHONE)}</a>
+        <a class="btn ghost" style="flex:.8;height:46px" href="${ZALO_URL}" ${isNative() ? '' : 'target="_blank"'} rel="noopener">Nhắn Zalo</a>
+      </div>
+      <div class="row" style="gap:8px;justify-content:center">
+        <a class="link" href="#/gopy">Góp ý &amp; báo lỗi</a><span class="muted">·</span><a class="link" href="#/donate">${CHANNEL === 'store' ? 'Đánh giá app' : 'Ủng hộ tác giả'}</a></div>
+    </section>
+  </main>
+  ${nav('tienich')}
+</div>`;
+}

@@ -18,6 +18,7 @@ public final class WidgetUpdater {
 
     public static void updateAll(Context ctx) {
         AppWidgetManager m = AppWidgetManager.getInstance(ctx);
+        update(ctx, m, IconWidget.class, m.getAppWidgetIds(new ComponentName(ctx, IconWidget.class)));
         update(ctx, m, SheetWidget.class, m.getAppWidgetIds(new ComponentName(ctx, SheetWidget.class)));
         update(ctx, m, AgendaWidget.class, m.getAppWidgetIds(new ComponentName(ctx, AgendaWidget.class)));
         update(ctx, m, MonthWidget.class, m.getAppWidgetIds(new ComponentName(ctx, MonthWidget.class)));
@@ -30,7 +31,8 @@ public final class WidgetUpdater {
         for (int id : ids) {
             RemoteViews v;
             try {
-                if (type == SheetWidget.class) v = WidgetRender.sheet(ctx);
+                if (type == IconWidget.class) v = WidgetRender.icon(ctx);
+                else if (type == SheetWidget.class) v = WidgetRender.sheet(ctx);
                 else if (type == AgendaWidget.class) v = WidgetRender.agenda(ctx);
                 else if (type == MonthWidget.class) v = WidgetRender.month(ctx);
                 else v = WidgetRender.countdown(ctx);

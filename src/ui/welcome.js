@@ -2,6 +2,7 @@
 import { setState } from '../store.js';
 import { ensurePermission, isNative } from '../notify.js';
 import { ICON } from './common.js';
+import { enableCalendar } from './more.js';
 
 const ui = { step: 0 };
 
@@ -26,19 +27,26 @@ const STEPS = [
     <h1 tabindex="-1">Mọi thứ chạy ngay trên máy</h1>`,
   () => `<div class="art"><span style="width:120px;height:120px;border-radius:60px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${ICON.bell(56)}</span></div>
     <h1 tabindex="-1">Bật thông báo để được nhắc</h1>
-    <p>App chỉ gửi nhắc ngày giỗ, rằm, mùng 1 và lễ Tết theo cài đặt của bạn. Có thể tắt bất cứ lúc nào.</p>`
+    <p>App chỉ gửi nhắc ngày giỗ, rằm, mùng 1 và lễ Tết theo cài đặt của bạn. Có thể tắt bất cứ lúc nào.</p>`,
+  () => `<div class="art"><span style="width:120px;height:120px;border-radius:60px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${ICON.sync(56)}</span></div>
+    <h1 tabindex="-1">Hiện ngày giỗ trên Google Calendar</h1>
+    <p>Ghi ngày giỗ, sinh nhật, lễ Tết vào lịch của máy (Google Calendar / Lịch iPhone). Xem được trên mọi thiết bị cùng tài khoản. Bật hay tắt lại trong Cài đặt.</p>`
 ];
+const steps = () => (isNative() ? STEPS : STEPS.slice(0, 3));
 
 export function renderWelcome() {
-  const last = ui.step === STEPS.length - 1;
+  const S = steps();
+  const actions = ui.step === 2
+    ? `<button type="button" class="btn" data-act="allow">Bật thông báo</button><button type="button" class="btn text" data-act="later">Để sau</button>`
+    : ui.step === 3
+      ? `<button type="button" class="btn" data-act="cal">Bật đồng bộ lịch</button><button type="button" class="btn text" data-act="done">Để sau</button>`
+      : '<button type="button" class="btn" data-act="next">Tiếp tục</button>';
   return `<main class="welcome" data-screen="welcome">
-    <div class="row" style="justify-content:flex-end;min-height:44px">${last ? '' : '<button type="button" class="link" data-act="skip" style="color:var(--muted)">Bỏ qua</button>'}</div>
-    ${STEPS[ui.step]()}
-    <div class="steps" aria-hidden="true">${STEPS.map((_, i) => `<i class="${i === ui.step ? 'on' : ''}"></i>`).join('')}</div>
-    <span class="sr">Bước ${ui.step + 1} trên ${STEPS.length}</span>
-    ${last
-      ? `<button type="button" class="btn" data-act="allow">Bật thông báo</button><button type="button" class="btn text" data-act="later">Để sau</button>`
-      : '<button type="button" class="btn" data-act="next">Tiếp tục</button>'}
+    <div class="row" style="justify-content:flex-end;min-height:44px">${ui.step >= 2 ? "" : '<button type="button" class="link" data-act="skip" style="color:var(--muted)">Bỏ qua</button>'}</div>
+    ${S[ui.step]()}
+    <div class="steps" aria-hidden="true">${S.map((_, i) => `<i class="${i === ui.step ? 'on' : ''}"></i>`).join('')}</div>
+    <span class="sr">Bước ${ui.step + 1} trên ${S.length}</span>
+    ${actions}
   </main>`;
 }
 
@@ -53,8 +61,11 @@ export function mountWelcome(root, rerender) {
     const a = e.target.closest('[data-act]')?.dataset.act;
     if (!a) return;
     if (a === 'next') { ui.step++; rerender(); root.ownerDocument.querySelector('.welcome h1')?.focus(); }
-    if (a === 'skip') { ui.step = STEPS.length - 1; rerender(); }
-    if (a === 'later') finish();
-    if (a === 'allow') { if (isNative()) await ensurePermission(); finish(); }
+    if (a === 'skip') { ui.step = 2; rerender(); }
+    const after = () => { if (steps().length > 3) { ui.step = 3; rerender(); } else finish(); };
+    if (a === 'later') after();
+    if (a === 'allow') { if (isNative()) await ensurePermission(); after(); }
+    if (a === 'cal') { await enableCalendar(); finish(); }
+    if (a === 'done') finish();
   });
 }

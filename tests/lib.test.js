@@ -204,7 +204,8 @@ describe('Dữ liệu widget', () => {
     const st = { settings: { widgetCountdown: 'auto' }, gios: [{ id: 'g', name: 'Ông nội', cal: 'am', day: 18, month: 10, repeat: 'yearly' }] };
     const now = new Date(2026, 10, 21, 9);
     const d = buildUserWidgetData(now, st);
-    expect(d.gios[0]).toEqual({ d: '2026-11-26', t: 'Giỗ Ông nội', l: '18/10' });
+    expect(d.gios[0]).toMatchObject({ d: '2026-11-26', t: 'Giỗ Ông nội', l: '18/10' });
+    expect(d.gios[0].r).toMatch(/^vankhan\/gio\?gid=g&jd=/);
     expect(d.cd).toEqual({ t: 'Giỗ Ông nội', d: '2026-11-26' });
     expect(buildUserWidgetData(now, { ...st, settings: { widgetCountdown: 'tet' } }).cd).toEqual({ t: 'Tết Nguyên Đán', d: '2027-02-06' });
     expect(buildUserWidgetData(now, { ...st, settings: { widgetCountdown: 'ongtao' } }).cd).toEqual({ t: 'Ông Công Ông Táo', d: '2027-01-30' });

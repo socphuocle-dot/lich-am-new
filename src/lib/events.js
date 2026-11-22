@@ -31,6 +31,33 @@ export const SOLAR_HOLIDAYS = [
 ];
 
 export const pad2 = (n) => String(n).padStart(2, '0');
+
+/** Loại sự kiện người dùng: giỗ (mặc định), sinh nhật, kỷ niệm */
+export const EVENT_TYPES = { gio: 'Ngày giỗ', sinhnhat: 'Sinh nhật', kyniem: 'Kỷ niệm' };
+export const titleOf = (g) => (g.type === 'sinhnhat' ? 'Sinh nhật ' + g.name : g.type === 'kyniem' ? g.name : 'Giỗ ' + g.name);
+/** Mốc cúng sau khi mất (ngày mất tính là ngày thứ nhất) */
+export const TANG_MILESTONES = [
+  { id: 'tuan', off: 6, label: 'Cúng tuần đầu (7 ngày)' },
+  { id: '49', off: 48, label: 'Cúng 49 ngày (chung thất)' },
+  { id: '100', off: 99, label: 'Cúng 100 ngày (tốt khốc)' }
+];
+
+/** Ngày mất (jd) của người "mới mất" — cần năm mất */
+export function deathJd(g) {
+  if (!g || !g.tang || !g.year) return null;
+  const y = Number(g.year);
+  if (g.cal === 'duong') return jdFromDate(g.day, g.month, y);
+  const s = lunarToSolar(g.day, g.month, y, !!g.leap) || lunarToSolar(Math.min(g.day, 29), g.month, y, !!g.leap);
+  return s ? jdFromDate(s.day, s.month, s.year) : null;
+}
+
+/** Tên ngày giỗ theo năm: giỗ đầu (tiểu tường), giỗ hết (đại tường) */
+export function gioTitle(g, n) {
+  if (g.tang && (g.type || 'gio') === 'gio' && n === 1) return 'Giỗ đầu ' + g.name;
+  if (g.tang && (g.type || 'gio') === 'gio' && n === 2) return 'Giỗ hết ' + g.name;
+  return titleOf(g);
+}
+
 export const jdOfDate = (d) => jdFromDate(d.getDate(), d.getMonth() + 1, d.getFullYear());
 
 function lunarAt(jd, cache) {
@@ -67,6 +94,7 @@ export function listEvents(fromJd, days, gios = [], opts = {}) {
   const { moon = true, lunarHolidays = true, solarHolidays = true } = opts;
   const out = [];
   const cache = new Map();
+  const deaths = new Map(gios.filter((g) => g.tang).map((g) => [g.id, deathJd(g)]));
   for (let jd = fromJd; jd < fromJd + days; jd++) {
     const s = jdToDate(jd);
     const l = lunarAt(jd, cache);
@@ -91,8 +119,17 @@ export function listEvents(fromJd, days, gios = [], opts = {}) {
       if (h) out.push({ key: `duong-${jd}`, jd, solar: s, lunar: l, kind: 'le', title: h.title });
     }
     for (const g of gios) {
+      if (g.tang) {
+        const dj = deaths.get(g.id);
+        if (dj != null) {
+          const m = TANG_MILESTONES.find((x) => dj + x.off === jd);
+          if (m) out.push({ key: `tang-${g.id}-${m.id}`, jd, solar: s, lunar: l, kind: 'gio', title: `${m.label.split(' (')[0]} ${g.name}`, gio: g, milestone: m.id });
+        }
+      }
       if (gioMatches(g, jd, s, l, cache)) {
-        out.push({ key: `gio-${g.id}-${jd}`, jd, solar: s, lunar: l, kind: 'gio', title: 'Giỗ ' + g.name, gio: g });
+        const n = g.tang && g.year ? (g.cal === 'am' ? l.year : s.year) - Number(g.year) : -1;
+        if (g.tang && g.year && n <= 0) continue; // chưa tới năm giỗ đầu
+        out.push({ key: `gio-${g.id}-${jd}`, jd, solar: s, lunar: l, kind: 'gio', title: gioTitle(g, n), gio: g, ...(g.tang && (n === 1 || n === 2) ? { milestone: n === 1 ? 'giodau' : 'giohet' } : {}) });
       }
     }
   }
@@ -101,7 +138,7 @@ export function listEvents(fromJd, days, gios = [], opts = {}) {
 
 /** Ngày dương gần nhất (từ fromJd) của một ngày giỗ âm lịch — dùng cho màn Thêm giỗ */
 export function nextGioDate(g, fromJd) {
-  const ev = listEvents(fromJd, 400, [g], { moon: false, lunarHolidays: false, solarHolidays: false });
+  const ev = listEvents(fromJd, 400, [g], { moon: false, lunarHolidays: false, solarHolidays: false }).filter((e) => !e.key.startsWith('tang-'));
   return ev.length ? ev[0] : null;
 }
 

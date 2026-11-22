@@ -6,11 +6,14 @@ import '@fontsource/be-vietnam-pro/vietnamese-700.css';
 import '@fontsource/be-vietnam-pro/latin-400.css';
 import '@fontsource/be-vietnam-pro/latin-600.css';
 import '@fontsource/be-vietnam-pro/latin-700.css';
+import '@fontsource/noto-serif/vietnamese-400.css';
+import '@fontsource/noto-serif/latin-400.css';
 import '@fontsource/noto-serif/vietnamese-700.css';
 import '@fontsource/noto-serif/latin-700.css';
 import './styles.css';
 
 import { getState, subscribe } from './store.js';
+import { toast } from './ui/common.js';
 import { reschedule } from './notify.js';
 import { pushWidgetData } from './widgets.js';
 import { renderWelcome, mountWelcome } from './ui/welcome.js';
@@ -21,6 +24,16 @@ import { renderCalendar, mountCalendar, resetCalendar } from './ui/calendar.js';
 import { renderReminders, mountReminders, renderGioForm, mountGioForm, clearGioForm } from './ui/reminders.js';
 import { renderCulture, renderProfile, mountProfile, renderTuvi, mountTuvi, renderNumerology, mountNumerology, renderIching, mountIching } from './ui/culture.js';
 import { renderDonate, mountDonate, renderSettings, mountSettings } from './ui/more.js';
+import { renderContacts, mountContacts, resetContacts } from './ui/contacts.js';
+import { renderVankhanList, renderVankhan, mountVankhan, renderGoodDays, mountGoodDays, renderInvite, mountInvite } from './ui/tools.js';
+import { listenNotificationActions } from './notify.js';
+import { checkUpdate } from './update.js';
+import { App as CapApp } from '@capacitor/app';
+import { renderFeedback, mountFeedback } from './ui/feedback.js';
+import { renderHub } from './ui/hub.js';
+import { renderConvert, mountConvert } from './ui/tools.js';
+import { renderShare, mountShare, resetShare, renderImport, mountImport, resetImport } from './ui/family.js';
+import { restoreFromSystemIfEmpty, mirrorToSystem, autoSyncCalendar } from './sync.js';
 
 const app = document.getElementById('app');
 const needsProfile = new Set(['tuvi', 'numerology']);
@@ -38,7 +51,16 @@ const ROUTES = {
   numerology: { render: renderNumerology, mount: mountNumerology, culture: true },
   iching: { render: renderIching, mount: mountIching, culture: true },
   donate: { render: renderDonate, mount: mountDonate },
-  settings: { render: renderSettings, mount: mountSettings }
+  settings: { render: renderSettings, mount: mountSettings },
+  contacts: { render: renderContacts, mount: mountContacts },
+  vankhan: { render: (p) => (p.id ? renderVankhan(p) : renderVankhanList(p)), mount: (r, rr, p) => (p.id ? mountVankhan(r, rr, p) : null) },
+  ngaytot: { render: renderGoodDays, mount: mountGoodDays },
+  thiep: { render: renderInvite, mount: mountInvite },
+  chiase: { render: renderShare, mount: mountShare },
+  nhap: { render: renderImport, mount: mountImport },
+  gopy: { render: renderFeedback, mount: mountFeedback },
+  tienich: { render: renderHub },
+  doingay: { render: renderConvert, mount: mountConvert }
 };
 
 function parseHash() {
@@ -55,11 +77,11 @@ function render(scrollTop = false) {
   let { name, params } = parseHash();
   let route = ROUTES[name];
   if (getState().onboarded && name === 'welcome') { replacing = true; location.replace('#/today'); return; }
-  if (!getState().onboarded && name !== 'welcome') { replacing = true; location.replace('#/welcome'); return; }
+  if (!getState().onboarded && name !== 'welcome' && name !== 'nhap') { replacing = true; location.replace('#/welcome'); return; }
   if (!route || (route.culture && !getState().settings.culture)) { replacing = true; location.replace('#/today'); return; }
   if (needsProfile.has(name) && !(getState().profile.dob && getState().profile.name)) { replacing = true; location.replace('#/profile'); return; }
   const y = window.scrollY;
-  if (name !== current?.name) { if (current?.name === 'add' || current?.name === 'edit') clearGioForm(); }
+  if (name !== current?.name) { if (current?.name === 'add' || current?.name === 'edit') clearGioForm(); if (current?.name === 'contacts') resetContacts(); if (current?.name === 'chiase') resetShare(); if (current?.name === 'nhap') resetImport(); }
   // Thay root để gỡ toàn bộ event listener cũ
   const root = document.createElement('div');
   root.innerHTML = route.render(params);
@@ -83,7 +105,7 @@ function applyLook() {
   const dark = s.theme === 'dark' || (s.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.documentElement.dataset.size = String(s.size);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#141210' : '#F8F4EC');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0E0B09' : '#F3ECE0');
 }
 
 // Ngăn xếp trang đã đi trong app — để nút "Quay lại" luôn hoạt động (kể cả khi mở thẳng một trang)
@@ -103,6 +125,15 @@ document.addEventListener('click', (e) => {
   else { replacing = true; location.replace(b.dataset.back); }
 });
 
+// Nút "Thêm" thu gọn thành tròn khi cuộn xuống, để không che nội dung
+let lastY = 0;
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  const fab = document.querySelector('.fab');
+  if (fab) fab.classList.toggle('mini', y > 60 && y >= lastY);
+  lastY = y;
+}, { passive: true });
+
 // Rung nhẹ khi bấm (chỉ trên điện thoại)
 if (Capacitor.isNativePlatform()) {
   document.addEventListener('click', (e) => {
@@ -110,7 +141,11 @@ if (Capacitor.isNativePlatform()) {
     if (el) Haptics.impact({ style: el.matches('.btn, .fab') ? ImpactStyle.Medium : ImpactStyle.Light }).catch(() => {});
   });
 }
-subscribe((s) => { applyLook(); reschedule(s); pushWidgetData(s); render(false); });
+subscribe((s) => {
+  applyLook(); reschedule(s); pushWidgetData(s); render(false);
+  mirrorToSystem(s);
+  if (s.calSync?.enabled) autoSyncCalendar();
+});
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyLook);
 // Mở lại app sau nhiều giờ: cập nhật ngày hôm nay và lịch nhắc
 let lastDay = new Date().toDateString();
@@ -119,6 +154,7 @@ document.addEventListener('visibilitychange', () => {
   if (new Date().toDateString() !== lastDay) { lastDay = new Date().toDateString(); resetCalendar(); render(false); }
   reschedule(getState());
   pushWidgetData(getState());
+  if (getState().calSync?.enabled) autoSyncCalendar();
 });
 
 // Bản web (GitHub Pages): cho phép cài lên màn hình chính và mở khi không có mạng
@@ -126,7 +162,29 @@ if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator && location.pr
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
-applyLook();
-render(true);
-reschedule(getState(), 50);
-pushWidgetData(getState(), 100);
+listenNotificationActions((h) => { if (location.hash !== h) location.hash = h; });
+
+// Link từ widget: lichamnhacgio://open/vankhan/ram?jd=… → mở đúng màn
+export function routeFromUrl(url) {
+  const m = String(url || '').match(/^lichamnhacgio:\/\/open\/([\w/?=&%.-]*)$/);
+  return m ? '#/' + (m[1] || 'today') : null;
+}
+if (Capacitor.isNativePlatform()) {
+  CapApp.addListener('appUrlOpen', ({ url }) => { const h = routeFromUrl(url); if (h && location.hash !== h) location.hash = h; }).catch(() => {});
+}
+
+async function start() {
+  if (Capacitor.isNativePlatform()) {
+    try { const l = await CapApp.getLaunchUrl(); const h = routeFromUrl(l?.url); if (h) { replacing = true; location.replace(h); } } catch { /* */ }
+  }
+  // Máy mới / cài lại: lấy lại dữ liệu từ bản sao lưu của hệ thống (Google / iCloud)
+  if (await restoreFromSystemIfEmpty()) setTimeout(() => toast('Đã khôi phục dữ liệu từ bản sao lưu của máy'), 600);
+  applyLook();
+  render(true);
+  reschedule(getState(), 50);
+  pushWidgetData(getState(), 100);
+  mirrorToSystem(getState());
+  if (getState().calSync?.enabled) autoSyncCalendar();
+  setTimeout(() => checkUpdate(), 3000);
+}
+start();

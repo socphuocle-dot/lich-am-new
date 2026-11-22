@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="2dp"><shape android:shape="rectangle"><corners android:radius="18dp"/><solid android:color="#33000000"/></shape></item>
+    <item android:bottom="2dp"><shape android:shape="rectangle"><corners android:radius="18dp"/>
+        <gradient android:angle="315" android:startColor="@color/widget_lacquer_hi" android:centerColor="@color/widget_lacquer" android:endColor="@color/widget_lacquer_deep"/></shape></item>
+</layer-list>

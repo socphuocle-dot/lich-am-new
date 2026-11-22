@@ -1,6 +1,7 @@
 package vn.lichamnhacgio.app.widget;
 
 import android.app.PendingIntent;
+import android.net.Uri;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -21,10 +22,38 @@ public final class WidgetRender {
     private WidgetRender() {}
 
     static PendingIntent openApp(Context ctx) {
-        Intent i = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
-        if (i == null) i = new Intent();
+        return openRoute(ctx, routeFor(ctx, CalendarStore.todayEpoch()));
+    }
+
+    /** Mở app tại một màn cụ thể qua link lichamnhacgio://open/<route> */
+    static PendingIntent openRoute(Context ctx, String route) {
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("lichamnhacgio://open/" + route));
+        i.setPackage(ctx.getPackageName());
+        i.setClassName(ctx, "vn.lichamnhacgio.app.MainActivity");
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        return PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return PendingIntent.getActivity(ctx, route.hashCode(), i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** Hôm nay có giỗ / rằm / mùng 1 / lễ có văn khấn → mở văn khấn; nếu không → màn Hôm nay */
+    static String routeFor(Context ctx, long epoch) {
+        for (UserStore.Item g : UserStore.gios(ctx, epoch, 1)) if (!g.route.isEmpty()) return g.route;
+        CalendarStore.Day d = CalendarStore.day(ctx, epoch);
+        if (!CalendarStore.hasLunar(d)) return "today";
+        String id = vanKhanId(d);
+        return id == null ? "today" : "vankhan/" + id + "?jd=" + (epoch + 2440588L);
+    }
+
+    static String vanKhanId(CalendarStore.Day d) {
+        if (d.lm == 12 && d.ld == 23) return "ongtao";
+        if (d.lm == 1 && d.ld == 1) return "tet";
+        if (d.lm == 1 && (d.ld == 3 || d.ld == 4)) return "hoavang";
+        if (d.lm == 1 && d.ld == 10) return "thantai";
+        if (d.lm == 1 && d.ld == 15) return "ramgieng";
+        if (d.lm == 5 && d.ld == 5) return "doanngo";
+        if (d.lm == 7 && d.ld == 15) return "vulan";
+        if (d.ld == 15) return "ram";
+        if (d.ld == 1) return "mung1";
+        return null;
     }
 
     static String countText(long diff) {
@@ -47,18 +76,29 @@ public final class WidgetRender {
         return d.good ? "Ngày Hoàng đạo" : "Ngày Hắc đạo";
     }
 
-    private static void fillSheet(Context ctx, RemoteViews v, CalendarStore.Day d) {
-        v.setTextViewText(R.id.band, "TH " + d.m + " · " + d.y);
+    private static void fillSheet(Context ctx, RemoteViews v, CalendarStore.Day d, boolean longBand) {
+        v.setTextViewText(R.id.band, (longBand ? "THÁNG " : "TH ") + d.m + " · " + d.y);
         v.setTextViewText(R.id.day, String.valueOf(d.d));
         v.setTextViewText(R.id.weekday, CalendarStore.THU[d.wd]);
         v.setTextViewText(R.id.lunar, lunarLine(ctx, d));
+    }
+
+    /* 0. Biểu tượng ngày (1×1) — số ngày đổi theo ngày của máy */
+    public static RemoteViews icon(Context ctx) {
+        CalendarStore.Day d = CalendarStore.day(ctx, CalendarStore.todayEpoch());
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_icon);
+        v.setTextViewText(R.id.weekday, d.wd == 0 ? "CN" : "THỨ " + (d.wd + 1));
+        v.setTextViewText(R.id.day, String.valueOf(d.d));
+        v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) + " ÂL" : "");
+        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+        return v;
     }
 
     /* 1. Tờ lịch (2×2) */
     public static RemoteViews sheet(Context ctx) {
         CalendarStore.Day d = CalendarStore.day(ctx, CalendarStore.todayEpoch());
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_sheet);
-        fillSheet(ctx, v, d);
+        fillSheet(ctx, v, d, true);
         v.setTextViewText(R.id.note, todayNote(ctx, d));
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
@@ -68,13 +108,14 @@ public final class WidgetRender {
     private static final int[] DATE = {R.id.date0, R.id.date1, R.id.date2, R.id.date3};
     private static final int[] TITLE = {R.id.title0, R.id.title1, R.id.title2, R.id.title3};
     private static final int[] COUNT = {R.id.count0, R.id.count1, R.id.count2, R.id.count3};
+    private static final int[] DOT = {R.id.dot0, R.id.dot1, R.id.dot2, R.id.dot3};
 
     /* 2. Lịch & sắp tới (4×2) */
     public static RemoteViews agenda(Context ctx) {
         long today = CalendarStore.todayEpoch();
         CalendarStore.Day d = CalendarStore.day(ctx, today);
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_agenda);
-        fillSheet(ctx, v, d);
+        fillSheet(ctx, v, d, false);
         List<UserStore.Item> items = UserStore.upcoming(ctx, today, 120, 3);
         for (int i = 0; i < ROW.length; i++) {
             if (i < items.size()) {
@@ -85,6 +126,7 @@ public final class WidgetRender {
                 v.setTextViewText(TITLE[i], it.title);
                 v.setTextViewText(COUNT[i], "· " + countText(it.epoch - today));
                 v.setTextColor(DATE[i], ctx.getColor(it.kind == 3 ? R.color.widget_ink : it.kind == 1 ? R.color.widget_gold_ink : R.color.widget_accent));
+                v.setInt(DOT[i], "setBackgroundResource", it.kind == 3 ? R.drawable.widget_dot_gio : it.kind == 1 ? R.drawable.widget_dot_moon : R.drawable.widget_dot_le);
             } else {
                 v.setViewVisibility(ROW[i], View.GONE);
             }

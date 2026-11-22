@@ -2,6 +2,9 @@ import { getState } from '../store.js';
 import { dayInfo, jdFromDate, jdToDate, solarToLunar, canChiYear, LUNAR_MONTH_NAME } from '../lib/lunar.js';
 import { listEvents } from '../lib/events.js';
 import { esc, ICON, nav } from './common.js';
+import { actionSheet } from './dialog.js';
+import { dayExtras, TRUC_Y } from '../lib/goodday.js';
+import { trucIndex, TRUC } from '../lib/lunar.js';
 
 const ui = { y: 0, m: 0, sel: 0, anim: '' };
 
@@ -77,13 +80,39 @@ export function renderCalendar() {
         <div class="kv"><span class="k">Tam hợp</span><span class="v">${info.tamHop.join(' · ')}</span></div>
       </div>
       <div class="small muted" style="line-height:1.5"><b style="color:var(--ink)">Giờ hoàng đạo:</b> ${info.hours.map((h) => `${h.chi} (${h.label})`).join(', ')}</div>
-      <div class="small muted"><b style="color:var(--ink)">Tiết khí:</b> ${info.solarTerm}</div>
+      <div class="small muted"><b style="color:var(--ink)">Tiết khí:</b> ${info.solarTerm} · <b style="color:var(--ink)">Trực ${TRUC[trucIndex(ui.sel)]}:</b> ${TRUC_Y[trucIndex(ui.sel)].toLowerCase()}</div>
+      ${(() => { const x = dayExtras(ui.sel); return `<div class="small muted" style="line-height:1.5"><b style="color:var(--ink)">Sao:</b> ${x.sao} (${x.saoTot ? 'tốt' : 'xấu'})${x.thienDuc ? ' · <b style="color:var(--accent)">Thiên Đức</b>' : ''}${x.nguyetDuc ? ' · <b style="color:var(--accent)">Nguyệt Đức</b>' : ''}<br><b style="color:var(--ink)">Xuất hành:</b> Hỷ thần ${x.hyThan} · Tài thần ${x.taiThan}</div>`; })()}
       ${selEvents.map((e) => `<div class="note"><span style="color:var(--accent)">${ICON.bell(18)}</span><b>${esc(e.title)}</b></div>`).join('')}
-      <a class="link" href="#/add?ld=${L.leap ? '' : L.day}&lm=${L.leap ? '' : L.month}">+ Thêm ngày giỗ vào ngày âm này</a>
+      <div class="quick-acts" role="group" aria-label="Thêm nhanh cho ngày này">
+        <a class="chip" href="${addHref('gio', s, L)}">${ICON.plus(16)} Giỗ ${L.leap ? '' : `(${L.day}/${L.month} âm)`}</a>
+        <a class="chip" href="${addHref('sinhnhat', s, L)}">${ICON.plus(16)} Sinh nhật</a>
+        <a class="chip" href="${addHref('kyniem', s, L)}">${ICON.plus(16)} Kỷ niệm</a>
+      </div>
+      <span class="small muted">Mẹo: nhấn giữ một ngày trên lịch để thêm nhanh.</span>
     </section>
   </main>
   ${nav('calendar')}
 </div>`;
+}
+
+function addHref(type, s, L) {
+  if (type === 'gio') return `#/add?type=gio&cal=am&ld=${L.leap ? '' : L.day}&lm=${L.leap ? '' : L.month}`;
+  return `#/add?type=${type}&cal=duong&ld=${s.day}&lm=${s.month}`;
+}
+
+async function quickAdd(jd) {
+  const s = jdToDate(jd);
+  const L = solarToLunar(s.day, s.month, s.year);
+  const v = await actionSheet({
+    title: `Ngày ${s.day}/${s.month}/${s.year}`,
+    sub: `Âm lịch ${L.day}/${L.month}${L.leap ? ' nhuận' : ''} · năm ${canChiYear(L.year)}`,
+    items: [
+      { value: 'gio', label: 'Thêm ngày giỗ', sub: `Nhắc hằng năm vào ${L.day}/${L.month} âm lịch`, icon: ICON.bell(20) },
+      { value: 'sinhnhat', label: 'Thêm sinh nhật', sub: `Nhắc hằng năm vào ${s.day}/${s.month} dương lịch`, icon: ICON.plus(20) },
+      { value: 'kyniem', label: 'Thêm ngày kỷ niệm', sub: `${s.day}/${s.month} dương lịch`, icon: ICON.plus(20) }
+    ]
+  });
+  if (v) location.hash = addHref(v, s, L);
 }
 
 function shift(dir) {
@@ -103,9 +132,21 @@ export function mountCalendar(root, rerender) {
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - st < 600) { shift(dx < 0 ? 1 : -1); rerender(); }
   }, { passive: true });
+  // Nhấn giữ một ngày → thêm nhanh
+  let lp = null, lpFired = false;
+  root.addEventListener('pointerdown', (e) => {
+    const c = e.target.closest('[data-jd]');
+    if (!c) return;
+    lpFired = false;
+    const x = e.clientX, y = e.clientY;
+    lp = { x, y, t: setTimeout(() => { lpFired = true; navigator.vibrate?.(15); quickAdd(Number(c.dataset.jd)); }, 480) };
+  });
+  const cancelLp = (e) => { if (lp && (!e || e.type !== 'pointermove' || Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 10)) { clearTimeout(lp.t); lp = null; } };
+  root.addEventListener('pointerup', () => cancelLp()); root.addEventListener('pointercancel', () => cancelLp()); root.addEventListener('pointermove', cancelLp);
+  root.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-jd]')) e.preventDefault(); });
   root.addEventListener('click', (e) => {
     const c = e.target.closest('[data-jd]');
-    if (c) { ui.sel = Number(c.dataset.jd); rerender(); return; }
+    if (c) { if (lpFired) { lpFired = false; return; } ui.sel = Number(c.dataset.jd); rerender(); return; }
     const a = e.target.closest('[data-act]');
     if (!a) return;
     if (a.dataset.act === 'prev') shift(-1);

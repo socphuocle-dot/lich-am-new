@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Đọc to văn khấn: tìm bộ chuyển văn bản thành giọng nói của máy (Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -22,6 +29,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Link mở thẳng một màn trong app (từ widget): lichamnhacgio://open/vankhan/ram -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="lichamnhacgio" android:host="open" />
+            </intent-filter>
+
         </activity>
 
         <provider
@@ -35,6 +50,10 @@
         </provider>
 
         <!-- Widget màn hình chính -->
+        <receiver android:name=".widget.IconWidget" android:label="Ngày hôm nay" android:exported="false">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_icon_info" />
+        </receiver>
         <receiver android:name=".widget.SheetWidget" android:label="Tờ lịch" android:exported="false">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_sheet_info" />
@@ -65,4 +84,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Đồng bộ với lịch máy (Google Calendar) và nhập ngày sinh từ danh bạ -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>

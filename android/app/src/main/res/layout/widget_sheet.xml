@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@drawable/widget_bg">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg">
     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingBottom="8dp">
-        <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/band" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:background="@drawable/widget_band" android:gravity="center" android:paddingTop="5dp" android:paddingBottom="5dp"
-            android:text="TH 11 · 2026" android:textColor="@color/widget_on_accent" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.06" />
-        <TextView android:id="@+id/day" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-            android:gravity="center" android:fontFamily="@font/noto_serif_digits" android:text="21" android:textColor="@color/widget_accent"
-            android:textSize="46sp" android:includeFontPadding="false"
-            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="24sp" android:autoSizeMaxTextSize="64sp" />
-        <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/weekday" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
-            android:text="Thứ Bảy" android:textColor="@color/widget_muted" android:textSize="12sp" />
-        <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/lunar" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
-            android:maxLines="1" android:ellipsize="end" android:paddingLeft="4dp" android:paddingRight="4dp"
-            android:text="13/10 Âm · Kỷ Hợi" android:textColor="@color/widget_ink" android:textSize="12sp" android:textStyle="bold" />
-        <TextView android:fontFamily="@font/be_vietnam_pro" android:id="@+id/note" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
-            android:maxLines="1" android:ellipsize="end" android:paddingLeft="6dp" android:paddingRight="6dp" android:paddingTop="2dp"
+        <TextView android:id="@+id/band" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
+            android:background="@drawable/widget_band" android:gravity="center" android:paddingTop="6dp" android:paddingBottom="7dp"
+            android:text="THÁNG 11 · 2026" android:textColor="@color/widget_on_accent" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08" android:shadowColor="#40000000" android:shadowDy="2" android:shadowRadius="4" />
+        <TextView android:id="@+id/day" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fontFamily="@font/noto_serif_digits"
+            android:gravity="center" android:text="21" android:textColor="@color/widget_accent" android:includeFontPadding="false" android:maxLines="1"
+            android:textSize="50sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="26sp" android:autoSizeMaxTextSize="72sp" android:shadowColor="#40000000" android:shadowDy="2" android:shadowRadius="4" />
+        <TextView android:id="@+id/weekday" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro"
+            android:text="Thứ Bảy" android:textColor="@color/widget_muted" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/lunar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:fontFamily="@font/be_vietnam_pro"
+            android:layout_marginTop="3dp" android:background="@drawable/widget_chip_gold" android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="2dp" android:paddingBottom="2dp"
+            android:maxLines="1" android:ellipsize="end" android:text="13/10 Âm · Kỷ Hợi" android:textColor="@color/widget_gold_ink" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:id="@+id/note" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro"
+            android:maxLines="1" android:ellipsize="end" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="4dp"
             android:text="Ngày Hoàng đạo" android:textColor="@color/widget_accent" android:textSize="11sp" android:textStyle="bold" />
     </LinearLayout>
 </FrameLayout>

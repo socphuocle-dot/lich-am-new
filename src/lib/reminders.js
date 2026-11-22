@@ -1,6 +1,7 @@
 // Lập lịch thông báo cục bộ từ danh sách sự kiện. Không cần server.
 import { listEvents, jdOfDate } from './events.js';
 import { jdToDate } from './lunar.js';
+import { vanKhanFor } from './vankhan.js';
 
 export const MAX_PENDING = 60; // iOS giới hạn 64 thông báo chờ
 
@@ -30,18 +31,22 @@ export function buildSchedule(now, state) {
     moon: true, lunarHolidays: true, solarHolidays: true
   });
   const out = [];
-  const push = (key, jd, time, title, body) => {
+  let cur = null;
+  const push = (key, jd, time, title, body, vk = vanKhanFor(cur)) => {
     const when = at(jd, time);
     if (when.getTime() <= now.getTime()) return;
-    out.push({ id: hashId(key + '|' + jd + '|' + time), title, body, at: when, key });
+    out.push({ id: hashId(key + '|' + jd + '|' + time), title, body, at: when, key, kind: cur.kind, evJd: cur.jd, gid: cur.gio?.id || '', vk: vk || '' });
   };
   for (const ev of events) {
     if (disabled[ev.key]) continue;
+    cur = ev;
     const lunarTxt = `${ev.lunar.day}/${ev.lunar.month}${ev.lunar.leap ? ' nhuận' : ''} âm lịch`;
     if (ev.kind === 'gio') {
       const g = ev.gio;
       for (const off of g.remind && g.remind.length ? g.remind : [0]) {
-        push(ev.key + '-' + off, ev.jd - off, g.time, `${offsetText(off)}: ${ev.title}`, `Ngày ${ev.solar.day}/${ev.solar.month} (${lunarTxt}).${g.note ? ' ' + g.note : ''}`);
+        const base = vanKhanFor(ev);
+        const vk = !base ? '' : off === 0 ? base : off === 1 ? (base === 'gio' ? 'tienthuong' : base) : '';
+        push(ev.key + '-' + off, ev.jd - off, g.time, `${offsetText(off)}: ${ev.title}`, `Ngày ${ev.solar.day}/${ev.solar.month} (${lunarTxt}).${g.note ? ' ' + g.note : ''}`, vk);
       }
       continue;
     }

@@ -14,6 +14,8 @@ concurrency:
 
 env:
   APK_URL: https://github.com/${{ github.repository }}/releases/latest/download/LichAm-NhacGio.apk
+  VITE_APK_URL: https://github.com/${{ github.repository }}/releases/latest/download/LichAm-NhacGio.apk
+  VITE_REPO: ${{ github.repository }}
 
 jobs:
   test:
@@ -35,8 +37,6 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
       - run: npm ci
-      - run: npm run build
-      - run: npx cap sync android
       - name: Lấy khóa ký từ GitHub Secrets
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -46,20 +46,30 @@ jobs:
             echo "::error::Chưa có Secret ANDROID_KEYSTORE_BASE64 — xem HUONG-DAN-PHAT-HANH.md bước 3"
             exit 1
           fi
-          echo "$KS_B64" | base64 -d > android/app/release.jks
+          echo "$KS_B64" | tr -d ' \r\n\t' | base64 -d > android/app/release.jks
+          KS_PASS=$(printf %s "$KS_PASS" | tr -d '\r\n')
           printf "storeFile=release.jks\nstorePassword=%s\nkeyAlias=lichamnhacgio\nkeyPassword=%s\n" "$KS_PASS" "$KS_PASS" > android/keystore.properties
-      - name: Build APK + AAB
-        working-directory: android
+      # APK tải trực tiếp: có mã QR ủng hộ + tự báo bản mới
+      - name: Build APK (bản tải trực tiếp)
         env:
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '1.0.0' }}
         run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease bundleRelease
-      - run: |
-          mkdir -p out
-          cp android/app/build/outputs/apk/release/app-release.apk out/LichAm-NhacGio.apk
-          cp android/app/build/outputs/bundle/release/app-release.aab out/LichAm-NhacGio.aab
+          npm run build
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew --no-daemon assembleRelease
+          mkdir -p ../out && cp app/build/outputs/apk/release/app-release.apk ../out/LichAm-NhacGio.apk
+      # AAB cho Google Play: ẩn mã QR (chính sách cửa hàng), cập nhật qua Play
+      - name: Build AAB (Google Play)
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '1.0.0' }}
+          VITE_CHANNEL: store
+        run: |
+          npm run build
+          npx cap sync android
+          cd android && ./gradlew --no-daemon bundleRelease
+          cp app/build/outputs/bundle/release/app-release.aab ../out/LichAm-NhacGio-GooglePlay.aab
       - uses: actions/upload-artifact@v4
         with: { name: android, path: out/* }
 

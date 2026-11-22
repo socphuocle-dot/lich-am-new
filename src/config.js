@@ -10,7 +10,16 @@ export const DONATE_ACCOUNTS = [
   { id: 'vcb', tab: 'Vietcombank', bank: 'Vietcombank', number: '0371000405296', copy: '0371000405296', qr: './qr/vcb.png' }
 ];
 export const DONATE_NAME = 'LE HUU PHUOC';
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.4.0';
 
 // Link tải APK mới nhất (GitHub Releases) — workflow tự điền khi build bản web
-export const APK_URL = import.meta.env.VITE_APK_URL || '';
+export const APK_URL = import.meta.env.VITE_APK_URL || 'https://github.com/socphuocle-dot/lich-am-new/releases/latest/download/LichAm-NhacGio.apk';
+
+// Kho GitHub (chủ/tên) — dùng để kiểm tra bản mới và tạo link chia sẻ. Workflow tự điền.
+export const REPO = import.meta.env.VITE_REPO || 'socphuocle-dot/lich-am-new';
+// Trang web của app (GitHub Pages) — dùng cho link chia sẻ danh sách giỗ
+export const WEB_URL = import.meta.env.VITE_WEB_URL || `https://${REPO.split('/')[0]}.github.io/${REPO.split('/')[1]}/`;
+
+// Liên hệ tác giả
+export const CONTACT_PHONE = '0903545334';
+export const ZALO_URL = 'https://zalo.me/0903545334';

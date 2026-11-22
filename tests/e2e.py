@@ -25,7 +25,7 @@ def check(name, fn):
 with sync_playwright() as p:
     browser = p.chromium.launch()
     for vp_name, vp in [('390x844', {'width': 390, 'height': 844}), ('360x740', {'width': 360, 'height': 740})]:
-        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block')
+        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block', permissions=['clipboard-read', 'clipboard-write'])
         external = []
         def route(r):
             if r.request.url.startswith(f'http://127.0.0.1:{PORT}'):
@@ -164,7 +164,10 @@ with sync_playwright() as p:
         check(f'[{vp_name}] Lọc nhắc việc, bật/tắt nhắc', t_reminders)
 
         def t_culture():
-            page.click('nav a[href="#/culture"]'); page.wait_for_selector('[data-screen="culture"]')
+            page.click('nav a[href="#/tienich"]'); page.wait_for_selector('[data-screen="hub"]')
+            expect(page.locator('a[href="tel:0903545334"]')).to_be_visible()
+            shot('tienich')
+            page.click('a.svc[href="#/culture"]'); page.wait_for_selector('[data-screen="culture"]')
             shot('culture')
             page.goto(BASE + '#/tuvi'); page.wait_for_selector('[data-screen="profile"]')
             page.click('[data-act="save"]')
@@ -227,7 +230,8 @@ with sync_playwright() as p:
             page.goto(BASE + '#/settings'); page.wait_for_selector('[data-screen="settings"]')
             page.click('[data-seg="size"][data-v="1"]')
             page.click('[data-tg="culture"]')
-            assert page.locator('nav a[href="#/culture"]').count() == 0
+            page.goto(BASE + '#/tienich'); page.wait_for_selector('[data-screen="hub"]')
+            assert page.locator('a.svc[href="#/culture"]').count() == 0
             page.goto(BASE + '#/tuvi'); page.wait_for_selector('[data-screen="today"]')
             page.goto(BASE + '#/settings'); page.click('[data-tg="culture"]')
             with page.expect_download() as dl:
@@ -264,6 +268,134 @@ with sync_playwright() as p:
             page2.click('[data-back]'); page2.wait_for_selector('[data-screen="reminders"]')
             page2.close()
         check(f'[{vp_name}] Nút quay lại hoạt động ở mọi màn', t_back)
+
+        def t_types():
+            page.goto(BASE + '#/add'); page.wait_for_selector('[data-screen="gio-form"]')
+            page.click('[data-type="sinhnhat"]')
+            expect(page.locator('label[for="g-name"]')).to_have_text('Tên người')
+            expect(page.locator('[data-cal="duong"]')).to_have_attribute('aria-pressed', 'true')
+            page.fill('#g-name', 'Bé Na')
+            page.select_option('select[data-f="day"]', '5'); page.select_option('select[data-f="month"]', '6')
+            page.click('[data-act="save"]'); page.wait_for_selector('[data-screen="reminders"]')
+            expect(page.get_by_text('Sinh nhật Bé Na').first).to_be_visible()
+            page.goto(BASE + '#/add'); page.wait_for_selector('[data-screen="gio-form"]')
+            page.click('[data-type="kyniem"]')
+            expect(page.locator('[data-rel]')).to_have_count(0)
+            expect(page.locator('label[for="g-name"]')).to_have_text('Tên sự kiện')
+            shot('form-kyniem')
+            page.click('[data-back]')
+            page.goto(BASE + '#/settings'); page.wait_for_selector('[data-screen="settings"]')
+            expect(page.get_by_text('Đồng bộ & sao lưu')).to_be_visible()
+            page.click('a[href="#/contacts"]'); page.wait_for_selector('[data-screen="contacts"]')
+            expect(page.get_by_text('Chỉ có trong app điện thoại')).to_be_visible()
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="settings"]')
+            st = json.loads(page.evaluate("localStorage.getItem('lamng.v1')"))
+            assert any(g.get('type') == 'sinhnhat' and g['name'] == 'Bé Na' for g in st['gios'])
+            no_hscroll()
+        check(f'[{vp_name}] Sinh nhật, kỷ niệm, màn đồng bộ & danh bạ', t_types)
+
+        def t_tools():
+            page.goto(BASE + '#/today'); page.wait_for_selector('[data-screen="today"]')
+            page.click('[data-act="conv"]')
+            expect(page.locator('[data-test="conv"]')).to_contain_text('13 tháng Mười')
+            page.click('[data-cvdir="a2d"]')
+            page.select_option('select[data-cv="d"]', '15'); page.select_option('select[data-cv="m"]', '10'); page.select_option('select[data-cv="y"]', '2026')
+            expect(page.locator('[data-test="conv"]')).to_contain_text('23/11/2026')
+            no_hscroll()
+            page.click('a.tool[href="#/vankhan"]'); page.wait_for_selector('[data-screen="vankhan-list"]')
+            page.click('a[href="#/vankhan/ram"]'); page.wait_for_selector('[data-screen="vankhan"]')
+            expect(page.locator('.vk-text mark').first).to_be_visible()
+            page.fill('#vk-host', 'Nguyễn Văn An'); page.fill('#vk-addr', 'số 1 Lê Lợi, Huế'); page.click('[data-act="save-host"]')
+            expect(page.locator('.vk-text')).to_contain_text('Tín chủ con là Nguyễn Văn An, ngụ tại số 1 Lê Lợi, Huế.')
+            expect(page.locator('.vk-text')).to_contain_text('năm Bính Ngọ')
+            assert page.locator('.vk-text mark').count() == 0
+            page.click('[data-tab="mam"]'); page.locator('[data-ck="0"]').click()
+            expect(page.locator('[data-ck="0"]')).to_have_attribute('aria-checked', 'true')
+            shot('vankhan')
+            page.goto(BASE + '#/ngaytot'); page.wait_for_selector('[data-screen="goodday"]')
+            page.click('[data-gact="khaitruong"]')
+            assert page.locator('[data-gopen]').count() > 0
+            page.locator('[data-gopen]').first.click()
+            expect(page.locator('.gd-detail')).to_contain_text('Giờ tốt')
+            no_hscroll(); shot('ngaytot')
+            # Nhấn giữ một ngày trên lịch → thêm nhanh
+            page.goto(BASE + '#/calendar'); page.wait_for_selector('[data-screen="calendar"]')
+            if page.locator('[data-act="today"]').count(): page.click('[data-act="today"]')
+            cell = page.locator('.cell[aria-label^="Ngày 26 tháng 11,"]')
+            box = cell.bounding_box()
+            page.mouse.move(box['x'] + 10, box['y'] + 10); page.mouse.down(); page.wait_for_timeout(700); page.mouse.up()
+            page.wait_for_selector('.sheet-dialog')
+            page.locator('.sheet-dialog [data-i="0"]').click()
+            page.wait_for_selector('[data-screen="gio-form"]')
+            expect(page.locator('select[data-f="day"]')).to_have_value('18')
+            page.fill('#g-name', 'Cụ Tổ'); page.click('[data-side="noi"]'); page.click('[data-act="save"]')
+            page.wait_for_selector('[data-screen="reminders"]')
+            expect(page.get_by_text('Bên Nội')).to_be_visible()
+            page.locator('a.item[href^="#/edit/"]', has_text='Giỗ Cụ Tổ').first.click()
+            page.click('a[href^="#/thiep/"]'); page.wait_for_selector('[data-screen="invite"] canvas')
+            page.fill('#inv-time', '11:00')
+            page.wait_for_timeout(400)
+            assert page.evaluate("document.querySelector('#inv-cv').toDataURL().length") > 20000
+            shot('thiep')
+        check(f'[{vp_name}] Tiện ích: đổi ngày, văn khấn, mâm cúng, ngày tốt, nhấn giữ lịch, thiệp mời', t_tools)
+
+        def t_family():
+            page.goto(BASE + '#/reminders'); page.wait_for_selector('[data-screen="reminders"]')
+            page.click('a[href="#/chiase"]'); page.wait_for_selector('[data-screen="share"]')
+            expect(page.locator('.qr-box svg')).to_be_visible()
+            n_sel = page.locator('[data-pick][aria-checked="true"]').count()
+            assert n_sel >= 1
+            shot('chiase')
+            page.click('[data-act="copy"]')
+            link = page.evaluate("navigator.clipboard.readText()")
+            assert '#/nhap?d=1' in link, link
+            c2 = browser.new_context(viewport=vp, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block')
+            c2.route('**/*', route)
+            p2 = c2.new_page(); p2.clock.install(time='2026-11-21T20:00:00+07:00')
+            p2.goto(BASE + link[link.index('#'):])
+            p2.wait_for_selector('[data-screen="import"]')
+            assert p2.locator('[data-ipick]').count() == n_sel
+            p2.click('[data-act="import"]'); p2.wait_for_selector('[data-screen="reminders"]')
+            assert p2.locator('a.item[href^="#/edit/"]').count() >= n_sel
+            # Nhập lại cùng link → báo đã có
+            p2.goto(BASE + link[link.index('#'):]); p2.wait_for_selector('[data-screen="import"]')
+            expect(p2.get_by_text('Bạn đã có đủ các ngày này.')).to_be_visible()
+            p2.goto(BASE + '#/nhap'); p2.fill('#im-code', 'mã sai'); p2.click('[data-act="read"]')
+            expect(p2.locator('.err')).to_be_visible()
+            c2.close()
+            page.goto(BASE + '#/vankhan/mung1'); page.wait_for_selector('[data-screen="vankhan"]')
+            expect(page.locator('[data-act="tts-play"]')).to_be_visible()
+            r = page.request.get(BASE.replace('index.html', 'privacy.html'))
+            assert r.ok and 'Chính sách quyền riêng tư' in r.text()
+        check(f'[{vp_name}] Chia sẻ cho cả họ bằng link, nhập không trùng; đọc to; trang riêng tư', t_family)
+
+        def t_tang():
+            page.goto(BASE + '#/add?type=gio'); page.wait_for_selector('[data-screen="gio-form"]')
+            page.fill('#g-name', 'Bà Cố'); page.click('[data-rel="Bà"]')
+            page.select_option('select[data-f="day"]', '5'); page.select_option('select[data-f="month"]', '10')
+            page.click('[data-tang]')
+            expect(page.get_by_text('Nhập năm mất')).to_be_visible()
+            page.click('[data-act="save"]'); expect(page.locator('.err')).to_contain_text('năm mất')
+            page.fill('input[data-f="year"]', '2026'); page.locator('input[data-f="year"]').dispatch_event('change')
+            tl = page.locator('.tang-list')
+            expect(tl).to_contain_text('Cúng 49 ngày'); expect(tl).to_contain_text('Giỗ đầu'); expect(tl).to_contain_text('Giỗ hết')
+            expect(tl).to_contain_text('31/12/2026')   # mất 5/10 âm = 13/11/2026 → ngày thứ 49 là 31/12
+            shot('tang')
+            page.click('[data-act="save"]'); page.wait_for_selector('[data-screen="reminders"]')
+            expect(page.get_by_text('Cúng 49 ngày Bà Cố').first).to_be_visible()
+            expect(page.locator('.badge-tang').first).to_be_visible()
+            page.goto(BASE + '#/vankhan/giodau'); page.wait_for_selector('[data-screen="vankhan"]')
+            page.select_option('select[data-pickdead]', label='Giỗ Bà Cố'); page.wait_for_selector('.vk-text')
+            expect(page.locator('.vk-text')).to_contain_text('giỗ đầu (Tiểu tường) của Bà Cố.')
+            assert 'gid=' in page.url
+            page.goto(BASE + '#/calendar'); page.wait_for_selector('[data-test="detail"]')
+            expect(page.locator('[data-test="detail"]')).to_contain_text('Hỷ thần')
+            page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
+            page.click('[data-act="copy"]'); expect(page.locator('.toast')).to_contain_text('viết vài dòng')
+            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.4.0')
+            page.click('[data-act="copy"]')
+            assert 'Thử góp ý' in page.evaluate('navigator.clipboard.readText()')
+        check(f'[{vp_name}] Người mới mất: mốc 7/49/100 ngày, giỗ đầu, giỗ hết; văn khấn tang lễ; sao, hướng; góp ý', t_tang)
 
         def t_swipe():
             page.goto(BASE + '#/calendar'); page.wait_for_selector('[data-screen="calendar"]')

@@ -1,9 +1,14 @@
 import { getState, updateSettings } from '../store.js';
 import { dayInfo, jdFromDate, canChiYear } from '../lib/lunar.js';
 import { listEvents, describeDate } from '../lib/events.js';
-import { esc, ICON, nav, MONTH_SHORT } from './common.js';
+import { esc, ICON, nav, MONTH_SHORT, toast } from './common.js';
 import { Capacitor } from '@capacitor/core';
-import { APK_URL } from '../config.js';
+import { APK_URL, APP_VERSION } from '../config.js';
+import { pendingUpdate } from '../update.js';
+import { setState } from '../store.js';
+import { backupToCloud, daysSinceBackup } from '../sync.js';
+import { toolsRow, converterCard, toggleConverter, onConverterEvent, nextOccasion } from './tools.js';
+import { occasion, vanKhanFor } from '../lib/vankhan.js';
 
 export function upcomingEvents(now, days = 120) {
   const st = getState();
@@ -14,7 +19,8 @@ export function upcomingEvents(now, days = 120) {
 
 export function eventRow(e, todayJd, { right = '', href = '' } = {}) {
   const d = describeDate(e, todayJd);
-  const tileCls = e.kind === 'gio' ? 'tile ink' : e.kind === 'moon' ? 'tile gold' : 'tile';
+  const bday = e.kind === 'gio' && ['sinhnhat', 'kyniem'].includes(e.gio?.type);
+  const tileCls = bday ? 'tile bday' : e.kind === 'gio' ? 'tile ink' : e.kind === 'moon' ? 'tile gold' : 'tile';
   const sub = e.kind === 'gio'
     ? `${d.weekday} · ${d.lunarText}${e.gio.rel ? ' · ' + esc(e.gio.rel) : ''}`
     : `${d.weekday} · ${d.lunarText}`;
@@ -56,6 +62,10 @@ export function renderToday() {
         <div class="r"><span>Ngày <b>${info.canChi.day}</b></span><span>Tháng <b>${info.canChi.month}</b></span><span>Tiết <b>${info.solarTerm}</b></span></div>
       </div>
     </section>
+    ${updateCard(st)}
+    ${occasionNote(todayJd)}
+    ${toolsRow()}
+    ${converterCard()}
 
     <section aria-label="Giờ hoàng đạo" class="col" style="gap:8px">
       <div class="h2row"><h2 class="h">Giờ hoàng đạo</h2><span class="muted small">Tuổi xung ngày: ${info.xung}</span></div>
@@ -64,7 +74,7 @@ export function renderToday() {
 
     <section aria-label="Sắp tới" class="col" style="gap:8px">
       <div class="h2row"><h2 class="h">Sắp tới</h2><a class="link" href="#/reminders">Xem tất cả</a></div>
-      <div class="card list">${soon.length ? soon.map((e) => eventRow(e, todayJd, { href: e.kind === 'gio' ? `#/edit/${e.gio.id}` : '' })).join('') : '<div class="empty">Chưa có sự kiện</div>'}</div>
+      <div class="card list">${soon.length ? soon.map((e) => { const v = vanKhanFor(e); return eventRow(e, todayJd, { href: e.kind === 'gio' ? `#/edit/${e.gio.id}` : v ? `#/vankhan/${v}?jd=${e.jd}` : '' }); }).join('') : '<div class="empty">Chưa có sự kiện</div>'}</div>
     </section>
 
     ${st.gios.length ? '' : `<a class="card pad row" href="#/add" style="text-decoration:none;color:var(--ink)">
@@ -77,16 +87,52 @@ export function renderToday() {
         <button type="button" class="icon-btn plain" data-act="hide-tip" aria-label="Ẩn gợi ý" style="width:40px;height:40px">${ICON.close()}</button></div>
       ${APK_URL ? `<a class="btn" style="height:46px" href="${esc(APK_URL)}" rel="noopener">${ICON.down()} Tải app Android (.apk)</a>` : ''}
     </section>` : ''}
+    ${backupNudge(st)}
 
     <a href="#/donate" class="center small muted" style="text-decoration:none;padding:4px 0">Miễn phí, không quảng cáo · <b style="color:var(--accent)">Mời tác giả ly cà phê</b></a>
   </main>
-  <a class="fab" href="#/add">${ICON.plus()} Thêm ngày giỗ</a>
+  <a class="fab" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
   ${nav('today')}
 </div>`;
 }
 
-export function mountToday(root) {
-  root.addEventListener('click', (e) => {
+function updateCard(st) {
+  const u = pendingUpdate(st);
+  if (!u) return '';
+  return `<section class="card pad col update-card" style="gap:10px" aria-label="Có bản cập nhật">
+    <div class="row" style="gap:12px;align-items:flex-start"><span class="nudge-ic">${ICON.down(22)}</span>
+      <div class="col grow" style="gap:2px"><b>Có bản mới ${esc(u.latest)}</b><span class="small muted">Bạn đang dùng ${APP_VERSION}. Cài đè lên bản cũ, dữ liệu vẫn giữ nguyên.</span>
+      ${u.notes ? `<span class="small" style="white-space:pre-line;margin-top:4px">${esc(u.notes)}</span>` : ''}</div></div>
+    <div class="row" style="gap:8px;justify-content:flex-end"><button type="button" class="chip" data-act="upd-later">Để sau</button><a class="chip on" style="display:inline-flex;align-items:center;text-decoration:none" href="${esc(APK_URL)}" rel="noopener">Tải bản mới</a></div></section>`;
+}
+
+function occasionNote() {
+  const nx = nextOccasion();
+  if (!nx || nx.diff > 1) return '';
+  const o = occasion(nx.id);
+  return `<a class="note occ" href="#/vankhan/${nx.id}?jd=${nx.jd}" style="text-decoration:none;color:var(--ink)"><span class="nudge-ic" style="width:34px;height:34px;border-radius:10px">${ICON.book(18)}</span>
+    <span class="grow col"><b>${nx.diff === 0 ? 'Hôm nay' : 'Ngày mai'}: ${esc(o.title.replace('Văn khấn ', ''))}</b><span class="small muted">Xem văn khấn và mâm cúng</span></span>${ICON.next(18)}</a>`;
+}
+
+function backupNudge(st) {
+  if (!Capacitor.isNativePlatform() || st.gios.length < 1) return '';
+  const d = daysSinceBackup(st);
+  const snooze = st.settings.backupSnooze ? (Date.now() - Date.parse(st.settings.backupSnooze)) / 864e5 : 99;
+  if ((d !== null && d < 30) || snooze < 14) return '';
+  return `<section class="card pad backup-nudge" aria-label="Nhắc sao lưu">
+    <div class="row" style="gap:12px;align-items:flex-start"><span class="nudge-ic">${ICON.cloud(22)}</span>
+      <div class="col grow" style="gap:2px"><b>${d === null ? 'Chưa sao lưu dữ liệu' : `${d} ngày chưa sao lưu`}</b><span class="small muted">Lưu ${st.gios.length} ngày đã ghi lên Google Drive / iCloud Drive để không mất khi đổi máy.</span></div></div>
+    <div class="row" style="gap:8px;justify-content:flex-end"><button type="button" class="chip" data-act="snooze">Để sau</button><button type="button" class="chip on" data-act="backup">Sao lưu ngay</button></div></section>`;
+}
+
+export function mountToday(root, rerender) {
+  root.addEventListener('change', (e) => { if (onConverterEvent(e)) rerender(); });
+  root.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-act="conv"]')) { const open = toggleConverter(); rerender(); if (open) document.querySelector('.conv')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
+    if (e.target.closest('[data-cvdir]')) { onConverterEvent(e); rerender(); return; }
+    if (e.target.closest('[data-act="backup"]')) { try { await backupToCloud(); toast('Đã tạo bản sao lưu'); } catch { /* hủy */ } return; }
+    if (e.target.closest('[data-act="upd-later"]')) { setState((x) => ({ ...x, update: { ...x.update, dismissed: x.update.latest } })); return; }
+    if (e.target.closest('[data-act="snooze"]')) { updateSettings({ backupSnooze: new Date().toISOString() }); return; }
     if (e.target.closest('[data-act="hide-tip"]')) updateSettings({ webTipHidden: true });
   });
 }

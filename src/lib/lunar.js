@@ -175,6 +175,16 @@ export const canChiMonth = (lm, ly) => CAN[(ly * 12 + lm + 3) % 10] + ' ' + CHI[
 export const dayChiIndex = (jd) => (jd + 1) % 12;
 export const canChiDay = (jd) => CAN[(jd + 9) % 10] + ' ' + CHI[(jd + 1) % 12];
 
+/** Chỉ số tiết khí 0..23 (0 = Xuân Phân) của ngày jd */
+export const sunTermIndex = (jd) => INT((sunLongitudeRad(jd + 1 - 0.5 - TZ / 24) / PI) * 12);
+
+/** Chi của tháng theo tiết khí (tháng Dần bắt đầu từ Lập Xuân) — dùng cho 12 trực */
+export const solarMonthChi = (jd) => (2 + Math.floor(((sunTermIndex(jd) - 21 + 24) % 24) / 2)) % 12;
+
+export const TRUC = ['Kiến', 'Trừ', 'Mãn', 'Bình', 'Định', 'Chấp', 'Phá', 'Nguy', 'Thành', 'Thu', 'Khai', 'Bế'];
+/** Trực của ngày: 0 = Kiến … 11 = Bế */
+export const trucIndex = (jd) => (dayChiIndex(jd) - solarMonthChi(jd) + 12) % 12;
+
 export function solarTerm(jd) {
   return TIET_KHI[INT((sunLongitudeRad(jd + 1 - 0.5 - TZ / 24) / PI) * 12)];
 }

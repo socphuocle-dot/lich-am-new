@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_paper">#1F1B18</color>
-    <color name="widget_card">#2A2521</color>
-    <color name="widget_ink">#F5F1EA</color>
-    <color name="widget_muted">#B8B0A6</color>
-    <color name="widget_line">#3A332E</color>
-    <color name="widget_accent">#F0705F</color>
-    <color name="widget_accent_soft">#3A1F1B</color>
-    <color name="widget_on_accent">#1C1917</color>
-    <color name="widget_gold_soft">#3A2E15</color>
-    <color name="widget_gold_ink">#E2B65A</color>
+    <color name="widget_paper">#1F1915</color>
+    <color name="widget_paper2">#15100D</color>
+    <color name="widget_card">#2A221C</color>
+    <color name="widget_ink">#F6F0E7</color>
+    <color name="widget_muted">#BDB3A7</color>
+    <color name="widget_line">#3A2F27</color>
+    <color name="widget_accent">#FF7B67</color>
+    <color name="widget_accent_soft">#3B1A15</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <color name="widget_gold_soft">#33270F</color>
+    <color name="widget_gold_ink">#EEC56E</color>
+    <color name="widget_gold_line">#8C6A2A</color>
+    <color name="widget_lacquer_hi">#C8392C</color>
+    <color name="widget_lacquer">#9B1A12</color>
+    <color name="widget_lacquer_deep">#5C0A07</color>
+    <color name="widget_on_lacquer_gold">#F6D891</color>
+    <color name="widget_on_lacquer_soft">#F6DDD7</color>
 </resources>

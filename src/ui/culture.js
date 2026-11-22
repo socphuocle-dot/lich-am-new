@@ -44,7 +44,7 @@ export function renderCulture() {
     </div>
     <p class="small muted center" style="margin:0;line-height:1.5">Nội dung mang tính tham khảo văn hóa và giải trí,<br>không thay cho lời khuyên chuyên môn.</p>
   </main>
-  ${nav('culture')}
+  ${nav('tienich')}
 </div>`;
 }
 

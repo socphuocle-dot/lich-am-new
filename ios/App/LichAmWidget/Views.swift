@@ -2,7 +2,7 @@ import WidgetKit
 import SwiftUI
 import UIKit
 
-// MARK: - Màu (tự đổi sáng/tối)
+// MARK: - Màu sơn mài (tự đổi sáng/tối)
 
 extension UIColor {
     convenience init(hex: UInt32) {
@@ -14,15 +14,24 @@ extension Color {
     static func dyn(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(UIColor { $0.userInterfaceStyle == .dark ? UIColor(hex: dark) : UIColor(hex: light) })
     }
-    static let paper = Color.dyn(0xF8F4EC, 0x1F1B18)
-    static let card = Color.dyn(0xFFFFFF, 0x2A2521)
-    static let ink = Color.dyn(0x1C1917, 0xF5F1EA)
-    static let muted = Color.dyn(0x57534E, 0xB8B0A6)
-    static let accent = Color.dyn(0xA3201A, 0xF0705F)
-    static let accentSoft = Color.dyn(0xFBEDEA, 0x3A1F1B)
-    static let onAccent = Color.dyn(0xFFFFFF, 0x1C1917)
-    static let goldInk = Color.dyn(0x7A5410, 0xE2B65A)
-    static let goldSoft = Color.dyn(0xFBF1D9, 0x3A2E15)
+    static func hex(_ v: UInt32) -> Color { Color(UIColor(hex: v)) }
+    static let paper = Color.dyn(0xFFFCF6, 0x1F1915)
+    static let paper2 = Color.dyn(0xF0E5D2, 0x15100D)
+    static let card = Color.dyn(0xFFFFFF, 0x2A221C)
+    static let ink = Color.dyn(0x17110E, 0xF6F0E7)
+    static let muted = Color.dyn(0x4E4640, 0xBDB3A7)
+    static let accent = Color.dyn(0x9B1A12, 0xFF7B67)
+    static let goldInk = Color.dyn(0x7A5108, 0xEEC56E)
+    static let goldSoft = Color.dyn(0xF7E8C6, 0x33270F)
+    static let goldLine = Color.dyn(0xD9B566, 0x8C6A2A)
+    static let onLacquerGold = Color.hex(0xF6D891)
+    static let onLacquerSoft = Color.hex(0xF6DDD7)
+}
+
+enum Paint {
+    static let lacquer = LinearGradient(colors: [.hex(0xC8392C), .hex(0x9B1A12), .hex(0x5C0A07)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let paper = LinearGradient(colors: [.paper, .paper2], startPoint: .top, endPoint: .bottom)
+    static let gold = LinearGradient(colors: [.hex(0xF1D48A), .hex(0xC08A2A)], startPoint: .top, endPoint: .bottom)
 }
 
 extension Font {
@@ -38,48 +47,29 @@ extension Font {
 extension View {
     /// Nền widget: iOS 17+ bắt buộc containerBackground
     @ViewBuilder
-    func widgetBackground(_ color: Color, pad: Bool = true) -> some View {
+    func widgetBackground<B: View>(pad: Bool = true, @ViewBuilder _ bg: () -> B) -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            self.containerBackground(color, for: .widget)
+            self.containerBackground(for: .widget) { bg() }
         } else if pad {
-            self.padding(12).frame(maxWidth: .infinity, maxHeight: .infinity).background(color)
+            self.padding(12).frame(maxWidth: .infinity, maxHeight: .infinity).background(bg())
         } else {
             self
         }
     }
+
+    /// Bóng nổi khối nhẹ cho số lớn
+    func emboss(_ dark: Bool = false) -> some View {
+        self.shadow(color: Color.black.opacity(dark ? 0.35 : 0.18), radius: dark ? 4 : 3, x: 0, y: 2)
+    }
 }
 
-// MARK: - Khối tờ lịch dùng chung
-
-struct SheetBlock: View {
-    let day: DayInfo
-    var compact = false
-
+/// Chấm màu theo loại sự kiện: giỗ (đen), rằm/mùng 1 (vàng), lễ (đỏ)
+struct KindDot: View {
+    let kind: Int
     var body: some View {
-        VStack(spacing: 2) {
-            Text("TH \(day.m) · \(String(day.y))")
-                .font(.bvp(11, .bold))
-                .foregroundColor(.onAccent)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.accent))
-            Text("\(day.d)")
-                .font(.digits(compact ? 44 : 50))
-                .foregroundColor(.accent)
-                .minimumScaleFactor(0.5)
-                .lineLimit(1)
-                .frame(maxHeight: .infinity)
-            Text(LunarText.thu[day.wd])
-                .font(.bvp(12))
-                .foregroundColor(.muted)
-            if day.hasLunar {
-                Text("\(day.lunarShort) Âm · \(day.canChi)")
-                    .font(.bvp(compact ? 11 : 12, .semibold))
-                    .foregroundColor(.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
+        Circle()
+            .fill(kind == 3 ? Color.ink : (kind == 1 ? Color.hex(0xC08A2A) : Color.accent))
+            .frame(width: 8, height: 8)
     }
 }
 
@@ -87,22 +77,54 @@ struct SheetBlock: View {
 
 struct SheetView: View {
     let entry: DayEntry
+    @Environment(\.colorScheme) var scheme
 
     var body: some View {
         let today = EpochDay.of(date: entry.date)
         let day = CalStore.shared.day(today)
         let note = UserStore().note(for: day)
-        VStack(spacing: 2) {
-            SheetBlock(day: day)
+        VStack(spacing: 3) {
+            Text("THÁNG \(day.m) · \(String(day.y))")
+                .font(.bvp(10, .bold))
+                .kerning(0.8)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 10).fill(Paint.lacquer)
+                        .overlay(Rectangle().fill(Color.hex(0xD9B566)).frame(height: 1.5), alignment: .bottom)
+                )
+                .shadow(color: Color.hex(0x5C0A07).opacity(0.35), radius: 4, x: 0, y: 2)
+            Text("\(day.d)")
+                .font(.digits(54))
+                .foregroundStyle(scheme == .dark ? AnyShapeStyle(Color.accent) : AnyShapeStyle(Paint.lacquer))
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+                .emboss()
+                .frame(maxHeight: .infinity)
+            Text(LunarText.thu[day.wd])
+                .font(.bvp(12, .semibold))
+                .foregroundColor(.muted)
+            if day.hasLunar {
+                Text("\(day.lunarShort) Âm · \(day.canChi)")
+                    .font(.bvp(11, .bold))
+                    .foregroundColor(.goldInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Color.goldSoft).overlay(Capsule().stroke(Color.goldLine, lineWidth: 1)))
+            }
             if !note.isEmpty {
                 Text(note)
-                    .font(.bvp(11, .bold))
+                    .font(.bvp(10, .bold))
                     .foregroundColor(.accent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
         }
-        .widgetBackground(.paper)
+        .widgetBackground { Paint.paper }
+        .widgetURL(DeepLink.url(for: entry.date))
     }
 }
 
@@ -116,32 +138,61 @@ struct AgendaView: View {
         let day = CalStore.shared.day(today)
         let items = UserStore().upcoming(from: today, days: 120, max: 3)
         HStack(spacing: 12) {
-            SheetBlock(day: day, compact: true)
-                .padding(6)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.card))
-                .frame(width: 132)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(spacing: 2) {
+                Text("TH \(day.m) · \(String(day.y))")
+                    .font(.bvp(10, .bold)).kerning(0.8)
+                    .foregroundColor(.onLacquerGold)
+                Text("\(day.d)")
+                    .font(.digits(48))
+                    .foregroundColor(.white)
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .emboss(true)
+                    .frame(maxHeight: .infinity)
+                Text(LunarText.thu[day.wd])
+                    .font(.bvp(12, .semibold))
+                    .foregroundColor(.onLacquerSoft)
+                if day.hasLunar {
+                    Text("\(day.lunarShort) Âm · \(day.canChi)")
+                        .font(.bvp(11, .bold))
+                        .foregroundColor(.onLacquerGold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .frame(width: 128)
+            .frame(maxHeight: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Paint.lacquer))
+            .shadow(color: Color.hex(0x5C0A07).opacity(0.35), radius: 6, x: 0, y: 3)
+
+            VStack(alignment: .leading, spacing: 7) {
                 Text("Sắp tới").font(.bvp(14, .bold)).foregroundColor(.ink)
                 if items.isEmpty {
                     Text("Không có sự kiện trong 4 tháng tới").font(.bvp(12)).foregroundColor(.muted)
                 }
                 ForEach(items) { it in
                     let c = EpochDay.civil(it.epoch)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(it.title)
-                            .font(.bvp(13, .semibold))
-                            .foregroundColor(.ink)
-                            .lineLimit(1)
-                        Text("\(LunarText.thuShort[EpochDay.weekday(it.epoch)]) \(c.2)/\(c.1) · \(LunarText.countText(it.epoch - today))")
-                            .font(.bvp(12, .medium))
-                            .foregroundColor(it.kind == 3 ? .muted : it.kind == 1 ? .goldInk : .accent)
-                            .lineLimit(1)
+                    HStack(alignment: .top, spacing: 8) {
+                        KindDot(kind: it.kind).padding(.top, 5)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(it.title)
+                                .font(.bvp(13, .semibold))
+                                .foregroundColor(.ink)
+                                .lineLimit(1)
+                            Text("\(LunarText.thuShort[EpochDay.weekday(it.epoch)]) \(c.2)/\(c.1) · \(LunarText.countText(it.epoch - today))")
+                                .font(.bvp(12, .medium))
+                                .foregroundColor(it.kind == 3 ? .muted : it.kind == 1 ? .goldInk : .accent)
+                                .lineLimit(1)
+                        }
                     }
                 }
                 Spacer(minLength: 0)
             }
         }
-        .widgetBackground(.paper)
+        .widgetBackground { Paint.paper }
+        .widgetURL(DeepLink.url(for: entry.date))
     }
 }
 
@@ -161,14 +212,18 @@ struct MonthView: View {
         let l = CalStore.shared.day(nextFirst - 1)
         let user = UserStore()
         VStack(spacing: 4) {
-            HStack(alignment: .lastTextBaseline) {
-                Text("Tháng \(t.m) · \(String(t.y))").font(.bvp(16, .bold)).foregroundColor(.ink)
+            HStack(alignment: .center) {
+                Text("Tháng \(t.m) · \(String(t.y))").font(.bvp(15, .bold)).foregroundColor(.white)
                 Spacer()
                 if f.hasLunar {
                     Text("Âm: tháng \(f.lm)\(f.lm != l.lm ? "–\(l.lm)" : "") \(CalStore.shared.yearName(l.ly))")
-                        .font(.bvp(11)).foregroundColor(.muted).lineLimit(1)
+                        .font(.bvp(11, .bold)).foregroundColor(.onLacquerGold).lineLimit(1)
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Paint.lacquer))
+            .shadow(color: Color.hex(0x5C0A07).opacity(0.3), radius: 4, x: 0, y: 2)
             HStack(spacing: 2) {
                 ForEach(0..<7, id: \.self) { i in
                     Text(["T2", "T3", "T4", "T5", "T6", "T7", "CN"][i])
@@ -177,8 +232,9 @@ struct MonthView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
+            .padding(.top, 2)
             ForEach(0..<rows, id: \.self) { r in
-                HStack(spacing: 2) {
+                HStack(spacing: 3) {
                     ForEach(0..<7, id: \.self) { c in
                         let e = first - lead + r * 7 + c
                         if e < first || e >= nextFirst {
@@ -190,7 +246,8 @@ struct MonthView: View {
                 }
             }
         }
-        .widgetBackground(.paper)
+        .widgetBackground { Paint.paper }
+        .widgetURL(DeepLink.url(for: entry.date))
     }
 }
 
@@ -204,22 +261,31 @@ struct MonthCell: View {
         VStack(spacing: 0) {
             Text("\(day.d)")
                 .font(.bvp(14, .semibold))
-                .foregroundColor(isToday ? .onAccent : (day.wd == 0 ? .accent : .ink))
+                .foregroundColor(isToday ? .white : (day.wd == 0 ? .accent : .ink))
             if day.hasLunar {
                 Text((day.ld == 1 ? "\(day.ld)/\(day.lm)" : "\(day.ld)") + (gio ? " •" : ""))
                     .font(.bvp(10, moon || gio ? .bold : .regular))
-                    .foregroundColor(isToday ? .onAccent : (moon ? .goldInk : day.kind == 2 ? .accent : .muted))
+                    .foregroundColor(isToday ? .onLacquerGold : (moon ? .goldInk : day.kind == 2 ? .accent : .muted))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isToday ? Color.accent : (moon ? Color.goldSoft : Color.clear))
+            Group {
+                if isToday {
+                    RoundedRectangle(cornerRadius: 9).fill(Paint.lacquer)
+                        .shadow(color: Color.hex(0x5C0A07).opacity(0.35), radius: 3, x: 0, y: 2)
+                } else if moon {
+                    RoundedRectangle(cornerRadius: 9).fill(Color.goldSoft)
+                        .overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.goldLine, lineWidth: 1))
+                } else {
+                    Color.clear
+                }
+            }
         )
     }
 }
 
-// MARK: - 4. Đếm ngược (nhỏ)
+// MARK: - 4. Đếm ngược (nhỏ, nền sơn mài)
 
 struct CountdownView: View {
     let entry: DayEntry
@@ -233,29 +299,31 @@ struct CountdownView: View {
                 let d = CalStore.shared.day(t.epoch)
                 Text(t.title)
                     .font(.bvp(13, .bold))
-                    .foregroundColor(.ink)
+                    .foregroundColor(.onLacquerGold)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
                 Text(diff <= 0 ? "Hôm nay" : "\(diff)")
-                    .font(.digits(48))
-                    .foregroundColor(.accent)
+                    .font(.digits(52))
+                    .foregroundColor(.white)
                     .minimumScaleFactor(0.4)
                     .lineLimit(1)
+                    .emboss(true)
                     .frame(maxHeight: .infinity)
                 if diff > 0 {
-                    Text("ngày nữa").font(.bvp(12)).foregroundColor(.muted)
+                    Text("ngày nữa").font(.bvp(12, .semibold)).foregroundColor(.onLacquerSoft)
                 }
                 Text("\(LunarText.thu[d.wd]), \(d.d)/\(d.m)" + (d.hasLunar ? " · \(d.lunarShort) Âm" : ""))
                     .font(.bvp(11))
-                    .foregroundColor(.muted)
+                    .foregroundColor(.onLacquerSoft)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             } else {
-                Text("Mở app để chọn mốc đếm ngược").font(.bvp(12)).foregroundColor(.muted).multilineTextAlignment(.center)
+                Text("Mở app để chọn mốc đếm ngược").font(.bvp(12)).foregroundColor(.white).multilineTextAlignment(.center)
             }
         }
-        .widgetBackground(.paper)
+        .widgetBackground { Paint.lacquer }
+        .widgetURL(DeepLink.url(for: entry.date))
     }
 }
 
@@ -298,6 +366,7 @@ struct LockView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .widgetBackground(.clear, pad: false)
+        .widgetBackground(pad: false) { Color.clear }
+        .widgetURL(DeepLink.url(for: entry.date))
     }
 }

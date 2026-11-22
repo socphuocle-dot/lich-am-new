@@ -3,6 +3,7 @@
 // - Dữ liệu động (ngày giỗ, mốc đếm ngược) do app ghi mỗi khi người dùng thay đổi.
 import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, canChiDay, canChiYear, dayChiIndex, daySpirit } from './lunar.js';
 import { listEvents, jdOfDate, pad2 } from './events.js';
+import { vanKhanFor } from './vankhan.js';
 
 export const ymd = (s) => `${s.year}-${pad2(s.month)}-${pad2(s.day)}`;
 // Số ngày kể từ 1970-01-01 (giống LocalDate.toEpochDay)
@@ -56,7 +57,11 @@ export function buildUserWidgetData(now, state) {
   const fromJd = jdOfDate(now);
   const gios = (state.gios || []).filter((g) => g.enabled !== false);
   const evs = listEvents(fromJd, 400, gios, { moon: false, lunarHolidays: false, solarHolidays: false });
-  const list = evs.map((e) => ({ d: ymd(e.solar), t: e.title, l: `${e.lunar.day}/${e.lunar.month}` }));
+  const list = evs.map((e) => ({
+    d: ymd(e.solar), t: e.title, l: `${e.lunar.day}/${e.lunar.month}`,
+    // Bấm widget → mở thẳng văn khấn ngày giỗ (hoặc màn sửa với sinh nhật, kỷ niệm)
+    r: vanKhanFor(e) ? `vankhan/${vanKhanFor(e)}?gid=${e.gio.id}&jd=${e.jd}` : `edit/${e.gio.id}`
+  }));
   const choice = state.settings.widgetCountdown || 'auto';
   let cd = null;
   if (choice === 'tet') cd = nextTet(fromJd);

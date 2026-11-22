@@ -20,6 +20,7 @@ public final class UserStore {
         public long epoch;
         public String title;
         public int kind; // 1 rằm/mùng 1, 2 lễ, 3 giỗ
+        public String route = "";
 
         Item(long epoch, String title, int kind) {
             this.epoch = epoch;
@@ -60,7 +61,11 @@ public final class UserStore {
             JSONObject g = a.optJSONObject(i);
             if (g == null) continue;
             long e = CalendarStore.epochFromYmd(g.optString("d"));
-            if (e >= from && e < from + days) out.add(new Item(e, g.optString("t"), 3));
+            if (e >= from && e < from + days) {
+                Item it = new Item(e, g.optString("t"), 3);
+                it.route = g.optString("r", "");
+                out.add(it);
+            }
         }
         return out;
     }

@@ -2,7 +2,7 @@
   "appId": "vn.lichamnhacgio.app",
   "appName": "Lịch Âm Nhắc Giỗ",
   "webDir": "dist",
-  "backgroundColor": "#F8F4EC",
+  "backgroundColor": "#F3ECE0",
   "android": { "allowMixedContent": false },
   "ios": { "contentInset": "never" },
   "plugins": {

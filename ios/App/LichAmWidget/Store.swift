@@ -121,7 +121,7 @@ final class UserStore {
     static let appGroup = "group.vn.lichamnhacgio.app"
     static let key = "widget_json"
 
-    struct Gio { let epoch: Int; let title: String }
+    struct Gio { let epoch: Int; let title: String; var route: String = "" }
     let gios: [Gio]
     let countdown: (epoch: Int, title: String)?
 
@@ -133,7 +133,7 @@ final class UserStore {
            let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             for item in obj["gios"] as? [[String: Any]] ?? [] {
                 if let d = item["d"] as? String, let e = EpochDay.fromYmd(d) {
-                    g.append(Gio(epoch: e, title: item["t"] as? String ?? ""))
+                    g.append(Gio(epoch: e, title: item["t"] as? String ?? "", route: item["r"] as? String ?? ""))
                 }
             }
             if let c = obj["cd"] as? [String: Any], let d = c["d"] as? String, let e = EpochDay.fromYmd(d) {
@@ -170,5 +170,35 @@ final class UserStore {
         if !d.event.isEmpty { return d.event }
         if !d.hasLunar { return "" }
         return d.good ? "Ngày Hoàng đạo" : "Ngày Hắc đạo"
+    }
+}
+
+
+/// Link mở thẳng một màn trong app khi bấm widget: lichamnhacgio://open/<route>
+enum DeepLink {
+    static func vanKhanId(_ d: DayInfo) -> String? {
+        if d.lm == 12 && d.ld == 23 { return "ongtao" }
+        if d.lm == 1 && d.ld == 1 { return "tet" }
+        if d.lm == 1 && (d.ld == 3 || d.ld == 4) { return "hoavang" }
+        if d.lm == 1 && d.ld == 10 { return "thantai" }
+        if d.lm == 1 && d.ld == 15 { return "ramgieng" }
+        if d.lm == 5 && d.ld == 5 { return "doanngo" }
+        if d.lm == 7 && d.ld == 15 { return "vulan" }
+        if d.ld == 15 { return "ram" }
+        if d.ld == 1 { return "mung1" }
+        return nil
+    }
+
+    static func route(epoch: Int) -> String {
+        if let g = UserStore().giosOn(epoch).first(where: { !$0.route.isEmpty }) { return g.route }
+        let d = CalStore.shared.day(epoch)
+        guard d.hasLunar, let id = vanKhanId(d) else { return "today" }
+        return "vankhan/\(id)?jd=\(epoch + 2440588)"
+    }
+
+    static func url(for date: Date) -> URL? {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        let e = EpochDay.of(c.year ?? 2026, c.month ?? 1, c.day ?? 1)
+        return URL(string: "lichamnhacgio://open/" + route(epoch: e))
     }
 }

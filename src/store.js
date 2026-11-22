@@ -12,8 +12,13 @@ export const DEFAULT_STATE = {
   disabled: {},
   settings: {
     autoMoon: true, moonEveOn: true, moonEve: '19:00', moonMornOn: true, moonMorning: '06:00',
-    holidayOn: true, gioTime: '07:00', size: 1, theme: 'light', culture: CULTURE_DEFAULT, monday: true, widgetCountdown: 'auto'
+    holidayOn: true, gioTime: '07:00', size: 1, theme: 'light', culture: CULTURE_DEFAULT, monday: true, widgetCountdown: 'auto',
+    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: ''
   },
+  calSync: { enabled: false, moon: false, holidays: true, calendarId: '', ids: [] },
+  lastBackup: '',
+  checklists: {},
+  update: {},
   onboarded: false
 };
 
@@ -30,7 +35,10 @@ function load() {
       profile: { ...DEFAULT_STATE.profile, ...(s.profile || {}) },
       settings: { ...DEFAULT_STATE.settings, ...(s.settings || {}) },
       gios: Array.isArray(s.gios) ? s.gios : [],
-      disabled: s.disabled || {}
+      disabled: s.disabled || {},
+      calSync: { ...DEFAULT_STATE.calSync, ...(s.calSync || {}) },
+      checklists: s.checklists || {},
+      update: s.update || {}
     };
   } catch {
     return clone(DEFAULT_STATE);
@@ -74,7 +82,9 @@ export function importData(text) {
   setState({
     ...clone(DEFAULT_STATE), ...data,
     settings: { ...DEFAULT_STATE.settings, ...(data.settings || {}) },
-    profile: { ...DEFAULT_STATE.profile, ...(data.profile || {}) }
+    profile: { ...DEFAULT_STATE.profile, ...(data.profile || {}) },
+    // Mã sự kiện lịch thuộc về máy cũ → tắt đồng bộ, người dùng bật lại trên máy này
+    calSync: { ...DEFAULT_STATE.calSync, moon: !!data.calSync?.moon, holidays: data.calSync?.holidays !== false }
   });
 }
 
