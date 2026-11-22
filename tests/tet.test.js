@@ -48,3 +48,12 @@ describe('Tết, ăn chay', () => {
     expect(jdToDate(nx[0].jd)).toMatchObject({ day: 23, month: 11 });
   });
 });
+
+import { phrases } from '../src/tts.js';
+describe('đọc kiểu tụng', () => {
+  it('tách vế, lặp "3 lần"', () => {
+    expect(phrases('Nam mô A Di Đà Phật! (3 lần)')).toEqual(['Nam mô A Di Đà Phật', 'Nam mô A Di Đà Phật', 'Nam mô A Di Đà Phật']);
+    expect(phrases('Con lạy chín phương Trời, mười phương chư Phật.\nCon kính lạy.')).toEqual(['Con lạy chín phương Trời,', 'mười phương chư Phật.', 'Con kính lạy.']);
+    expect(phrases('Tín chủ con là ……, ngụ tại …….')).not.toContain('……');
+  });
+});

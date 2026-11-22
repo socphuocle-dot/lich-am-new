@@ -4,6 +4,7 @@
 import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, canChiDay, canChiYear, dayChiIndex, daySpirit } from './lunar.js';
 import { listEvents, jdOfDate, pad2 } from './events.js';
 import { vanKhanFor } from './vankhan.js';
+import { nextChayDays } from './tet.js';
 
 export const ymd = (s) => `${s.year}-${pad2(s.month)}-${pad2(s.day)}`;
 // Số ngày kể từ 1970-01-01 (giống LocalDate.toEpochDay)
@@ -71,6 +72,12 @@ export function buildUserWidgetData(now, state) {
     cd = e ? { t: e.title, d: ymd(e.solar) } : nextTet(fromJd);
   } else {
     cd = list.length && list[0].d < (nextTet(fromJd) || { d: '9999' }).d ? { t: list[0].t, d: list[0].d } : nextTet(fromJd);
+  }
+  // Ngày chay sắp tới (2 ngày gần nhất) — hiện trên widget "Sắp tới" và "Bé Thỏ nhắc"
+  const k = state.settings.chay;
+  if (k && k !== 'off') {
+    for (const c of nextChayDays(k, fromJd, 40).slice(0, 2)) list.push({ d: ymd(c.solar), t: 'Ngày chay', l: `${c.lunar.day}/${c.lunar.month}`, r: 'anchay' });
+    list.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
   }
   return { v: 1, updated: now.toISOString(), gios: list, cd };
 }

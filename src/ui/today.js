@@ -12,6 +12,7 @@ import { occasion, vanKhanFor } from '../lib/vankhan.js';
 import { mascot, moonPhase, cloud, sparkle, lanternString, ILL, seasonOf, seasonDecor } from './art.js';
 import { giap, giapName } from './zodiac.js';
 import { isChay, CHAY, tetYear, lunarJd } from '../lib/tet.js';
+import { whatsNewCard, hideWhatsNew } from '../whatsnew.js';
 
 export function upcomingEvents(now, days = 120) {
   const st = getState();
@@ -80,6 +81,7 @@ export function renderToday() {
       <div class="card list">${soon.length ? soon.map((e) => { const v = vanKhanFor(e); return eventRow(e, todayJd, { href: e.kind === 'gio' ? `#/edit/${e.gio.id}` : v ? `#/vankhan/${v}?jd=${e.jd}` : '' }); }).join('') : '<div class="empty">Chưa có sự kiện</div>'}</div>
     </section>
     ${updateCard(st)}
+    ${whatsNewCard()}
     ${toolsRow()}
     ${converterCard()}
 
@@ -172,6 +174,7 @@ export function mountToday(root, rerender) {
     if (e.target.closest('[data-act="backup"]')) { try { await backupToCloud(); toast('Đã tạo bản sao lưu'); } catch { /* hủy */ } return; }
     if (e.target.closest('[data-act="upd-later"]')) { setState((x) => ({ ...x, update: { ...x.update, dismissed: x.update.latest } })); return; }
     if (e.target.closest('[data-act="snooze"]')) { updateSettings({ backupSnooze: new Date().toISOString() }); return; }
+    if (e.target.closest('[data-act="new-hide"]')) { hideWhatsNew(); return; }
     if (e.target.closest('[data-act="hide-tip"]')) updateSettings({ webTipHidden: true });
   });
 }

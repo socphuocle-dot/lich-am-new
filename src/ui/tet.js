@@ -182,7 +182,8 @@ export function renderAnchay() {
   <main class="body">
     <div class="field"><span class="lb">Ăn chay mỗi tháng</span><div class="chips">${[['off', 'Không'], ...Object.entries(CHAY).map(([k, v]) => [k, v.name])].map(([k, lb]) => `<button type="button" class="chip" data-chay="${k}" aria-pressed="${kind === k}">${lb}</button>`).join('')}</div></div>
     ${kind !== 'off' ? `<p class="note small" style="display:block">Các ngày âm: <b>${CHAY[kind].days.join(', ')}</b>. Tháng thiếu (29 ngày) dời lùi: tháng này là ngày <b>${chayDaysOfMonth(kind, l.month, l.year, l.leap).join(', ')}</b>.</p>
-    <div class="row"><div class="col grow"><span class="lb">Nhắc tối hôm trước</span><span class="small muted">Thông báo "Mai là ngày chay" lúc ${esc(st.settings.chayTime || '19:00')}</span></div>
+    <div class="row"><div class="col grow"><span class="lb">Nhắc tối hôm trước</span><span class="small muted">Thông báo "Mai là ngày chay"</span></div>
+      <select class="input" style="width:auto" id="chay-time" aria-label="Giờ nhắc">${['17:00', '18:00', '19:00', '20:00', '21:00'].map((t) => `<option ${t === (st.settings.chayTime || '19:00') ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <button type="button" class="switch" role="switch" aria-checked="${st.settings.chayRemind !== false}" aria-label="Nhắc tối hôm trước" data-act="chay-remind"></button></div>
     <section class="col" style="gap:6px"><h2 class="h">Ngày chay sắp tới</h2><div class="card list">${list.map((d) => { const diff = d.jd - tj; return `<div class="item"><span class="tile gold"><b>${d.solar.day}</b><span>TH ${d.solar.month}</span></span>
       <span class="col grow"><span class="t">${THU[(d.jd + 1) % 7]} · ${d.lunar.day}/${d.lunar.month} âm</span><span class="s"><span class="when${diff <= 1 ? ' soon' : ''}">${diff === 0 ? 'Hôm nay' : diff === 1 ? 'Ngày mai' : 'còn ' + diff + ' ngày'}</span></span></span></div>`; }).join('')}</div></section>`
@@ -191,6 +192,7 @@ export function renderAnchay() {
 </div>`;
 }
 export function mountAnchay(root) {
+  root.querySelector('#chay-time')?.addEventListener('change', (e) => updateSettings({ chayTime: e.target.value }));
   root.addEventListener('click', (e) => {
     const c = e.target.closest('[data-chay]');
     if (c) { updateSettings({ chay: c.dataset.chay }); return; }

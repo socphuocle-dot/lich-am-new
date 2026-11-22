@@ -30,12 +30,13 @@ import { listenNotificationActions } from './notify.js';
 import { checkUpdate } from './update.js';
 import { App as CapApp } from '@capacitor/app';
 import { renderFeedback, mountFeedback } from './ui/feedback.js';
-import { renderHub } from './ui/hub.js';
+import { renderHub, mountHub } from './ui/hub.js';
 import { renderConvert, mountConvert } from './ui/tools.js';
 import { renderShare, mountShare, resetShare, renderImport, mountImport, resetImport } from './ui/family.js';
 import { renderHieuhi, mountHieuhi, renderPrep, mountPrep, renderMemorial, mountMemorial, renderGiapha, mountGiapha, renderXemtuoi, mountXemtuoi } from './ui/giadinh.js';
 import { renderSaohan, mountSaohan } from './ui/saohan.js';
 import { renderTetPrep, mountTetPrep, renderXongdat, mountXongdat, renderXuathanh, renderAnchay, mountAnchay, renderMenh, mountMenh } from './ui/tet.js';
+import { renderWhatsNew } from './whatsnew.js';
 import { restoreFromSystemIfEmpty, mirrorToSystem, autoSyncCalendar } from './sync.js';
 
 const app = document.getElementById('app');
@@ -62,7 +63,7 @@ const ROUTES = {
   chiase: { render: renderShare, mount: mountShare },
   nhap: { render: renderImport, mount: mountImport },
   gopy: { render: renderFeedback, mount: mountFeedback },
-  tienich: { render: renderHub },
+  tienich: { render: renderHub, mount: mountHub },
   doingay: { render: renderConvert, mount: mountConvert },
   hieuhi: { render: renderHieuhi, mount: mountHieuhi },
   chuanbi: { render: renderPrep, mount: mountPrep },
@@ -74,7 +75,8 @@ const ROUTES = {
   xongdat: { render: renderXongdat, mount: mountXongdat },
   xuathanh: { render: renderXuathanh },
   anchay: { render: renderAnchay, mount: mountAnchay },
-  menh: { render: renderMenh, mount: mountMenh }
+  menh: { render: renderMenh, mount: mountMenh },
+  moi: { render: renderWhatsNew }
 };
 
 function parseHash() {

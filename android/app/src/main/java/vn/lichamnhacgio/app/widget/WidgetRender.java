@@ -104,6 +104,7 @@ public final class WidgetRender {
     /** Biểu tượng màu cho từng loại sự kiện trong danh sách */
     static int eventIcon(Context ctx, UserStore.Item it) {
         if (it.kind == 3) {
+            if (it.title.startsWith("Ngày chay")) return drawable(ctx, "widget_ic_lotus");
             if (it.title.startsWith("Sinh nhật")) return drawable(ctx, "widget_ic_bday");
             if (it.title.startsWith("Cúng")) return drawable(ctx, "widget_ic_lotus");
             if (!it.title.startsWith("Giỗ")) return drawable(ctx, "widget_ic_kyniem");
@@ -207,7 +208,9 @@ public final class WidgetRender {
         int totalCells = lead + (int) (nextFirst - first);
         v.setViewVisibility(R.id.week5, totalCells > 35 ? View.VISIBLE : View.GONE);
         java.util.Map<Long, Boolean> bdays = new java.util.HashMap<>();
+        java.util.Set<Long> chay = new java.util.HashSet<>();
         for (UserStore.Item g : UserStore.gios(ctx, first, (int) (nextFirst - first))) {
+            if (g.title.startsWith("Ngày chay")) { chay.add(g.epoch); continue; }
             boolean b = g.title.startsWith("Sinh nhật") || (!g.title.startsWith("Giỗ") && !g.title.startsWith("Cúng"));
             Boolean prev = bdays.get(g.epoch);
             bdays.put(g.epoch, prev == null ? b : (prev && b)); // ngày có cả giỗ và sinh nhật: ưu tiên chấm giỗ
@@ -224,7 +227,7 @@ public final class WidgetRender {
             CalendarStore.Day d = CalendarStore.day(ctx, e);
             boolean isToday = e == today;
             boolean moon = d.ld == 1 || d.ld == 15;
-            boolean gio = UserStore.hasGio(ctx, e);
+            boolean gio = bdays.containsKey(e);
             SpannableStringBuilder sb = new SpannableStringBuilder();
             String num = String.valueOf(d.d);
             sb.append(num);
@@ -240,7 +243,7 @@ public final class WidgetRender {
                 sb.setSpan(new ForegroundColorSpan(lc), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 if (moon) sb.setSpan(new StyleSpan(Typeface.BOLD), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 // Chấm màu theo loại: đỏ = giỗ, hồng = sinh nhật/kỷ niệm, vàng = lễ
-                int dot = gio ? (Boolean.TRUE.equals(bdays.get(e)) ? 0xFFE0568A : 0xFFB3261E) : d.kind == 2 ? 0xFFD29A34 : 0;
+                int dot = gio ? (Boolean.TRUE.equals(bdays.get(e)) ? 0xFFE0568A : 0xFFB3261E) : d.kind == 2 ? 0xFFD29A34 : chay.contains(e) ? 0xFF2F9E6A : 0;
                 if (dot != 0) {
                     int s2 = sb.length();
                     sb.append("\n●");
@@ -296,6 +299,10 @@ public final class WidgetRender {
             long diff = it.epoch - today;
             text = (diff <= 0 ? "Hôm nay: " : diff == 1 ? "Ngày mai: " : "Còn " + diff + " ngày nữa là ") + it.title;
             pose = it.title.startsWith("Sinh nhật") ? "cake" : it.kind == 1 ? "lantern" : it.kind == 3 ? "pray" : "star";
+        } else if (daysToTet(ctx, today) > 0 && daysToTet(ctx, today) <= 30) {
+            int n = daysToTet(ctx, today);
+            text = "Còn " + n + " ngày nữa là Tết " + CalendarStore.yearName(ctx, CalendarStore.day(ctx, today + n).ly) + "!";
+            pose = "star";
         } else if (CalendarStore.hasLunar(d) && (d.ld == 1 || d.ld == 15)) {
             text = "Hôm nay " + (d.ld == 15 ? "Rằm" : "mùng Một") + ", nhớ thắp nén hương nhé";
             pose = "lantern";
@@ -316,5 +323,14 @@ public final class WidgetRender {
         v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) : "");
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
+    }
+
+    /** Số ngày tới mùng 1 Tết (0 nếu không thấy trong 60 ngày) */
+    static int daysToTet(Context ctx, long today) {
+        for (int i = 1; i <= 60; i++) {
+            CalendarStore.Day x = CalendarStore.day(ctx, today + i);
+            if (x.ld == 1 && x.lm == 1 && !x.leap) return i;
+        }
+        return 0;
     }
 }

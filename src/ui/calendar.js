@@ -1,3 +1,4 @@
+import { isChay } from '../lib/tet.js';
 import { getState } from '../store.js';
 import { dayInfo, jdFromDate, jdToDate, solarToLunar, canChiYear, LUNAR_MONTH_NAME } from '../lib/lunar.js';
 import { listEvents } from '../lib/events.js';
@@ -43,7 +44,8 @@ export function renderCalendar() {
     const moon = l.day === 1 || l.day === 15;
     const cls = ['cell', wd === 0 ? 'sun' : '', moon ? 'moon' : '', jd === todayJd ? 'today' : ''].join(' ');
     const kinds = new Set(evs.map((e) => (e.kind === 'gio' ? (['sinhnhat', 'kyniem'].includes(e.gio?.type) ? 'bd' : 'gio') : e.kind === 'le' ? 'le' : '')).filter(Boolean));
-    const mk = kinds.size ? `<span class="dots">${['gio', 'bd', 'le'].filter((k) => kinds.has(k)).map((k) => `<i class="ev ${k}"></i>`).join('')}</span>` : '';
+    if (isChay(st.settings.chay, l)) kinds.add('chay');
+    const mk = kinds.size ? `<span class="dots">${['gio', 'bd', 'le', 'chay'].filter((k) => kinds.has(k)).map((k) => `<i class="ev ${k}"></i>`).join('')}</span>` : '';
     const lt = l.day === 1 ? `${l.day}/${l.month}${l.leap ? 'N' : ''}` : l.day;
     cells += `<button type="button" class="${cls}" data-jd="${jd}" aria-pressed="${jd === ui.sel}" aria-label="Ngày ${d} tháng ${ui.m}, âm lịch ${l.day} tháng ${l.month}${evs.length ? ', ' + esc(evs.map((e) => e.title).join(', ')) : ''}"><span class="d">${d}</span><span class="l">${lt}</span>${mk}</button>`;
   }
@@ -69,6 +71,7 @@ export function renderCalendar() {
       <span><i class="ev gio"></i> Giỗ</span>
       <span><i class="ev bd"></i> Sinh nhật</span>
       <span><i class="ev le"></i> Lễ</span>
+      ${st.settings.chay && st.settings.chay !== 'off' ? '<span><i class="ev chay"></i> Chay</span>' : ''}
       ${ui.sel !== todayJd || ui.m !== now.getMonth() + 1 || ui.y !== now.getFullYear() ? '<button type="button" class="link" data-act="today">Về hôm nay</button>' : ''}
     </div>
     <section class="card pad col" style="gap:10px" aria-label="Chi tiết ngày đã chọn" data-test="detail">

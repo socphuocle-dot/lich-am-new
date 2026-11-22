@@ -49,6 +49,8 @@ export function renderHub() {
   return `<div class="screen" data-screen="hub">
   <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div></header>
   <main class="body" style="gap:16px">
+    <label class="search hub-search">${ICON.search(18)}<input id="hub-q" class="input" type="search" placeholder="Tìm: xông đất, ăn chay, văn khấn…" aria-label="Tìm tiện ích" autocomplete="off"></label>
+    <section id="hub-res" class="card list" hidden aria-live="polite"></section>
     <section class="banner red hub-banner"><span class="bn-lanterns">${lanternString()}</span><span class="bn-cloud a">${cloud(90, '#F6D27A', .45)}</span>
       <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — Bé Thỏ Ngọc lo hết!</span></div>
       <div class="bn-mascot">${mascot('book', 96)}</div></section>
@@ -103,4 +105,53 @@ export function renderHub() {
   </main>
   ${nav('tienich')}
 </div>`;
+}
+
+/* ===== Tìm nhanh tiện ích (gõ không dấu cũng được) ===== */
+const fold = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+export const SEARCH = [
+  ['Thêm ngày giỗ', '#/add?type=gio', 'gio giỗ cúng giỗ ngày mất nhắc giỗ', 'incense'],
+  ['Thêm sinh nhật', '#/add?type=sinhnhat', 'sinh nhật sinh nhat chúc mừng', 'cake'],
+  ['Thêm kỷ niệm', '#/add?type=kyniem', 'kỷ niệm ngày cưới', 'rings'],
+  ['Tang lễ: 7, 49, 100 ngày', '#/add?type=gio&tang=1', 'người mới mất tang cúng tuần 49 ngày 100 ngày giỗ đầu giỗ hết', 'lotus'],
+  ['Văn khấn', '#/vankhan', 'văn khấn bài khấn đọc to cúng', 'book'],
+  ['Mâm cúng', '#/vankhan?tab=mam', 'mâm cúng đồ lễ lễ vật mâm cỗ vùng miền bắc trung nam', 'tray'],
+  ['Đi lễ chùa, đền, phủ', '#/vankhan?g=chua', 'chùa đền phủ đình đức ông tam bảo thánh mẫu thành hoàng đi lễ', 'pagoda'],
+  ['Lịch ăn chay', '#/anchay', 'ăn chay chay ngày chay mùng 1 rằm', 'bowl'],
+  ['Thiệp mời giỗ', '#/thiep', 'thiệp mời giỗ mời họ hàng', 'card'],
+  ['Thần Tài', '#/vankhan/thantai', 'thần tài thổ địa cúng thần tài', 'coin'],
+  ['Gia phả', '#/giapha', 'gia phả cây gia đình dòng họ tổ tiên', 'tree'],
+  ['Tưởng nhớ người đã khuất', '#/tuongnho', 'tưởng nhớ ảnh tiểu sử nơi an táng mộ', 'frame'],
+  ['Sổ hiếu hỉ', '#/hieuhi', 'hiếu hỉ tiền mừng phúng viếng đám cưới đám ma đáp lễ', 'hongbao'],
+  ['Chuẩn bị đám giỗ', '#/chuanbi', 'chuẩn bị giỗ việc cần làm khách mời mâm cỗ phân công', 'checklist'],
+  ['Chuẩn bị Tết', '#/chuanbitet', 'tết chuẩn bị tết tất niên giao thừa ông táo hóa vàng', 'lantern'],
+  ['Tuổi xông đất', '#/xongdat', 'xông đất xông nhà đầu năm tuổi hợp', 'house'],
+  ['Xuất hành đầu năm', '#/xuathanh', 'xuất hành hướng hỷ thần tài thần giờ tốt mùng 1', 'compass'],
+  ['Ngày tốt', '#/ngaytot', 'ngày tốt xem ngày cưới khai trương động thổ', 'star'],
+  ['Sao hạn, giải hạn', '#/saohan', 'sao hạn giải hạn cúng sao la hầu kế đô thái bạch', 'starlamp'],
+  ['Xem tuổi làm nhà, cưới hỏi', '#/xemtuoi', 'xem tuổi kim lâu hoang ốc tam tai làm nhà cưới', 'scroll'],
+  ['Mệnh và màu hợp tuổi', '#/menh', 'mệnh ngũ hành màu hợp tuổi nạp âm', 'wuxing'],
+  ['Đổi ngày âm dương', '#/doingay', 'đổi ngày âm dương chuyển đổi lịch', 'swap'],
+  ['Lịch tháng', '#/calendar', 'lịch tháng âm lịch', 'cal'],
+  ['Chia sẻ cho cả họ', '#/chiase', 'chia sẻ gửi zalo qr cả họ người thân', 'family'],
+  ['Nhập từ người thân', '#/nhap', 'nhập link mã người thân', 'inbox'],
+  ['Sinh nhật từ danh bạ', '#/contacts', 'danh bạ sinh nhật', 'contacts'],
+  ['Sao lưu, đồng bộ', '#/settings', 'sao lưu đồng bộ google drive icloud cài đặt', 'cloud'],
+  ['Góp ý, báo lỗi', '#/gopy', 'góp ý báo lỗi liên hệ tác giả', 'face'],
+  ['Có gì mới', '#/moi', 'có gì mới cập nhật phiên bản', 'star']
+].map(([t, href, k, ic]) => ({ t, href, k: fold(t + ' ' + k), ic }));
+
+export function mountHub(root) {
+  const q = root.querySelector('#hub-q');
+  const res = root.querySelector('#hub-res');
+  if (!q) return;
+  q.addEventListener('input', () => {
+    const k = fold(q.value).trim();
+    const words = k.split(/\s+/).filter(Boolean);
+    const hits = k ? SEARCH.filter((x) => words.every((w) => x.k.includes(w))) : [];
+    root.querySelectorAll('.svc-group, .hub-banner, .contact').forEach((el) => { el.hidden = !!k; });
+    res.hidden = !k;
+    res.innerHTML = hits.length ? hits.map((x) => `<a class="item" href="${x.href}"><span class="pastel sm butter">${ILL[x.ic] ? ILL[x.ic]() : ''}</span><span class="grow t">${x.t}</span>${ICON.next(18)}</a>`).join('')
+      : '<div class="empty">Không tìm thấy. Thử gõ: giỗ, tết, chay, văn khấn, sao hạn…</div>';
+  });
 }

@@ -89,12 +89,25 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.9.0)
+## Cập nhật lên phiên bản mới (ví dụ 1.9.2)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.9.0` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.9.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.9.0` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.9.2` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.9.2` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.9.2` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.9.2
+- Đọc văn khấn 3 kiểu: Thường · Trầm, chậm · Chuông mõ (giọng trầm, ngắt theo vế, chuông mở đầu và kết thúc, mõ gõ nhịp — âm thanh tạo ngay trên máy).
+- Ghi âm giọng người thật cho từng bài (ông bà, cha mẹ, thầy ở chùa) hoặc chọn file ghi âm có sẵn; nút lớn đổi thành "Nghe giọng …".
+- Xin quyền micro chỉ khi bấm ghi âm (Android RECORD_AUDIO, iPhone NSMicrophoneUsageDescription).
+
+## Có gì mới ở 1.9.1
+- Tìm nhanh tiện ích ở đầu trang Tiện ích (gõ không dấu cũng được).
+- Chia sẻ cho cả họ gửi kèm gia phả và trang tưởng nhớ (không kèm ảnh); người nhận nhập một chạm, không thêm trùng.
+- Thẻ "Có gì mới" hiện một lần trên màn Hôm nay sau khi cập nhật, và màn "Có gì mới" đầy đủ.
+- Ngày chay: chấm xanh trên lịch tháng và widget, chọn giờ nhắc (17–21 giờ).
+- Widget "Bé Thỏ nhắc" đếm ngược Tết trong tháng cuối năm (Android và iPhone).
+- Thư mục store/: hồ sơ Google Play soạn sẵn, 8 ảnh chụp màn hình, ảnh nổi bật, biểu tượng 512.
 
 ## Có gì mới ở 1.9.0 — bản Tết Đinh Mùi
 - Nhóm "Tết Đinh Mùi" tự lên đầu Tiện ích khi còn dưới 90 ngày đến Tết; màn Hôm nay nhắc khi còn dưới 30 ngày.

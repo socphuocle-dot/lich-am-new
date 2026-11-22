@@ -23,9 +23,9 @@ def check(name, fn):
         results.append((name, False, str(e)[:300])); print('FAIL', name, '->', str(e)[:300])
 
 with sync_playwright() as p:
-    browser = p.chromium.launch()
+    browser = p.chromium.launch(args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'])
     for vp_name, vp in [('390x844', {'width': 390, 'height': 844}), ('360x740', {'width': 360, 'height': 740})]:
-        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block', permissions=['clipboard-read', 'clipboard-write'])
+        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block', permissions=['clipboard-read', 'clipboard-write', 'microphone'])
         external = []
         def route(r):
             if r.request.url.startswith(f'http://127.0.0.1:{PORT}'):
@@ -407,7 +407,7 @@ with sync_playwright() as p:
             expect(page.locator('[data-test="detail"]')).to_contain_text('Hỷ thần')
             page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
             page.click('[data-act="copy"]'); expect(page.locator('.toast')).to_contain_text('viết vài dòng')
-            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.9.0')
+            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.9.2')
             page.click('[data-act="copy"]')
             assert 'Thử góp ý' in page.evaluate('navigator.clipboard.readText()')
         check(f'[{vp_name}] Người mới mất: mốc 7/49/100 ngày, giỗ đầu, giỗ hết; văn khấn tang lễ; sao, hướng; góp ý', t_tang)
@@ -491,7 +491,33 @@ with sync_playwright() as p:
             page.goto(BASE + '#/vankhan?g=chua'); expect(page.locator('[data-screen="vankhan-list"] a.item')).to_have_count(4)
             page.click('a[href="#/vankhan/ducong"]'); page.wait_for_selector('.vk-text')
             expect(page.locator('.vk-text')).to_contain_text('Già Lam Chân Tể')
-        check(f'[{vp_name}] Dòng họ: sổ hiếu hỉ, gia phả, chuẩn bị giỗ, tưởng nhớ, xem tuổi, mâm theo vùng, sao hạn, Tết, xông đất, xuất hành, ăn chay, mệnh, đi chùa', t_dongho)
+            # Giọng đọc: kiểu tụng, ghi âm giọng người nhà, nghe lại, xóa
+            page.goto(BASE + '#/vankhan/ram'); page.wait_for_selector('[data-voice]')
+            page.click('[data-voice] summary'); page.click('[data-style="tram"]')
+            expect(page.locator('[data-style="tram"]')).to_have_attribute('aria-pressed', 'true')
+            page.click('[data-act="rec-start"]'); page.wait_for_selector('.rec-live')
+            page.wait_for_timeout(1200); page.click('[data-act="rec-stop"]'); page.wait_for_selector('#v-by')
+            page.fill('#v-by', 'Ông nội'); page.click('[data-act="rec-save"]')
+            expect(page.locator('[data-act="v-play"]')).to_contain_text('Nghe giọng Ông nội')
+            page.wait_for_timeout(300); page.click('[data-act="v-play"]'); expect(page.locator('[data-act="v-stop"]')).to_be_visible()
+            page.click('[data-act="v-stop"]')
+            page.click('[data-voice] summary') if page.locator('[data-voice][open]').count() == 0 else None
+            page.click('[data-act="v-prefer"]'); expect(page.locator('[data-act="tts-play"]')).to_be_visible()
+            page.click('[data-act="v-del"]'); page.click('[data-ok]')
+            expect(page.locator('[data-act="rec-start"]').first).to_be_visible()
+            # Tìm nhanh tiện ích (không dấu), chia sẻ kèm gia phả, có gì mới
+            page.goto(BASE + '#/tienich'); page.wait_for_selector('#hub-q')
+            page.fill('#hub-q', 'xong dat'); expect(page.locator('#hub-res a.item').first).to_contain_text('Tuổi xông đất')
+            expect(page.locator('.svc-group').first).to_be_hidden()
+            page.fill('#hub-q', ''); expect(page.locator('.svc-group').first).to_be_visible()
+            page.goto(BASE + '#/chiase'); page.wait_for_selector('[data-act="t-people"]')
+            page.click('[data-act="copy"]'); link = page.evaluate('navigator.clipboard.readText()')
+            assert '#/nhap?d=2' in link, link
+            page.goto(BASE + '#/nhap?d=' + link.split('d=')[1]); page.wait_for_selector('[data-screen="import"]')
+            expect(page.locator('[data-screen="import"] h2')).to_contain_text('gia phả 3 người')
+            page.goto(BASE + '#/moi'); page.wait_for_selector('[data-screen="moi"]')
+            page.goto(BASE + '#/today'); expect(page.locator('.whatsnew')).to_have_count(0)
+        check(f'[{vp_name}] Dòng họ: sổ hiếu hỉ, gia phả, chuẩn bị giỗ, tưởng nhớ, xem tuổi, mâm theo vùng, sao hạn, Tết, xông đất, xuất hành, ăn chay, mệnh, đi chùa, tìm nhanh, gửi gia phả, giọng đọc', t_dongho)
 
         def t_swipe():
             page.goto(BASE + '#/calendar'); page.wait_for_selector('[data-screen="calendar"]')

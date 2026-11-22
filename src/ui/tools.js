@@ -8,6 +8,9 @@ import { ACTIVITIES, findGoodDays, rateDay, birthChi, yearWarnings } from '../li
 import { esc, ICON, backHeader, toast } from './common.js';
 import { isNative } from '../notify.js';
 import { speakParagraphs, stopSpeaking, ttsStatus, openVoiceInstall } from '../tts.js';
+import { unlockAudio } from '../sounds.js';
+import { saveVoice, voiceUrl, deleteVoice, startRecording, stopRecording, cancelRecording, canRecord } from '../voice.js';
+import { confirmSheet } from './dialog.js';
 import { mascot, ILL, cloud, sparkle, lanternString } from './art.js';
 import { giap, giapName } from './zodiac.js';
 
@@ -17,7 +20,9 @@ const todayJd = () => { const n = new Date(); return jdFromDate(n.getDate(), n.g
 const lunarOf = (jd) => { const s = jdToDate(jd); return { s, l: solarToLunar(s.day, s.month, s.year) }; };
 
 /* ============ VĂN KHẤN ============ */
-const vk = { tab: 'van', wake: null, editHost: false, reading: -1, deadText: '', autoFrom: '' };
+const vk = { tab: 'van', wake: null, editHost: false, reading: -1, deadText: '', autoFrom: '', rec: 'idle', draft: null, by: '', audio: null, playing: false, voiceOpen: false };
+const STYLES = [['thuong', 'Thường'], ['tram', 'Trầm, chậm'], ['tung', 'Chuông mõ']];
+const mmss = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
 
 /** Dịp sắp tới gần nhất có văn khấn (để gợi ý đầu danh sách) */
 // Biểu tượng màu cho từng bài khấn
@@ -92,6 +97,43 @@ function vkContext(params) {
   };
 }
 
+/** Thanh đọc: nút lớn + thẻ "Giọng đọc" (giọng máy kiểu tụng / giọng người thật ghi âm) */
+function voiceBar(o, st) {
+  const meta = st.voices?.[o.id];
+  const useVoice = meta && st.settings.preferVoice !== false;
+  const style = st.settings.ttsStyle || 'tung';
+  const busy = vk.reading >= 0 || vk.playing;
+  const big = useVoice
+    ? `<button type="button" class="btn big-read ${vk.playing ? 'ghost' : ''}" data-act="${vk.playing ? 'v-stop' : 'v-play'}">${vk.playing ? '■ Dừng nghe' : '▶ Nghe giọng ' + esc(meta.by || 'người nhà')}</button>`
+    : `<button type="button" class="btn big-read ${vk.reading >= 0 ? 'ghost' : ''}" data-act="${vk.reading >= 0 ? 'tts-stop' : 'tts-play'}">${vk.reading >= 0 ? '■ Dừng đọc' : '▶ Đọc to'}</button>`;
+  const speed = useVoice ? '' : `<div class="seg" style="flex:1.3" aria-label="Tốc độ đọc">${[[0.8, 'Chậm'], [1, 'Vừa'], [1.15, 'Nhanh']].map(([v, lb]) => `<button type="button" data-rate="${v}" aria-pressed="${(st.settings.ttsRate ?? 1) === v}">${lb}</button>`).join('')}</div>`;
+  const recUi = vk.rec === 'rec'
+    ? `<div class="rec-live" role="status"><span class="rec-dot" aria-hidden="true"></span><b>Đang ghi âm</b><span class="rec-time" id="rec-time">0:00</span><button type="button" class="btn" style="width:auto;height:44px;padding:0 18px" data-act="rec-stop">■ Dừng</button></div>
+       <span class="small muted">Đọc chậm, rõ từ đầu đến cuối bài. Có thể cầm máy gần miệng khoảng một gang tay.</span>`
+    : vk.rec === 'review' && vk.draft
+      ? `<div class="col" style="gap:8px"><audio controls src="${vk.draft.url}" style="width:100%"></audio>
+         <label class="field"><span class="lb">Giọng của ai?</span><input id="v-by" class="input" maxlength="30" placeholder="Ví dụ: Ông nội, Thầy Thích Minh Tâm" value="${esc(vk.by)}"></label>
+         <div class="row" style="gap:8px"><button type="button" class="btn" style="flex:1.4;height:46px" data-act="rec-save">Lưu giọng đọc</button><button type="button" class="btn ghost" style="flex:1;height:46px" data-act="rec-again">Ghi lại</button></div>
+         <button type="button" class="btn text" style="height:40px" data-act="rec-cancel">Bỏ bản ghi này</button></div>`
+      : meta
+        ? `<div class="item" style="padding:6px 0;border:0"><span class="pastel sm rose">${ILL.face()}</span><span class="col grow"><span class="t">Giọng ${esc(meta.by || 'người nhà')}</span><span class="s">${mmss(meta.sec || 0)} · ghi ${esc((meta.at || '').slice(0, 10).split('-').reverse().join('/'))}</span></span></div>
+           <div class="quick-acts"><button type="button" class="chip" data-act="v-prefer" aria-pressed="${useVoice}">${useVoice ? '✓ Đang dùng giọng này' : 'Dùng giọng này'}</button>
+             <button type="button" class="chip" data-act="rec-start">🎙 Ghi lại</button><button type="button" class="chip" data-act="v-del">${ICON.trash(16)} Xóa</button></div>`
+        : `<button type="button" class="btn ghost" style="height:48px" data-act="rec-start">🎙 Ghi âm giọng người nhà đọc bài này</button>
+           <label class="chip" style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px">${ICON.up(16)} Chọn file ghi âm có sẵn<input type="file" accept="audio/*" id="v-file" hidden></label>`;
+  return `<div class="tts-bar" role="group" aria-label="Đọc to">${big}${speed}</div>
+    <details class="card voice-card" ${vk.voiceOpen || vk.rec !== 'idle' ? 'open' : ''} data-voice>
+      <summary><span class="pastel sm butter">${ILL.lotus()}</span><span class="col grow"><b>Giọng đọc</b><span class="small muted">${useVoice ? 'Giọng ' + esc(meta.by || 'người nhà') + ' (ghi âm)' : 'Giọng máy · ' + (style === 'tung' ? 'trầm, có chuông mõ' : STYLES.find((x) => x[0] === style)[1].toLowerCase())}</span></span><span class="chip">Đổi</span></summary>
+      <div class="col" style="gap:10px;padding:0 14px 14px">
+        <span class="lb">Giọng máy đọc</span>
+        <div class="seg" role="group" aria-label="Kiểu đọc">${STYLES.map(([k, lb]) => `<button type="button" data-style="${k}" aria-pressed="${style === k}" ${busy ? 'disabled' : ''}>${lb}</button>`).join('')}</div>
+        <span class="small muted">${style === 'tung' ? 'Giọng trầm, chậm, ngắt theo từng vế; chuông mở đầu và kết thúc, mõ gõ nhịp.' : style === 'tram' ? 'Giọng trầm, chậm, ngắt nghỉ theo từng vế câu.' : 'Đọc liền mạch như bình thường.'}</span>
+        <span class="lb" style="margin-top:4px">Giọng người thật</span>
+        ${recUi}
+        <span class="small muted">Bản ghi âm lưu trên máy này, dùng riêng cho bài "${esc(o.title.replace('Văn khấn ', ''))}". Chưa nằm trong file sao lưu.</span>
+      </div></details>`;
+}
+
 export function renderVankhan(params) {
   const o = occasion(params.id) || OCCASIONS[0];
   if (vk.tabFrom !== location.hash) { vk.tab = params.tab === 'mam' ? 'mam' : 'van'; vk.tabFrom = location.hash; vk.editHost = false; }
@@ -130,9 +172,7 @@ export function renderVankhan(params) {
       <section class="card list" aria-label="Mâm cúng gợi ý">${mam.map((m, i) => `<button type="button" class="item" data-ck="${i}" role="checkbox" aria-checked="${checked.has(i)}">
         <span class="tick ${checked.has(i) ? 'on' : ''}" aria-hidden="true"></span><span class="grow t" style="${checked.has(i) ? 'text-decoration:line-through;color:var(--muted)' : ''}">${esc(m)}</span></button>`).join('')}</section>
       <span class="small muted">Đã chuẩn bị ${checked.size}/${mam.length} · ${region !== 'chung' ? 'theo phong tục ' + REGIONS.find((r) => r[0] === region)[1].replace('Miền', 'miền') + ' · ' : ''}mỗi nhà mỗi lệ, thêm bớt cho hợp gia đình</span>`
-    : `${infoCard}<div class="tts-bar" role="group" aria-label="Đọc to">
-        <button type="button" class="btn big-read ${vk.reading >= 0 ? 'ghost' : ''}" data-act="${vk.reading >= 0 ? 'tts-stop' : 'tts-play'}">${vk.reading >= 0 ? '■ Dừng đọc' : '▶ Đọc to'}</button>
-        <div class="seg" style="flex:1.3" aria-label="Tốc độ đọc">${[[0.8, 'Chậm'], [1, 'Vừa'], [1.15, 'Nhanh']].map(([v, lb]) => `<button type="button" data-rate="${v}" aria-pressed="${(st.settings.ttsRate ?? 1) === v}">${lb}</button>`).join('')}</div></div>
+    : `${infoCard}${voiceBar(o, st)}
       <article class="vk-text size-${size}" aria-label="${esc(o.title)}">${filled.map((p, i) => `<p class="${vk.reading === i ? 'reading' : ''}" data-p="${i}">${p.map((x) => x.fill && (x.key === 'baiVi' || x.key === 'saoHan') ? `<b class="vk-fill">${esc(x.t)}</b>` : x.fill ? `<b class="vk-fill" data-field="${x.key}" role="button" tabindex="0" title="Bấm để sửa">${esc(x.t)}</b>` : x.missing ? `<mark data-field="${x.key}" role="button" tabindex="0" title="Bấm để điền">${esc(x.t)}</mark>` : esc(x.t).replace(/\n/g, '<br>')).join('')}</p>`).join('')}</article>`;
   return `<div class="screen no-nav" data-screen="vankhan">
   ${backHeader(o.title.replace('Văn khấn ', '').replace(/^./, (c) => c.toUpperCase()), '#/vankhan', `${THU[(jd + 1) % 7]} ${s.day}/${s.month} · âm ${l.day}/${l.month}${l.leap ? ' nhuận' : ''}`)}
@@ -159,7 +199,15 @@ export function mountVankhan(root, rerender, params) {
     const off = () => { if (!location.hash.startsWith('#/vankhan/')) { vk.wake?.release?.().catch(() => {}); vk.wake = null; window.removeEventListener('hashchange', off); } };
     window.addEventListener('hashchange', off);
   }
-  const offTts = () => { if (!location.hash.startsWith('#/vankhan/' + o.id)) { stopSpeaking(); vk.reading = -1; window.removeEventListener('hashchange', offTts); } };
+  const offTts = () => {
+    if (location.hash.startsWith('#/vankhan/' + o.id)) return;
+    stopSpeaking(); vk.reading = -1;
+    if (vk.audio) { vk.audio.pause(); vk.playing = false; }
+    if (vk.rec === 'rec') cancelRecording();
+    if (vk.draft?.url) URL.revokeObjectURL(vk.draft.url);
+    vk.rec = 'idle'; vk.draft = null;
+    window.removeEventListener('hashchange', offTts);
+  };
   window.addEventListener('hashchange', offTts);
   const go = (patch) => {
     const q = new URLSearchParams({ ...(params.jd ? { jd: params.jd } : {}), ...(params.gid ? { gid: params.gid } : {}), ...(params.tab ? { tab: params.tab } : {}), ...patch });
@@ -179,6 +227,31 @@ export function mountVankhan(root, rerender, params) {
     if (k === 'dead') { vk.deadText = ''; go({ gid: v }); }
     if (k === 'deadtext') { vk.deadText = v; rerender(); }
   });
+  root.querySelector('[data-voice]')?.addEventListener('toggle', (e) => { vk.voiceOpen = e.target.open; });
+  // Chuẩn bị sẵn bản ghi âm để bấm nghe là phát ngay (trình duyệt chỉ cho phát trong lúc bấm)
+  const meta = getState().voices?.[o.id];
+  if (meta && vk.voiceFor !== o.id + meta.at) {
+    vk.voiceFor = o.id + meta.at; vk.voiceSrc = '';
+    voiceUrl(o.id, meta.mime).then((u) => { if (vk.voiceFor === o.id + meta.at) vk.voiceSrc = u; });
+  }
+  if (vk.rec === 'rec') {
+    const t0 = Date.now() - (vk.recElapsed || 0);
+    const tick = setInterval(() => {
+      const el = document.getElementById('rec-time');
+      if (!el || vk.rec !== 'rec') { clearInterval(tick); return; }
+      const n = Math.floor((Date.now() - t0) / 1000); el.textContent = mmss(n);
+      if (n >= 900) root.querySelector('[data-act="rec-stop"]')?.click(); // tối đa 15 phút
+    }, 500);
+  }
+  root.querySelector('#v-file')?.addEventListener('change', (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 25 * 1024 * 1024) { toast('File quá lớn (tối đa 25 MB)'); return; }
+    const url = URL.createObjectURL(f);
+    const a = new Audio(url);
+    a.addEventListener('loadedmetadata', () => { if (vk.draft) vk.draft.sec = Math.round(a.duration) || 0; });
+    vk.draft = { blob: f, mime: f.type || 'audio/mpeg', sec: 0, url }; vk.by = ''; vk.rec = 'review'; rerender();
+  });
   root.querySelector('[data-info]')?.addEventListener('toggle', (e) => { vk.editHost = e.target.open; const c = e.target.querySelector('summary .chip'); if (c) c.textContent = e.target.open ? 'Thu gọn' : 'Sửa'; });
   // Bấm chữ tô màu trong bài → mở ô tương ứng
   const FIELD = { ngayAm: 'vk-date', nam: 'vk-date', tinChu: 'vk-host', hoTen: 'vk-host', diaChi: 'vk-addr', nguoiMat: 'vk-dead', tenBe: 'vk-baby' };
@@ -192,7 +265,7 @@ export function mountVankhan(root, rerender, params) {
   // Tự đọc khi mở bài (người lớn tuổi): chỉ một lần mỗi lần mở
   if (getState().settings.autoRead && vk.tab === 'van' && vk.autoFrom !== location.hash) {
     vk.autoFrom = location.hash;
-    setTimeout(() => root.querySelector('[data-act="tts-play"]')?.click(), 700);
+    setTimeout(() => root.querySelector('[data-act="tts-play"], [data-act="v-play"]')?.click(), 900);
   }
   root.addEventListener('click', async (e) => {
     const fd = e.target.closest('[data-field]');
@@ -216,9 +289,53 @@ export function mountVankhan(root, rerender, params) {
       });
       return;
     }
+    const sty = e.target.closest('[data-style]');
+    if (sty) { updateSettings({ ttsStyle: sty.dataset.style }); return; }
     const act = e.target.closest('[data-act]')?.dataset.act;
     const sz = getState().settings.vkSize ?? 1;
+    if (act === 'v-play') {
+      if (!vk.voiceSrc) { toast('Đang mở bản ghi âm, bấm lại sau giây lát'); return; }
+      if (!vk.audio) { vk.audio = new Audio(); vk.audio.addEventListener('ended', () => { vk.playing = false; rerender(); }); }
+      vk.audio.src = vk.voiceSrc;
+      vk.audio.play().then(() => { vk.playing = true; rerender(); }).catch(() => toast('Không phát được bản ghi âm'));
+      return;
+    }
+    if (act === 'v-stop') { vk.audio?.pause(); vk.playing = false; rerender(); return; }
+    if (act === 'v-prefer') { updateSettings({ preferVoice: getState().settings.preferVoice === false }); return; }
+    if (act === 'rec-start' || act === 'rec-again') {
+      if (!canRecord()) { toast('Máy này chưa hỗ trợ ghi âm trong app. Hãy dùng "Chọn file ghi âm có sẵn".'); return; }
+      if (vk.draft?.url) URL.revokeObjectURL(vk.draft.url);
+      vk.draft = null; await stopSpeaking(); vk.reading = -1; vk.audio?.pause(); vk.playing = false;
+      try { await startRecording(); } catch { toast('Chưa được phép dùng micro. Hãy cho phép trong Cài đặt máy.'); vk.rec = 'idle'; rerender(); return; }
+      vk.rec = 'rec'; vk.recElapsed = 0; rerender();
+      return;
+    }
+    if (act === 'rec-stop') {
+      const r = await stopRecording();
+      if (!r || !r.blob.size) { vk.rec = 'idle'; toast('Chưa ghi được âm thanh'); rerender(); return; }
+      vk.draft = { ...r, url: URL.createObjectURL(r.blob) }; vk.rec = 'review'; rerender();
+      setTimeout(() => document.getElementById('v-by')?.focus(), 100);
+      return;
+    }
+    if (act === 'rec-cancel') { if (vk.draft?.url) URL.revokeObjectURL(vk.draft.url); vk.draft = null; vk.rec = 'idle'; rerender(); return; }
+    if (act === 'rec-save') {
+      const by = (document.getElementById('v-by')?.value || '').trim() || 'người nhà';
+      try { await saveVoice(o.id, vk.draft.blob); } catch { toast('Không lưu được — bộ nhớ máy có thể đã đầy'); return; }
+      const m = { by, sec: vk.draft.sec || 0, mime: vk.draft.mime, at: new Date().toISOString() };
+      URL.revokeObjectURL(vk.draft.url); vk.draft = null; vk.rec = 'idle'; vk.voiceFor = '';
+      setState((s2) => ({ ...s2, voices: { ...s2.voices, [o.id]: m }, settings: { ...s2.settings, preferVoice: true } }));
+      toast('Đã lưu giọng ' + by);
+      return;
+    }
+    if (act === 'v-del') {
+      const m = getState().voices?.[o.id];
+      if (!(await confirmSheet({ title: `Xóa giọng ${m?.by || 'người nhà'}?`, message: 'Bản ghi âm của bài này sẽ bị xóa khỏi máy.', ok: 'Xóa', danger: true }))) return;
+      await deleteVoice(o.id); vk.voiceFor = ''; vk.voiceSrc = '';
+      setState((s2) => { const v = { ...s2.voices }; delete v[o.id]; return { ...s2, voices: v }; });
+      return;
+    }
     if (act === 'tts-play') {
+      if ((getState().settings.ttsStyle || 'tung') === 'tung') unlockAudio();
       const status = await ttsStatus();
       if (status === 'none') { toast('Máy này chưa hỗ trợ đọc to'); return; }
       if (status === 'missing') {
@@ -235,7 +352,7 @@ export function mountVankhan(root, rerender, params) {
         const btn = app.querySelector('[data-act="tts-stop"], [data-act="tts-play"]');
         if (btn && i < 0) { btn.dataset.act = 'tts-play'; btn.textContent = '▶ Đọc to'; btn.classList.remove('ghost'); }
         if (i >= 0) app.querySelector(`.vk-text p[data-p="${i}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      });
+      }, getState().settings.ttsStyle || 'tung');
       return;
     }
     if (act === 'tts-stop') { await stopSpeaking(); vk.reading = -1; rerender(); return; }

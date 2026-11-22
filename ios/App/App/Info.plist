@@ -41,6 +41,8 @@
 	<string>Ghi ngày giỗ, sinh nhật, rằm và lễ Tết vào Lịch để đồng bộ với iCloud trên các thiết bị của bạn.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>Ghi ngày giỗ, sinh nhật, rằm và lễ Tết vào Lịch của bạn.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Để ghi âm giọng người nhà đọc văn khấn. Bản ghi chỉ lưu trên máy này.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Đọc ngày sinh của người thân trong Danh bạ để thêm nhắc sinh nhật. Dữ liệu chỉ lưu trên máy.</string>
 	<key>UIApplicationSceneManifest</key>

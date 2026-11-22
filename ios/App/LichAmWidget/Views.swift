@@ -90,6 +90,7 @@ enum Art {
     static func giapOfYear(_ ly: Int) -> String { String(format: "widget_giap_%02d", ((ly + 8) % 12 + 12) % 12) }
     static func icon(_ it: UpcomingItem) -> String {
         if it.kind == 3 {
+            if it.title.hasPrefix("Ngày chay") { return "widget_ic_lotus" }
             if it.title.hasPrefix("Sinh nhật") { return "widget_ic_bday" }
             if it.title.hasPrefix("Cúng") { return "widget_ic_lotus" }
             if !it.title.hasPrefix("Giỗ") { return "widget_ic_kyniem" }
@@ -289,7 +290,9 @@ struct MonthView: View {
                         if e < first || e >= nextFirst {
                             Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
-                            MonthCell(day: CalStore.shared.day(e), isToday: e == today, gio: !user.giosOn(e).isEmpty)
+                            MonthCell(day: CalStore.shared.day(e), isToday: e == today,
+                                      gio: user.giosOn(e).contains(where: { !$0.title.hasPrefix("Ngày chay") }),
+                                      chay: user.giosOn(e).contains(where: { $0.title.hasPrefix("Ngày chay") }))
                         }
                     }
                 }
@@ -304,6 +307,7 @@ struct MonthCell: View {
     let day: DayInfo
     let isToday: Bool
     let gio: Bool
+    var chay: Bool = false
 
     var body: some View {
         let moon = day.ld == 1 || day.ld == 15
@@ -316,7 +320,7 @@ struct MonthCell: View {
                     .font(.bvp(10, moon || gio ? .bold : .regular))
                     .foregroundColor(isToday ? .onLacquerGold : (moon ? .goldInk : day.kind == 2 ? .accent : .muted))
             }
-            Circle().fill(isToday ? Color.white : (gio ? Color.hex(0xB3261E) : day.kind == 2 ? Color.hex(0xD29A34) : Color.clear))
+            Circle().fill(isToday ? Color.white : (gio ? Color.hex(0xB3261E) : day.kind == 2 ? Color.hex(0xD29A34) : chay ? Color.hex(0x2F9E6A) : Color.clear))
                 .frame(width: 4, height: 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -495,6 +499,12 @@ struct TipView: View {
             let diff = n.epoch - today
             let lead = diff <= 0 ? "Hôm nay: " : diff == 1 ? "Ngày mai: " : "Còn \(diff) ngày nữa là "
             return (lead + n.title, Art.mascot(for: n.title, kind: n.kind))
+        }
+        for i in 1...30 {
+            let x = CalStore.shared.day(today + i)
+            if x.ld == 1 && x.lm == 1 && !x.leap {
+                return ("Còn \(i) ngày nữa là Tết \(CalStore.shared.yearName(x.ly))!", "widget_mascot_star")
+            }
         }
         if day.hasLunar && (day.ld == 1 || day.ld == 15) {
             return ("Hôm nay \(day.ld == 15 ? "Rằm" : "mùng Một"), nhớ thắp nén hương nhé", "widget_mascot_lantern")
