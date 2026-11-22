@@ -89,12 +89,62 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.5.1)
+## Cập nhật lên phiên bản mới (ví dụ 1.9.0)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.5.1` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.5.1` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.5.1` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.9.0` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.9.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.9.0` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.9.0 — bản Tết Đinh Mùi
+- Nhóm "Tết Đinh Mùi" tự lên đầu Tiện ích khi còn dưới 90 ngày đến Tết; màn Hôm nay nhắc khi còn dưới 30 ngày.
+- Chuẩn bị Tết: việc cần làm từ 23 tháng Chạp đến hóa vàng, đúng ngày dương, có phân công, nối văn khấn và mâm cúng.
+- Tuổi xông đất: gợi ý 8 tuổi hợp nhất với gia chủ và năm mới, có giải thích từng điểm; xem cho người trong gia phả.
+- Xuất hành mùng 1–3: giờ tốt, hướng Hỷ thần, Tài thần, tuổi xung ngày.
+- Lịch ăn chay 2/4/6/8/10 ngày mỗi tháng: hiện trên màn Hôm nay, nhắc tối hôm trước, tự dời ngày ở tháng thiếu.
+- Văn khấn đi lễ chùa, đền, phủ: Đức Ông, Tam Bảo, Thánh Mẫu, Thành Hoàng.
+- Mệnh & màu hợp tuổi: mệnh nạp âm, màu hợp, màu nên hạn chế, số hợp, tuổi hợp và xung.
+
+## Có gì mới ở 1.8.0
+- Sao hạn & giải hạn (Tiện ích → Xem ngày → Sao hạn):
+  - Sao chiếu mệnh (Cửu Diệu) và hạn trong năm theo năm sinh, giới tính; xem năm nay và năm sau.
+  - Cách cúng dâng sao: ngày âm hằng tháng, giờ, hướng, số đèn (có hình bày đèn), chữ trên bài vị, 3 ngày cúng sắp tới.
+  - Văn khấn dâng sao giải hạn tự điền tên sao, tuổi, hạn; đọc to được; danh sách lễ vật.
+  - Xem cho cả nhà: lấy từ Gia phả những người còn sống có năm sinh.
+  - Nút nhắc cúng sao đầu năm (tháng Giêng).
+
+## Có gì mới ở 1.7.0
+- Nhóm mới "Dòng họ" trong Tiện ích:
+  - Gia phả: cây gia đình nhiều đời, thêm con, vợ/chồng; nối với ngày giỗ; gửi gia phả cho người thân.
+  - Tưởng nhớ: ảnh, năm sinh – mất, quê quán, nơi an táng, tiểu sử, lời dặn của người đã khuất.
+  - Sổ hiếu hỉ: ghi mừng cưới, phúng viếng, tân gia…; tự nhắc lịch sử qua lại khi đáp lễ.
+  - Chuẩn bị đám giỗ: việc cần làm theo mốc (trước 1 tuần, 3 ngày, hôm trước, ngày giỗ), phân công, khách mời, ước tính số mâm.
+- Xem tuổi làm nhà, cưới hỏi: Kim Lâu, Hoang Ốc, Tam Tai cho 6 năm tới.
+- Mâm cúng theo vùng miền Bắc, Trung, Nam cho Tết, giỗ, rằm, ông Táo, Vu Lan, Đoan Ngọ.
+
+## Có gì mới ở 1.6.1
+- Số ngày còn lại thành nhãn nhỏ dưới tên sự kiện; tên dài không còn bị bẻ dòng lệch.
+- Trăng ngày mùng 1 vẽ viền trăng non thay vì cục tròn xám (app và widget).
+- Lời nhắn của Bé Thỏ ngắn gọn hơn; chú thích lịch tháng gọn một dòng.
+- Nhãn tiện ích một dòng (Tang lễ, Thiệp mời, Giờ tốt, Chia sẻ, Danh bạ, Sao lưu…).
+- Nút Thêm tự ẩn khi cuộn xuống, hiện lại khi cuộn lên.
+- Widget lịch tháng Android có chấm màu theo loại; giao diện theo mùa chỉnh màu cho bản tối.
+
+## Có gì mới ở 1.6.0
+- Màn Hôm nay sắp lại: "Sắp tới" nằm ngay dưới tờ lịch, đầu màn thoáng hơn, can chi ngày/tháng gọn một cụm.
+- Thông báo nhỏ (Đã lưu, Hoàn tác…) không còn đè lên nút Thêm; nút Thêm không che mục cuối.
+- Tiêu đề không còn rớt một chữ xuống dòng; chữ phụ to hơn (tối thiểu 13–14px) cho người lớn tuổi.
+- Bộ quy chuẩn chung về cỡ chữ, khoảng cách, bo góc, bóng đổ cho mọi màn.
+- Lịch tháng: chấm màu theo loại (đỏ giỗ, hồng sinh nhật/kỷ niệm, vàng lễ); mùng 1 và Rằm nổi bật hơn.
+- Hiệu ứng mượt: thẻ hiện dần, số ngày "nảy" nhẹ, bấm có độ lún và rung nhẹ.
+- Giao diện theo mùa: Tết có cành mai, Trung thu có đèn lồng, Vu Lan có hoa sen; Bé Thỏ đổi dáng theo dịp.
+- Widget iPhone đồng bộ với Android: trăng đúng pha, con giáp, Bé Thỏ, icon theo loại; thêm "Ngày hôm nay" kiểu biểu tượng Lịch và "Bé Thỏ nhắc".
+
+## Có gì mới ở 1.5.2
+- Widget làm lại toàn bộ: trăng đúng pha theo ngày âm, con giáp của ngày/năm, linh vật Bé Thỏ, biểu tượng màu cho giỗ/sinh nhật/rằm.
+- Widget "Ngày hôm nay" 1×1 kiểu biểu tượng lịch iOS (thứ đỏ, số ngày to, ngày âm).
+- Widget mới "Bé Thỏ nhắc" (4×1): chào theo giờ, nhắc giỗ/rằm/sinh nhật sắp tới.
+- Có ảnh xem trước cho mọi widget khi chọn trong danh sách widget.
 
 ## Có gì mới ở 1.5.1
 - Sửa: một số máy mở app chỉ thấy màn hình vàng trống. App nay hiện giao diện ngay, không chờ các thành phần của máy (khôi phục sao lưu, link từ widget) — các việc đó chạy nền.

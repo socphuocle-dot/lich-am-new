@@ -32,7 +32,7 @@ export function renderReminders() {
     const on = !st.disabled[e.key];
     const d = describeDate(e, todayJd);
     const right = e.kind === 'gio'
-      ? `<span class="count" style="color:${d.diff <= 3 ? 'var(--accent)' : 'var(--muted)'}">${d.count}</span>`
+      ? `<span class="chev" aria-hidden="true">${ICON.next(18)}</span>`
       : sw(on, 'Bật nhắc ' + e.title, `data-key="${e.key}"`);
     return head + `<div style="opacity:${on ? 1 : .5}">${eventRow(e, todayJd, { right, href: e.kind === 'gio' ? `#/edit/${e.gio.id}` : '' })}</div>`;
   }).join('');
@@ -224,7 +224,9 @@ export function renderGioForm(params) {
     ${editing && type === 'gio' ? `<div class="quick-acts" role="group" aria-label="Chuẩn bị ngày giỗ">
       <a class="chip" href="#/vankhan/gio?gid=${editing.id}&jd=${nextGioDate({ ...editing, repeat: 'yearly' }, todayJd)?.jd || ''}">${ICON.book(16)} Văn khấn</a>
       <a class="chip" href="#/vankhan/gio?tab=mam&gid=${editing.id}&jd=${nextGioDate({ ...editing, repeat: 'yearly' }, todayJd)?.jd || ''}">${ICON.tray(16)} Mâm cúng</a>
-      <a class="chip" href="#/thiep/${editing.id}">${ICON.card(16)} Gửi thiệp mời</a></div>` : ''}
+      <a class="chip" href="#/thiep/${editing.id}">${ICON.card(16)} Gửi thiệp mời</a>
+      <a class="chip" href="#/chuanbi/${editing.id}">${ICON.check(16)} Chuẩn bị giỗ</a>
+      <a class="chip" href="#/tuongnho/${editing.id}">${ICON.heart(16)} Trang tưởng nhớ</a></div>` : ''}
     ${editing ? `<div class="row"><div class="col grow"><span class="lb">Bật nhắc ${noun.toLowerCase()} này</span></div>${sw(f.enabled !== false, 'Bật nhắc ' + noun.toLowerCase() + ' này', 'data-enabled')}</div>
       <button type="button" class="btn danger" data-act="delete">${ICON.trash()} Xóa ${noun.toLowerCase()}</button>` : ''}
     ${f.error ? `<p class="err" role="alert">${esc(f.error)}</p>` : ''}
@@ -303,7 +305,8 @@ export function mountGioForm(root, rerender, params) {
         ...(g.contactId ? { contactId: g.contactId, source: g.source } : {}), day: g.day, month: g.month,
         year: g.year ? Number(g.year) : '', leap: !!g.leap, remind: g.remind.length ? g.remind : [0],
         time: g.time || '07:00', repeat: g.repeat, ...(g.tang && g.type === 'gio' ? { tang: true } : {}), ...(g.side && g.type !== 'kyniem' ? { side: g.side } : {}), note: g.note.trim(), enabled: g.enabled !== false,
-        ...(g.repeat === 'once' ? { onceYear } : {})
+        ...(g.repeat === 'once' ? { onceYear } : {}),
+        ...(() => { const old = getState().gios.find((x) => x.id === g.id); return old?.memo ? { memo: old.memo } : {}; })()
       };
       saveGio(rec);
       form = null;

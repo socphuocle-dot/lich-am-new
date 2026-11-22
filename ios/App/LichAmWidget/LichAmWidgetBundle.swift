@@ -68,10 +68,30 @@ struct LockWidget: Widget {
     }
 }
 
+struct IconWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "IconWidget", provider: DayProvider()) { e in IconView(entry: e) }
+            .configurationDisplayName("Ngày hôm nay")
+            .description("Giống biểu tượng Lịch: thứ, ngày dương lớn và ngày âm có trăng.")
+            .supportedFamilies([.systemSmall])
+    }
+}
+
+struct TipWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "TipWidget", provider: DayProvider()) { e in TipView(entry: e) }
+            .configurationDisplayName("Bé Thỏ nhắc")
+            .description("Bé Thỏ Ngọc nhắc ngày giỗ, rằm, sinh nhật sắp tới.")
+            .supportedFamilies([.systemMedium])
+    }
+}
+
 @main
 struct LichAmWidgetBundle: WidgetBundle {
     var body: some Widget {
+        IconWidget()
         SheetWidget()
+        TipWidget()
         AgendaWidget()
         MonthWidget()
         CountdownWidget()

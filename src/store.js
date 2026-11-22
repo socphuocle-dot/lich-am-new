@@ -13,12 +13,15 @@ export const DEFAULT_STATE = {
   settings: {
     autoMoon: true, moonEveOn: true, moonEve: '19:00', moonMornOn: true, moonMorning: '06:00',
     holidayOn: true, gioTime: '07:00', size: 1, theme: 'light', culture: CULTURE_DEFAULT, monday: true, widgetCountdown: 'auto',
-    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: ''
+    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: '', region: 'chung', chay: 'off', chayRemind: true, chayTime: '19:00'
   },
   calSync: { enabled: false, moon: false, holidays: true, calendarId: '', ids: [] },
   lastBackup: '',
   checklists: {},
   update: {},
+  hieuhi: [],   // sổ hiếu hỉ: { id, dir: 'nhan'|'di', kind, person, note, date, amount, gift }
+  prep: {},     // chuẩn bị đám giỗ theo id ngày giỗ: { tasks: [...], guests: [...] }
+  people: [],   // gia phả: { id, name, gender, born, died, parentId, spouseOf, gioId, note }
   onboarded: false
 };
 
@@ -38,7 +41,10 @@ function load() {
       disabled: s.disabled || {},
       calSync: { ...DEFAULT_STATE.calSync, ...(s.calSync || {}) },
       checklists: s.checklists || {},
-      update: s.update || {}
+      update: s.update || {},
+      hieuhi: Array.isArray(s.hieuhi) ? s.hieuhi : [],
+      prep: s.prep && typeof s.prep === 'object' ? s.prep : {},
+      people: Array.isArray(s.people) ? s.people : []
     };
   } catch {
     return clone(DEFAULT_STATE);

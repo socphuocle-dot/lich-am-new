@@ -116,7 +116,7 @@ export function moonPhase(lday, size = 64) {
   <radialGradient id="${g}h"><stop offset=".55" stop-color="#FFE7A8" stop-opacity=".45"/><stop offset="1" stop-color="#FFE7A8" stop-opacity="0"/></radialGradient></defs>
   <circle cx="32" cy="32" r="32" fill="url(#${g}h)" opacity="${(0.25 + lit * 0.75).toFixed(2)}"/>
   <clipPath id="${g}c"><path d="${litPath || 'M0 0'}"/></clipPath>
-  <circle cx="32" cy="32" r="${r}" fill="#3A2E27" opacity=".55"/>
+  <circle cx="32" cy="32" r="${r}" fill="#3A2E27" opacity="${lit < 0.08 ? '.12' : '.55'}"/>${lit < 0.08 ? `<circle cx="32" cy="32" r="${r - 0.9}" fill="none" stroke="#D9A441" stroke-width="1.8" stroke-dasharray="3 2.4" opacity=".85"/>` : ''}
   <g clip-path="url(#${g}c)"><circle cx="32" cy="32" r="${r}" fill="url(#${g})"/>
   <circle cx="24" cy="26" r="4" fill="#E2B456" opacity=".45"/><circle cx="40" cy="38" r="5.5" fill="#E2B456" opacity=".35"/><circle cx="37" cy="22" r="2.4" fill="#E2B456" opacity=".4"/></g>
 </svg>`;
@@ -230,8 +230,84 @@ export const ILL = {
     <path d="M6 24 q12-14 28-4 l8-8 v24 l-8-8 q-16 10-28-4z" fill="url(#${a})"/>
     <path d="M14 18 q4 6 0 12 M20 16 q4 8 0 16" stroke="#FFE3B0" stroke-width="1.4" fill="none" opacity=".8"/>
     <circle cx="11" cy="22" r="1.8" fill="#3A1A10"/><path d="M8 28 q2 2 5 1" stroke="#8E140C" stroke-width="1.2" fill="none"/>`, lg(a, '#FFB35C', '#E5463A', '#B5261A')); },
+  tree() { const a = G(); return wrap(`
+    <path d="M24 44 v-14 M24 34 l-8-6 M24 31 l8-6" stroke="#8A5A36" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <circle cx="24" cy="16" r="11" fill="url(#${a})"/><circle cx="13" cy="24" r="7.5" fill="url(#${a})"/><circle cx="35" cy="24" r="7.5" fill="url(#${a})"/>
+    <circle cx="24" cy="13" r="3" fill="#FBD9BF" stroke="#fff" stroke-width="1.2"/><circle cx="13" cy="23" r="2.6" fill="#FBD9BF" stroke="#fff" stroke-width="1.2"/><circle cx="35" cy="23" r="2.6" fill="#FBD9BF" stroke="#fff" stroke-width="1.2"/>
+    <ellipse cx="24" cy="44" rx="12" ry="2.4" fill="#5FB48C" opacity=".6"/>`, lg(a, '#8FD3A6', '#3F9B6A')); },
+  frame() { const a = G(); return wrap(`
+    <rect x="9" y="5" width="30" height="36" rx="3" fill="url(#${a})"/><rect x="13" y="9" width="22" height="28" rx="2" fill="#FFF6EA"/>
+    <circle cx="24" cy="19" r="5" fill="#C9B49F"/><path d="M15.5 35 a8.5 8 0 0 1 17 0z" fill="#C9B49F"/>
+    <path d="M19 41 l-3 5 M29 41 l3 5" stroke="#A8721A" stroke-width="2" stroke-linecap="round"/>
+    <path d="M38 6 c2-3 6-1 4 2 l-4 4 -4-4 c-2-3 2-5 4-2z" fill="#F0637F"/>`, lg(a, ...GOLD)); },
+  hongbao() { const a = G(), b = G(); return wrap(`
+    <rect x="10" y="5" width="28" height="38" rx="4" fill="url(#${a})"/><path d="M10 13 q14 10 28 0" fill="#B5261A"/>
+    <circle cx="24" cy="18" r="6" fill="url(#${b})"/><path d="M21 18 h6 M24 15 v6" stroke="#8E140C" stroke-width="1.6"/>
+    <path d="M16 30 h16 M18 35 h12" stroke="#F6D27A" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>`, lg(a, ...RED) + lg(b, ...GOLD)); },
+  checklist() { const a = G(); return wrap(`
+    <rect x="8" y="7" width="32" height="37" rx="4" fill="#FFF6EA" stroke="url(#${a})" stroke-width="2.4"/><rect x="17" y="3" width="14" height="7" rx="2.5" fill="url(#${a})"/>
+    <path d="M13 19 l2.5 2.5 4.5-5 M13 28 l2.5 2.5 4.5-5" stroke="#2F9E6A" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="13.5" y="34" width="5" height="5" rx="1.2" fill="none" stroke="#C9B49F" stroke-width="1.6"/>
+    <path d="M23 20 h12 M23 29 h12 M23 37 h9" stroke="#C9B49F" stroke-width="1.8" stroke-linecap="round"/>`, lg(a, ...GOLD)); },
+  scroll() { const a = G(); return wrap(`
+    <rect x="11" y="8" width="26" height="32" fill="#FFF6EA"/><rect x="7" y="5" width="34" height="6" rx="3" fill="url(#${a})"/><rect x="7" y="37" width="34" height="6" rx="3" fill="url(#${a})"/>
+    <circle cx="24" cy="22" r="7" fill="none" stroke="#C8392C" stroke-width="1.8"/><path d="M24 15 v14 M17 22 h14" stroke="#C8392C" stroke-width="1.2" opacity=".7"/>
+    <path d="M16 33 h16" stroke="#C9B49F" stroke-width="1.8" stroke-linecap="round"/>`, lg(a, ...RED)); },
+  starlamp() { const a = G(); return wrap(`
+    <circle cx="24" cy="24" r="17" fill="#2A2350"/><circle cx="24" cy="24" r="17" fill="none" stroke="url(#${a})" stroke-width="2"/>
+    ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => { const t = (i / 9) * Math.PI * 2 - Math.PI / 2; return `<circle cx="${(24 + 12 * Math.cos(t)).toFixed(1)}" cy="${(24 + 12 * Math.sin(t)).toFixed(1)}" r="2" fill="#FFD46B"/>`; }).join('')}
+    <path d="M24 16 l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="url(#${a})"/>`, lg(a, ...GOLD)); },
+  pagoda() { const a = G(); return wrap(`
+    <path d="M24 3 v5" stroke="#A8721A" stroke-width="2" stroke-linecap="round"/>
+    <path d="M10 15 q14-9 28 0 l-3 2 h-22z" fill="url(#${a})"/><rect x="15" y="17" width="18" height="7" fill="#FFF6EA"/>
+    <path d="M7 27 q17-9 34 0 l-3 2 h-28z" fill="url(#${a})"/><rect x="12" y="29" width="24" height="12" fill="#FFF6EA"/>
+    <rect x="21" y="32" width="6" height="9" rx="3" fill="#C98E25"/><rect x="6" y="41" width="36" height="3" rx="1.5" fill="#8A5A36"/>`, lg(a, ...RED)); },
+  bowl() { const a = G(); return wrap(`
+    <path d="M20 14 c-6-4-4-10 2-11 2 5 0 9-2 11z" fill="#5FB48C"/><path d="M27 13 c4-6 10-5 11-1 -4 3-8 3-11 1z" fill="#7CC36E"/>
+    <ellipse cx="24" cy="22" rx="17" ry="4" fill="#F7E3B8"/><circle cx="18" cy="20" r="3" fill="#F2C230"/><circle cx="26" cy="19" r="3.4" fill="#E5463A"/><circle cx="32" cy="21" r="2.6" fill="#7CC36E"/>
+    <path d="M7 22 q17 26 34 0z" fill="url(#${a})"/><rect x="17" y="38" width="14" height="4" rx="2" fill="#A8721A"/>`, lg(a, '#9CC3F0', '#3E78C8')); },
+  wuxing() { return wrap(`
+    <circle cx="24" cy="24" r="17" fill="none" stroke="#E2D6C3" stroke-width="2"/>
+    <circle cx="24" cy="8" r="6" fill="#E5463A"/><circle cx="39" cy="19" r="6" fill="#F2C230"/><circle cx="33" cy="37" r="6" fill="#D9DEE6" stroke="#9AA3AF"/>
+    <circle cx="15" cy="37" r="6" fill="#2F6FD6"/><circle cx="9" cy="19" r="6" fill="#2E9E5B"/>`); },
+  compass() { const a = G(); return wrap(`
+    <circle cx="24" cy="24" r="18" fill="#FFF6EA" stroke="url(#${a})" stroke-width="3.2"/>
+    <path d="M24 9 l4.5 15 -4.5 15 -4.5-15z" fill="#C8392C"/><path d="M24 24 l4.5 0 -4.5 15 -4.5-15z" fill="#3A2E28"/>
+    <circle cx="24" cy="24" r="2.6" fill="#F6C343"/><text x="24" y="8" font-size="0">B</text>`, lg(a, ...GOLD)); },
   face() { return wrap(`
     <circle cx="24" cy="22" r="13" fill="#FBD9BF"/><path d="M11 20 a13 13 0 0 1 26 0 q-6-6-13-4 q-7-2-13 4z" fill="#3A2A22"/>
     <circle cx="19" cy="23" r="1.6" fill="#3A2A22"/><circle cx="29" cy="23" r="1.6" fill="#3A2A22"/><path d="M20 28 q4 3 8 0" stroke="#C8392C" stroke-width="1.6" fill="none" stroke-linecap="round"/>
     <path d="M10 44 a14 10 0 0 1 28 0z" fill="#9B6BD6"/>`); }
 };
+
+/* ===== Giao diện theo mùa lễ (tính theo âm lịch) ===== */
+const flower = (x, y, r, c1, c2) => {
+  const p = [0, 72, 144, 216, 288].map((a) => `<ellipse cx="${x}" cy="${y - r * 0.55}" rx="${r * 0.42}" ry="${r * 0.6}" transform="rotate(${a} ${x} ${y})"/>`).join('');
+  return `<g fill="${c1}" stroke="${c2}" stroke-width=".6">${p}</g><circle cx="${x}" cy="${y}" r="${r * 0.28}" fill="#C0561B"/>`;
+};
+/** Cành mai (vàng) hoặc đào (hồng) cho dịp Tết */
+export function blossomBranch(w = 120, kind = 'mai') {
+  const [c1, c2] = kind === 'dao' ? ['#FFB3C7', '#E06A8C'] : ['#FFD95A', '#E0A21B'];
+  return `<svg class="deco-branch" viewBox="0 0 120 70" width="${w}" height="${w * 0.58}" aria-hidden="true">
+    <path d="M-2 8 C30 14 48 22 70 40 C84 52 98 58 120 62" class="br" fill="none" stroke="#6B3E22" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M40 20 C46 8 56 4 66 4 M70 40 C74 30 82 26 92 26 M24 12 C26 22 22 32 14 38" class="br" fill="none" stroke="#6B3E22" stroke-width="2" stroke-linecap="round"/>
+    ${flower(66, 6, 8, c1, c2)}${flower(92, 26, 9, c1, c2)}${flower(14, 38, 7, c1, c2)}${flower(52, 26, 6, c1, c2)}${flower(108, 58, 7, c1, c2)}
+    <circle cx="80" cy="46" r="2.4" fill="${c2}"/><circle cx="32" cy="16" r="2" fill="${c2}"/><circle cx="58" cy="32" r="2.2" fill="#7FA650"/></svg>`;
+}
+
+/** Mùa lễ theo ngày âm: Tết (23 tháng Chạp → Rằm tháng Giêng), Vu Lan (1–15/7), Trung thu (1–16/8) */
+export function seasonOf(l) {
+  if ((l.month === 12 && l.day >= 23) || (l.month === 1 && l.day <= 15)) return { id: 'tet', pose: 'star', greet: l.month === 12 ? 'Sắp Tết rồi' : 'Chúc mừng năm mới' };
+  if (l.month === 7 && l.day <= 15) return { id: 'vulan', pose: 'pray', greet: 'Mùa Vu Lan báo hiếu' };
+  if (l.month === 8 && l.day <= 16) return { id: 'trungthu', pose: 'lantern', greet: 'Mùa Trung thu' };
+  return null;
+}
+
+/** Trang trí đặt trên tờ lịch theo mùa */
+export function seasonDecor(s) {
+  if (!s) return '';
+  if (s.id === 'tet') return `<span class="season-deco tl">${blossomBranch(118, 'mai')}</span>`;
+  if (s.id === 'trungthu') return `<span class="season-deco lan">${lanternString()}</span>`;
+  if (s.id === 'vulan') return `<span class="season-deco lotus">${ILL.lotus()}</span><span class="season-deco lotus r">${ILL.lotus()}</span>`;
+  return '';
+}

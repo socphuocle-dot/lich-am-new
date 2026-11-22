@@ -33,6 +33,9 @@ import { renderFeedback, mountFeedback } from './ui/feedback.js';
 import { renderHub } from './ui/hub.js';
 import { renderConvert, mountConvert } from './ui/tools.js';
 import { renderShare, mountShare, resetShare, renderImport, mountImport, resetImport } from './ui/family.js';
+import { renderHieuhi, mountHieuhi, renderPrep, mountPrep, renderMemorial, mountMemorial, renderGiapha, mountGiapha, renderXemtuoi, mountXemtuoi } from './ui/giadinh.js';
+import { renderSaohan, mountSaohan } from './ui/saohan.js';
+import { renderTetPrep, mountTetPrep, renderXongdat, mountXongdat, renderXuathanh, renderAnchay, mountAnchay, renderMenh, mountMenh } from './ui/tet.js';
 import { restoreFromSystemIfEmpty, mirrorToSystem, autoSyncCalendar } from './sync.js';
 
 const app = document.getElementById('app');
@@ -60,7 +63,18 @@ const ROUTES = {
   nhap: { render: renderImport, mount: mountImport },
   gopy: { render: renderFeedback, mount: mountFeedback },
   tienich: { render: renderHub },
-  doingay: { render: renderConvert, mount: mountConvert }
+  doingay: { render: renderConvert, mount: mountConvert },
+  hieuhi: { render: renderHieuhi, mount: mountHieuhi },
+  chuanbi: { render: renderPrep, mount: mountPrep },
+  tuongnho: { render: renderMemorial, mount: mountMemorial },
+  giapha: { render: renderGiapha, mount: mountGiapha },
+  xemtuoi: { render: renderXemtuoi, mount: mountXemtuoi },
+  saohan: { render: renderSaohan, mount: mountSaohan },
+  chuanbitet: { render: renderTetPrep, mount: mountTetPrep },
+  xongdat: { render: renderXongdat, mount: mountXongdat },
+  xuathanh: { render: renderXuathanh },
+  anchay: { render: renderAnchay, mount: mountAnchay },
+  menh: { render: renderMenh, mount: mountMenh }
 };
 
 function parseHash() {
@@ -137,14 +151,18 @@ let lastY = 0;
 window.addEventListener('scroll', () => {
   const y = window.scrollY;
   const fab = document.querySelector('.fab');
-  if (fab) fab.classList.toggle('mini', y > 60 && y >= lastY);
+  if (fab) {
+    fab.classList.toggle('mini', y > 60);
+    // Cuộn xuống: ẩn hẳn để đọc trọn nội dung; cuộn lên: hiện lại
+    if (Math.abs(y - lastY) > 4) fab.classList.toggle('hide', y > 120 && y > lastY);
+  }
   lastY = y;
 }, { passive: true });
 
 // Rung nhẹ khi bấm (chỉ trên điện thoại)
 if (Capacitor.isNativePlatform()) {
   document.addEventListener('click', (e) => {
-    const el = e.target.closest('.switch, .btn, .chip, .tip, .cell, .palace, .num-btn, .fab, [data-act="one"], [data-act="all"]');
+    const el = e.target.closest('.switch, .btn, .chip, .tip, .cell, .palace, .num-btn, .fab, .svc, .tool, .nav a, a.item, [data-act="one"], [data-act="all"]');
     if (el) Haptics.impact({ style: el.matches('.btn, .fab') ? ImpactStyle.Medium : ImpactStyle.Light }).catch(() => {});
   });
 }

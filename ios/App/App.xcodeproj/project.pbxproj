@@ -21,6 +21,7 @@
 		39F1C1D461184994965DC146 /* LichAmWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95B88666D3B84120900BCEE8 /* LichAmWidgetBundle.swift */; };
 		40DB77D57B564C1E93BF94F8 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE35BA30ADC74AD2B7AFEF39 /* Store.swift */; };
 		A755ACF315714E558C14FE3C /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD93718C4C143B486497903 /* Views.swift */; };
+		A16000000000000000000001 /* WidgetArt in Resources */ = {isa = PBXBuildFile; fileRef = A16000000000000000000002 /* WidgetArt */; };
 		4206FD31861547E18F31A022 /* calendar.json in Resources */ = {isa = PBXBuildFile; fileRef = 471EC8E09318406087FF9856 /* calendar.json */; };
 		08760B0267AD4169BAD1641F /* LichAmWidget.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 307087735B9D447FB7353595 /* LichAmWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3245DCAF02274E4383BC9E46 /* BeVietnamPro-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4F55F511A9764B4B8A76E68D /* BeVietnamPro-Regular.ttf */; };
@@ -47,6 +48,7 @@
 		95B88666D3B84120900BCEE8 /* LichAmWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LichAmWidgetBundle.swift; sourceTree = "<group>"; };
 		DE35BA30ADC74AD2B7AFEF39 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		ECD93718C4C143B486497903 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
+		A16000000000000000000002 /* WidgetArt */ = {isa = PBXFileReference; lastKnownFileType = folder; path = WidgetArt; sourceTree = "<group>"; };
 		471EC8E09318406087FF9856 /* calendar.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = calendar.json; sourceTree = "<group>"; };
 		0B3BB4F8EA0A4D6F8B76B18C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		21A291CD139647F4858DCF63 /* LichAmWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LichAmWidget.entitlements; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 				DE35BA30ADC74AD2B7AFEF39 /* Store.swift */,
 				ECD93718C4C143B486497903 /* Views.swift */,
 				471EC8E09318406087FF9856 /* calendar.json */,
+				A16000000000000000000002 /* WidgetArt */,
 				0B3BB4F8EA0A4D6F8B76B18C /* Info.plist */,
 				21A291CD139647F4858DCF63 /* LichAmWidget.entitlements */,
 				4F55F511A9764B4B8A76E68D /* BeVietnamPro-Regular.ttf */,
@@ -233,6 +236,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4206FD31861547E18F31A022 /* calendar.json in Resources */,
+				A16000000000000000000001 /* WidgetArt in Resources */,
 				3245DCAF02274E4383BC9E46 /* BeVietnamPro-Regular.ttf in Resources */,
 				21B7D069FCF84F449B7056CE /* BeVietnamPro-SemiBold.ttf in Resources */,
 				C5FB46C4FB2846B4AF55EB57 /* BeVietnamPro-Bold.ttf in Resources */,

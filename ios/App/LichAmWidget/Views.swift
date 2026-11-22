@@ -73,6 +73,48 @@ struct KindDot: View {
     }
 }
 
+
+// MARK: - Hình minh họa (trăng, con giáp, Bé Thỏ) đóng gói trong thư mục WidgetArt
+
+enum Art {
+    static let chi = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"]
+    static func ui(_ name: String) -> UIImage? {
+        guard let p = Bundle.main.path(forResource: name, ofType: "png", inDirectory: "WidgetArt") else { return nil }
+        return UIImage(contentsOfFile: p)
+    }
+    static func moon(_ d: DayInfo) -> String? { d.hasLunar ? String(format: "widget_moon_%02d", Swift.max(1, Swift.min(30, d.ld))) : nil }
+    static func giap(canChi: String) -> String? {
+        guard let last = canChi.split(separator: " ").last, let i = chi.firstIndex(of: String(last)) else { return nil }
+        return String(format: "widget_giap_%02d", i)
+    }
+    static func giapOfYear(_ ly: Int) -> String { String(format: "widget_giap_%02d", ((ly + 8) % 12 + 12) % 12) }
+    static func icon(_ it: UpcomingItem) -> String {
+        if it.kind == 3 {
+            if it.title.hasPrefix("Sinh nhật") { return "widget_ic_bday" }
+            if it.title.hasPrefix("Cúng") { return "widget_ic_lotus" }
+            if !it.title.hasPrefix("Giỗ") { return "widget_ic_kyniem" }
+            return "widget_ic_gio"
+        }
+        return it.kind == 1 ? "widget_ic_moon" : "widget_ic_le"
+    }
+    static func mascot(for title: String, kind: Int) -> String {
+        if title.hasPrefix("Sinh nhật") { return "widget_mascot_cake" }
+        if title.hasPrefix("Tết") || kind == 1 { return "widget_mascot_lantern" }
+        if title.hasPrefix("Giỗ") || kind == 3 { return "widget_mascot_pray" }
+        return "widget_mascot_star"
+    }
+}
+
+struct ArtImage: View {
+    let name: String?
+    let size: CGFloat
+    var body: some View {
+        if let n = name, let img = Art.ui(n) {
+            Image(uiImage: img).resizable().interpolation(.high).scaledToFit().frame(width: size, height: size)
+        }
+    }
+}
+
 // MARK: - 1. Tờ lịch (nhỏ)
 
 struct SheetView: View {
@@ -101,19 +143,24 @@ struct SheetView: View {
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
                 .emboss()
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay(ArtImage(name: Art.moon(day), size: 24), alignment: .topTrailing)
             Text(LunarText.thu[day.wd])
                 .font(.bvp(12, .semibold))
                 .foregroundColor(.muted)
             if day.hasLunar {
-                Text("\(day.lunarShort) Âm · \(day.canChi)")
-                    .font(.bvp(11, .bold))
-                    .foregroundColor(.goldInk)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.goldSoft).overlay(Capsule().stroke(Color.goldLine, lineWidth: 1)))
+                HStack(spacing: 3) {
+                    ArtImage(name: Art.giap(canChi: day.canChi), size: 16)
+                    Text("\(day.lunarShort) · \(day.canChi)")
+                        .font(.bvp(11, .bold))
+                        .foregroundColor(.goldInk)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+                .padding(.leading, 3)
+                .padding(.trailing, 8)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Color.goldSoft).overlay(Capsule().stroke(Color.goldLine, lineWidth: 1)))
             }
             if !note.isEmpty {
                 Text(note)
@@ -165,6 +212,7 @@ struct AgendaView: View {
             .frame(width: 128)
             .frame(maxHeight: .infinity)
             .background(RoundedRectangle(cornerRadius: 16).fill(Paint.lacquer))
+            .overlay(ArtImage(name: Art.moon(day), size: 20).padding(7), alignment: .topTrailing)
             .shadow(color: Color.hex(0x5C0A07).opacity(0.35), radius: 6, x: 0, y: 3)
 
             VStack(alignment: .leading, spacing: 7) {
@@ -174,8 +222,8 @@ struct AgendaView: View {
                 }
                 ForEach(items) { it in
                     let c = EpochDay.civil(it.epoch)
-                    HStack(alignment: .top, spacing: 8) {
-                        KindDot(kind: it.kind).padding(.top, 5)
+                    HStack(alignment: .center, spacing: 8) {
+                        ArtImage(name: Art.icon(it), size: 24)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(it.title)
                                 .font(.bvp(13, .semibold))
@@ -213,6 +261,7 @@ struct MonthView: View {
         let user = UserStore()
         VStack(spacing: 4) {
             HStack(alignment: .center) {
+                if t.hasLunar { ArtImage(name: Art.giapOfYear(t.ly), size: 22) }
                 Text("Tháng \(t.m) · \(String(t.y))").font(.bvp(15, .bold)).foregroundColor(.white)
                 Spacer()
                 if f.hasLunar {
@@ -263,10 +312,12 @@ struct MonthCell: View {
                 .font(.bvp(14, .semibold))
                 .foregroundColor(isToday ? .white : (day.wd == 0 ? .accent : .ink))
             if day.hasLunar {
-                Text((day.ld == 1 ? "\(day.ld)/\(day.lm)" : "\(day.ld)") + (gio ? " •" : ""))
+                Text(day.ld == 1 ? "\(day.ld)/\(day.lm)" : "\(day.ld)")
                     .font(.bvp(10, moon || gio ? .bold : .regular))
                     .foregroundColor(isToday ? .onLacquerGold : (moon ? .goldInk : day.kind == 2 ? .accent : .muted))
             }
+            Circle().fill(isToday ? Color.white : (gio ? Color.hex(0xB3261E) : day.kind == 2 ? Color.hex(0xD29A34) : Color.clear))
+                .frame(width: 4, height: 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -303,13 +354,17 @@ struct CountdownView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
-                Text(diff <= 0 ? "Hôm nay" : "\(diff)")
-                    .font(.digits(52))
-                    .foregroundColor(.white)
-                    .minimumScaleFactor(0.4)
-                    .lineLimit(1)
-                    .emboss(true)
-                    .frame(maxHeight: .infinity)
+                HStack(alignment: .bottom, spacing: 0) {
+                    Text(diff <= 0 ? "Hôm nay" : "\(diff)")
+                        .font(.digits(50))
+                        .foregroundColor(.white)
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(1)
+                        .emboss(true)
+                    Spacer(minLength: 0)
+                    ArtImage(name: Art.mascot(for: t.title, kind: 0), size: 54)
+                }
+                .frame(maxHeight: .infinity)
                 if diff > 0 {
                     Text("ngày nữa").font(.bvp(12, .semibold)).foregroundColor(.onLacquerSoft)
                 }
@@ -368,5 +423,90 @@ struct LockView: View {
         }
         .widgetBackground(pad: false) { Color.clear }
         .widgetURL(DeepLink.url(for: entry.date))
+    }
+}
+
+
+// MARK: - 6. Ngày hôm nay (nhỏ) — giống biểu tượng Lịch của iOS
+
+struct IconView: View {
+    let entry: DayEntry
+
+    var body: some View {
+        let day = CalStore.shared.day(EpochDay.of(date: entry.date))
+        VStack(spacing: 0) {
+            Text(LunarText.thu[day.wd].uppercased())
+                .font(.bvp(15, .bold))
+                .foregroundColor(.hex(0xE0352B))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text("\(day.d)")
+                .font(.system(size: 86, weight: .light))
+                .foregroundColor(.ink)
+                .minimumScaleFactor(0.5)
+                .lineLimit(1)
+                .frame(maxHeight: .infinity)
+            if day.hasLunar {
+                HStack(spacing: 4) {
+                    ArtImage(name: Art.moon(day), size: 16)
+                    Text("\(day.lunarShort) Âm").font(.bvp(13, .semibold)).foregroundColor(.muted)
+                }
+            }
+        }
+        .widgetBackground { LinearGradient(colors: [.dyn(0xFFFFFF, 0x2A221D), .dyn(0xF6F1EA, 0x1C1612)], startPoint: .top, endPoint: .bottom) }
+        .widgetURL(DeepLink.url(for: entry.date))
+    }
+}
+
+// MARK: - 7. Bé Thỏ nhắc (vừa)
+
+struct TipView: View {
+    let entry: DayEntry
+
+    var body: some View {
+        let today = EpochDay.of(date: entry.date)
+        let day = CalStore.shared.day(today)
+        let next = UserStore().upcoming(from: today, days: 8, max: 1).first
+        let h = Calendar.current.component(.hour, from: entry.date)
+        let greet = h < 11 ? "Chào buổi sáng!" : h < 14 ? "Chào buổi trưa!" : h < 18 ? "Chào buổi chiều!" : "Chào buổi tối!"
+        let msg = TipView.message(today: today, day: day, next: next)
+        HStack(spacing: 8) {
+            ArtImage(name: msg.1, size: 78)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(greet) \(LunarText.thu[day.wd]) \(day.d)/\(day.m)")
+                    .font(.bvp(13, .bold)).foregroundColor(.accent).lineLimit(1).minimumScaleFactor(0.8)
+                Text(msg.0)
+                    .font(.bvp(13)).foregroundColor(.ink).lineLimit(3).minimumScaleFactor(0.85)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.card).overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.goldLine.opacity(0.6), lineWidth: 1)))
+            VStack(spacing: 2) {
+                ArtImage(name: Art.moon(day), size: 30)
+                if day.hasLunar { Text(day.lunarShort).font(.bvp(11, .semibold)).foregroundColor(.muted) }
+            }
+        }
+        .widgetBackground { Paint.paper }
+        .widgetURL(DeepLink.url(for: entry.date))
+    }
+
+    static func message(today: Int, day: DayInfo, next: UpcomingItem?) -> (String, String) {
+        if let n = next {
+            let diff = n.epoch - today
+            let lead = diff <= 0 ? "Hôm nay: " : diff == 1 ? "Ngày mai: " : "Còn \(diff) ngày nữa là "
+            return (lead + n.title, Art.mascot(for: n.title, kind: n.kind))
+        }
+        if day.hasLunar && (day.ld == 1 || day.ld == 15) {
+            return ("Hôm nay \(day.ld == 15 ? "Rằm" : "mùng Một"), nhớ thắp nén hương nhé", "widget_mascot_lantern")
+        }
+        if day.hasLunar {
+            for i in 1...31 {
+                let x = CalStore.shared.day(today + i)
+                if x.ld == 1 || x.ld == 15 {
+                    return ("Còn \(i) ngày nữa đến \(x.ld == 15 ? "Rằm" : "mùng Một") · \(day.good ? "ngày Hoàng đạo" : "ngày Hắc đạo")", "widget_mascot_wave")
+                }
+            }
+        }
+        return ("Mở app để xem lịch âm hôm nay", "widget_mascot_wave")
     }
 }

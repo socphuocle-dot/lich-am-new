@@ -23,6 +23,7 @@ public final class WidgetUpdater {
         update(ctx, m, AgendaWidget.class, m.getAppWidgetIds(new ComponentName(ctx, AgendaWidget.class)));
         update(ctx, m, MonthWidget.class, m.getAppWidgetIds(new ComponentName(ctx, MonthWidget.class)));
         update(ctx, m, CountdownWidget.class, m.getAppWidgetIds(new ComponentName(ctx, CountdownWidget.class)));
+        update(ctx, m, TipWidget.class, m.getAppWidgetIds(new ComponentName(ctx, TipWidget.class)));
         scheduleMidnight(ctx);
     }
 
@@ -35,6 +36,7 @@ public final class WidgetUpdater {
                 else if (type == SheetWidget.class) v = WidgetRender.sheet(ctx);
                 else if (type == AgendaWidget.class) v = WidgetRender.agenda(ctx);
                 else if (type == MonthWidget.class) v = WidgetRender.month(ctx);
+                else if (type == TipWidget.class) v = WidgetRender.tip(ctx);
                 else v = WidgetRender.countdown(ctx);
                 m.updateAppWidget(id, v);
             } catch (Exception e) {

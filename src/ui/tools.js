@@ -2,7 +2,8 @@
 import { getState, setState, updateSettings } from '../store.js';
 import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, canChiYear, canChiDay, THU, LUNAR_MONTH_NAME, lunarMonthLength, leapMonthOfYear } from '../lib/lunar.js';
 import { nextGioDate, titleOf } from '../lib/events.js';
-import { OCCASIONS, occasion, fillText, plainText, ngayAmText } from '../lib/vankhan.js';
+import { STARS, HANS } from '../lib/saohan.js';
+import { OCCASIONS, occasion, fillText, plainText, ngayAmText, REGIONS, mamFor, hasRegional } from '../lib/vankhan.js';
 import { ACTIVITIES, findGoodDays, rateDay, birthChi, yearWarnings } from '../lib/goodday.js';
 import { esc, ICON, backHeader, toast } from './common.js';
 import { isNative } from '../notify.js';
@@ -21,7 +22,7 @@ const vk = { tab: 'van', wake: null, editHost: false, reading: -1, deadText: '',
 /** Dịp sắp tới gần nhất có văn khấn (để gợi ý đầu danh sách) */
 // Biểu tượng màu cho từng bài khấn
 const VK_ICON = {
-  gio: ['incense', 'rose'], tienthuong: ['incense', 'rose'], mung1: ['cal', 'butter'], ram: ['lantern', 'butter'], thantai: ['coin', 'butter'],
+  gio: ['incense', 'rose'], tienthuong: ['incense', 'rose'], mung1: ['cal', 'butter'], ram: ['lantern', 'butter'], thantai: ['coin', 'butter'], giaihan: ['starlamp', 'lilac'], tambao: ['lotus', 'butter'], ducong: ['incense', 'peach'], thanhmau: ['frame', 'rose'], thanhhoang: ['house', 'mint'],
   ongtao: ['fish', 'peach'], tatnien: ['tray', 'peach'], giaothua: ['lantern', 'rose'], tet: ['lantern', 'rose'], hoavang: ['card', 'rose'],
   ramgieng: ['lantern', 'butter'], thanhminh: ['lotus', 'mint'], doanngo: ['tray', 'mint'], vulan: ['lotus', 'lilac'], chungsinh: ['lotus', 'lilac'],
   cungtuan: ['lotus', 'lilac'], tuan100: ['lotus', 'lilac'], giodau: ['incense', 'lilac'], giohet: ['incense', 'lilac'],
@@ -43,13 +44,15 @@ export function nextOccasion() {
 export function renderVankhanList(params) {
   const mamMode = params.tab === 'mam';
   const nx = nextOccasion();
-  const groups = [...new Set(OCCASIONS.map((o) => o.group))];
-  const nxO = nx && occasion(nx.id);
+  const allGroups = [...new Set(OCCASIONS.map((o) => o.group))];
+  // ?g=chua: chỉ hiện nhóm "Đi lễ chùa, đền, phủ" (mở từ Tiện ích)
+  const groups = params.g === 'chua' ? allGroups.filter((g) => g.startsWith('Đi lễ')) : allGroups;
+  const nxO = params.g ? null : nx && occasion(nx.id);
   return `<div class="screen no-nav" data-screen="vankhan-list">
-  ${backHeader(mamMode ? 'Mâm cúng theo dịp' : 'Văn khấn & mâm cúng', '#/today', mamMode ? 'Danh sách đồ lễ, đánh dấu khi đã chuẩn bị' : 'Bản cổ truyền · tự điền ngày, tên, địa chỉ')}
+  ${backHeader(mamMode ? 'Mâm cúng theo dịp' : params.g === 'chua' ? 'Văn khấn đi lễ' : 'Văn khấn & mâm cúng', params.g ? '#/tienich' : '#/today', mamMode ? 'Danh sách đồ lễ, đánh dấu khi đã chuẩn bị' : 'Bản cổ truyền · tự điền ngày, tên, địa chỉ')}
   <main class="body" style="gap:14px">
     <section class="banner red" aria-hidden="false"><span class="bn-cloud a">${cloud(80, '#F6D27A', .5)}</span><span class="bn-cloud b">${cloud(60, '#F6D27A', .35)}</span>
-      <div class="col grow" style="gap:4px;position:relative"><b>Văn khấn cổ truyền</b><span>24 bài · tự điền ngày, tên, địa chỉ · đọc to cho ông bà nghe</span></div><div class="bn-mascot">${mascot('pray', 92)}</div></section>
+      <div class="col grow" style="gap:4px;position:relative"><b>${params.g === 'chua' ? 'Đi lễ chùa, đền, phủ' : 'Văn khấn cổ truyền'}</b><span>${params.g === 'chua' ? 'Khấn Đức Ông, Tam Bảo, Thánh Mẫu, Thành Hoàng · có lễ vật nên sắm' : `${OCCASIONS.length} bài · tự điền ngày, tên, địa chỉ · đọc to cho ông bà nghe`}</span></div><div class="bn-mascot">${mascot('pray', 92)}</div></section>
     ${nxO ? `<a class="dark-card col" href="#/vankhan/${nx.id}?jd=${nx.jd}${mamMode ? '&tab=mam' : ''}" style="text-decoration:none;gap:6px">
       <span class="m small">${nx.diff === 0 ? 'Hôm nay' : nx.diff === 1 ? 'Ngày mai' : `Còn ${nx.diff} ngày`} · ${esc(nxO.when)}</span>
       <div class="h2row" style="align-items:center"><span class="serif" style="font-size:1.2rem;font-weight:700">${esc(nxO.title)}</span>${ICON.next(22)}</div></a>` : ''}
@@ -60,6 +63,14 @@ export function renderVankhanList(params) {
     <p class="small muted" style="line-height:1.6;margin:0">Văn khấn soạn theo khuôn cổ truyền phổ biến. Mỗi vùng, mỗi nhà có thể khác — bạn cứ đọc theo lòng thành, không cần đúng từng chữ.</p>
   </main>
 </div>`;
+}
+
+/** Văn khấn dâng sao: điền sao chiếu mệnh, hạn của người khấn (truyền qua link từ màn Sao hạn) */
+function starCtx(params) {
+  const star = STARS.find((x) => x.id === params.sao);
+  if (!star) return { baiVi: 'chư vị Tinh quân Cửu Diệu', saoHan: 'chúng con kính dâng sao cầu an, giải hạn cho cả gia đình' };
+  const han = params.han ? HANS[params.han] : null;
+  return { baiVi: star.baiVi, saoHan: `${params.tuoi ? 'người tuổi ' + params.tuoi + ' ' : ''}gặp sao ${star.name} chiếu mệnh${han ? ', hạn ' + han.name : ''}` };
 }
 
 function vkContext(params) {
@@ -75,7 +86,8 @@ function vkContext(params) {
     ctx: {
       ngayAm: ngayAmText(l.day, l.month, l.leap), nam: canChiYear(l.year), tinChu: host, diaChi: st.settings.address || '',
       hoTen, nguoiMat: g ? withRel(g) : vk.deadText,
-      tenBe: st.settings.babyName || ''
+      tenBe: st.settings.babyName || '',
+      ...starCtx(params)
     }
   };
 }
@@ -89,7 +101,9 @@ export function renderVankhan(params) {
   const filled = fillText(o.text, ctx);
   const missing = new Set(filled.flat().filter((x) => x.missing).map((x) => x.key));
   const size = st.settings.vkSize ?? 1;
-  const ckKey = `${o.id}:${g ? g.id + ':' : ''}${l.year}-${l.month}-${l.day}`;
+  const region = hasRegional(o) ? (st.settings.region || 'chung') : 'chung';
+  const mam = mamFor(o, region);
+  const ckKey = `${o.id}:${g ? g.id + ':' : ''}${l.year}-${l.month}-${l.day}${region !== 'chung' ? ':' + region : ''}`;
   const checked = new Set(st.checklists[ckKey] || []);
   const s = jdToDate(jd);
   const needsDead = o.text.some((p) => p.includes('{nguoiMat}'));
@@ -112,13 +126,14 @@ export function renderVankhan(params) {
       <span class="small muted">Tên, địa chỉ được nhớ cho mọi bài khấn. Bấm vào chữ tô màu trong bài để sửa nhanh.</span>
     </div></details>`;
   const body = vk.tab === 'mam'
-    ? `<section class="card list" aria-label="Mâm cúng gợi ý">${o.mam.map((m, i) => `<button type="button" class="item" data-ck="${i}" role="checkbox" aria-checked="${checked.has(i)}">
+    ? `${hasRegional(o) ? `<div class="seg" role="group" aria-label="Vùng miền">${REGIONS.map(([k, lb]) => `<button type="button" data-region="${k}" aria-pressed="${region === k}">${lb.replace('Miền ', '')}</button>`).join('')}</div>` : ''}
+      <section class="card list" aria-label="Mâm cúng gợi ý">${mam.map((m, i) => `<button type="button" class="item" data-ck="${i}" role="checkbox" aria-checked="${checked.has(i)}">
         <span class="tick ${checked.has(i) ? 'on' : ''}" aria-hidden="true"></span><span class="grow t" style="${checked.has(i) ? 'text-decoration:line-through;color:var(--muted)' : ''}">${esc(m)}</span></button>`).join('')}</section>
-      <span class="small muted">Đã chuẩn bị ${checked.size}/${o.mam.length} · đánh dấu được lưu riêng cho dịp này</span>`
+      <span class="small muted">Đã chuẩn bị ${checked.size}/${mam.length} · ${region !== 'chung' ? 'theo phong tục ' + REGIONS.find((r) => r[0] === region)[1].replace('Miền', 'miền') + ' · ' : ''}mỗi nhà mỗi lệ, thêm bớt cho hợp gia đình</span>`
     : `${infoCard}<div class="tts-bar" role="group" aria-label="Đọc to">
         <button type="button" class="btn big-read ${vk.reading >= 0 ? 'ghost' : ''}" data-act="${vk.reading >= 0 ? 'tts-stop' : 'tts-play'}">${vk.reading >= 0 ? '■ Dừng đọc' : '▶ Đọc to'}</button>
         <div class="seg" style="flex:1.3" aria-label="Tốc độ đọc">${[[0.8, 'Chậm'], [1, 'Vừa'], [1.15, 'Nhanh']].map(([v, lb]) => `<button type="button" data-rate="${v}" aria-pressed="${(st.settings.ttsRate ?? 1) === v}">${lb}</button>`).join('')}</div></div>
-      <article class="vk-text size-${size}" aria-label="${esc(o.title)}">${filled.map((p, i) => `<p class="${vk.reading === i ? 'reading' : ''}" data-p="${i}">${p.map((x) => x.fill ? `<b class="vk-fill" data-field="${x.key}" role="button" tabindex="0" title="Bấm để sửa">${esc(x.t)}</b>` : x.missing ? `<mark data-field="${x.key}" role="button" tabindex="0" title="Bấm để điền">${esc(x.t)}</mark>` : esc(x.t).replace(/\n/g, '<br>')).join('')}</p>`).join('')}</article>`;
+      <article class="vk-text size-${size}" aria-label="${esc(o.title)}">${filled.map((p, i) => `<p class="${vk.reading === i ? 'reading' : ''}" data-p="${i}">${p.map((x) => x.fill && (x.key === 'baiVi' || x.key === 'saoHan') ? `<b class="vk-fill">${esc(x.t)}</b>` : x.fill ? `<b class="vk-fill" data-field="${x.key}" role="button" tabindex="0" title="Bấm để sửa">${esc(x.t)}</b>` : x.missing ? `<mark data-field="${x.key}" role="button" tabindex="0" title="Bấm để điền">${esc(x.t)}</mark>` : esc(x.t).replace(/\n/g, '<br>')).join('')}</p>`).join('')}</article>`;
   return `<div class="screen no-nav" data-screen="vankhan">
   ${backHeader(o.title.replace('Văn khấn ', '').replace(/^./, (c) => c.toUpperCase()), '#/vankhan', `${THU[(jd + 1) % 7]} ${s.day}/${s.month} · âm ${l.day}/${l.month}${l.leap ? ' nhuận' : ''}`)}
   <main class="body" style="gap:14px">
@@ -186,10 +201,13 @@ export function mountVankhan(root, rerender, params) {
     if (t) { vk.tab = t.dataset.tab; rerender(); return; }
     const rt = e.target.closest('[data-rate]');
     if (rt) { updateSettings({ ttsRate: Number(rt.dataset.rate) }); return; }
+    const rg = e.target.closest('[data-region]');
+    if (rg) { updateSettings({ region: rg.dataset.region }); return; }
     const ck = e.target.closest('[data-ck]');
     if (ck) {
       const { l, g } = vkContext(params);
-      const key = `${o.id}:${g ? g.id + ':' : ''}${l.year}-${l.month}-${l.day}`;
+      const region = hasRegional(o) ? (getState().settings.region || 'chung') : 'chung';
+      const key = `${o.id}:${g ? g.id + ':' : ''}${l.year}-${l.month}-${l.day}${region !== 'chung' ? ':' + region : ''}`;
       const i = Number(ck.dataset.ck);
       setState((s) => {
         const cur = new Set(s.checklists[key] || []);

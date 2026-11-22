@@ -1,5 +1,7 @@
 // Tab "Tiện ích": danh mục dịch vụ, gom theo nhóm như một "siêu ứng dụng" — dễ tìm, bấm một chạm.
 import { getState } from '../store.js';
+import { jdFromDate, canChiYear } from '../lib/lunar.js';
+import { tetYear, lunarJd } from '../lib/tet.js';
 import { ICON, nav } from './common.js';
 import { CONTACT_PHONE, ZALO_URL, CHANNEL } from '../config.js';
 import { isNative } from '../notify.js';
@@ -21,7 +23,7 @@ const I = {
 };
 
 const tile = (href, icon, label, tone) => `<a class="svc ${tone}" href="${href}"><span class="pastel ${PASTEL[tone]}">${icon}</span><span class="lbl">${label}</span></a>`;
-const PASTEL = { red: 'rose', gold: 'butter', jade: 'mint', ink: 'sky', violet: 'lilac' };
+const PASTEL = { red: 'rose', gold: 'butter', jade: 'mint', ink: 'sky', violet: 'lilac', peach: 'peach' };
 
 function group(title, sub, tone, tiles) {
   return `<section class="svc-group" aria-label="${title}">
@@ -33,6 +35,16 @@ export function renderHub() {
   const st = getState();
   const culture = st.settings.culture;
   const firstGio = st.gios.find((g) => (g.type || 'gio') === 'gio');
+  const n = new Date();
+  const Y = tetYear();
+  const daysToTet = lunarJd(1, 1, Y) - jdFromDate(n.getDate(), n.getMonth() + 1, n.getFullYear());
+  const tetSoon = daysToTet <= 90; // gần Tết: đưa nhóm Tết lên đầu
+  const tetGroup = group(`Tết ${canChiYear(Y)}`, daysToTet > 0 ? `Còn ${daysToTet} ngày · việc cần làm, xông đất, xuất hành` : 'Chúc mừng năm mới!', 'red', [
+    tile('#/chuanbitet', ILL.lantern(), 'Chuẩn bị Tết', 'red'),
+    tile('#/xongdat', ILL.house(), 'Xông đất', 'red'),
+    tile('#/xuathanh', ILL.compass(), 'Xuất hành', 'red'),
+    tile('#/vankhan/tet?tab=mam', ILL.tray(), 'Mâm cỗ Tết', 'red')
+  ]);
   const count = (t) => st.gios.filter((g) => (g.type || 'gio') === t).length;
   return `<div class="screen" data-screen="hub">
   <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div></header>
@@ -40,35 +52,43 @@ export function renderHub() {
     <section class="banner red hub-banner"><span class="bn-lanterns">${lanternString()}</span><span class="bn-cloud a">${cloud(90, '#F6D27A', .45)}</span>
       <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — Bé Thỏ Ngọc lo hết!</span></div>
       <div class="bn-mascot">${mascot('book', 96)}</div></section>
+    ${tetSoon ? tetGroup : ''}
     ${group('Ngày của gia đình', `${count('gio')} giỗ · ${count('sinhnhat')} sinh nhật · ${count('kyniem')} kỷ niệm`, 'red', [
       tile('#/add?type=gio', ILL.incense(), 'Ngày giỗ', 'red'),
       tile('#/add?type=sinhnhat', ILL.cake(), 'Sinh nhật', 'red'),
       tile('#/add?type=kyniem', ILL.rings(), 'Kỷ niệm', 'red'),
-      tile('#/add?type=gio&tang=1', ILL.lotus(), 'Người mới mất', 'red')
+      tile('#/add?type=gio&tang=1', ILL.lotus(), 'Tang lễ', 'red')
     ])}
-    ${group('Cúng lễ', 'Văn khấn, đồ lễ, mời họ hàng', 'gold', [
+    ${group('Cúng lễ', 'Văn khấn, đồ lễ, đi chùa, ăn chay', 'gold', [
       tile('#/vankhan', ILL.book(), 'Văn khấn', 'gold'),
       tile('#/vankhan?tab=mam', ILL.tray(), 'Mâm cúng', 'gold'),
-      tile(firstGio ? `#/thiep/${firstGio.id}` : '#/thiep', ILL.card(), 'Thiệp mời giỗ', 'gold'),
-      tile('#/vankhan/thantai', ILL.coin(), 'Thần Tài', 'gold')
+      tile('#/vankhan?g=chua', ILL.pagoda(), 'Đi lễ chùa', 'gold'),
+      tile('#/anchay', ILL.bowl(), 'Ăn chay', 'gold')
     ])}
-    ${group('Xem ngày', 'Tốt xấu, đổi ngày, giờ hoàng đạo', 'jade', [
+    ${group('Dòng họ', 'Gia phả, tưởng nhớ, hiếu hỉ, chuẩn bị giỗ', 'peach', [
+      tile('#/giapha', ILL.tree(), 'Gia phả', 'peach'),
+      tile('#/tuongnho', ILL.frame(), 'Tưởng nhớ', 'peach'),
+      tile('#/hieuhi', ILL.hongbao(), 'Hiếu hỉ', 'peach'),
+      tile('#/chuanbi', ILL.checklist(), 'Chuẩn bị giỗ', 'peach')
+    ])}
+    ${group('Xem ngày', 'Tốt xấu, sao hạn, tuổi, mệnh', 'jade', [
       tile('#/ngaytot', ILL.star(), 'Ngày tốt', 'jade'),
-      tile('#/doingay', ILL.swap(), 'Đổi ngày', 'jade'),
-      tile('#/calendar', ILL.cal(), 'Lịch tháng', 'jade'),
-      tile('#/today', ILL.sun(), 'Giờ hoàng đạo', 'jade')
+      tile('#/saohan', ILL.starlamp(), 'Sao hạn', 'jade'),
+      tile('#/xemtuoi', ILL.scroll(), 'Xem tuổi', 'jade'),
+      tile('#/menh', ILL.wuxing(), 'Mệnh, màu', 'jade')
     ])}
+    ${tetSoon ? '' : tetGroup}
     ${group('Kết nối gia đình', 'Chia sẻ, đồng bộ, sao lưu', 'ink', [
-      tile('#/chiase', ILL.family(), 'Chia sẻ cả họ', 'ink'),
-      tile('#/nhap', ILL.inbox(), 'Nhập từ người thân', 'ink'),
-      tile('#/contacts', ILL.contacts(), 'Sinh nhật danh bạ', 'ink'),
-      tile('#/settings', ILL.cloud(), 'Đồng bộ, sao lưu', 'ink')
+      tile('#/chiase', ILL.family(), 'Chia sẻ', 'ink'),
+      tile('#/nhap', ILL.inbox(), 'Nhập vào', 'ink'),
+      tile('#/contacts', ILL.contacts(), 'Danh bạ', 'ink'),
+      tile('#/settings', ILL.cloud(), 'Sao lưu', 'ink')
     ])}
     ${culture ? group('Văn hóa', 'Tử Vi, Thần số, Kinh Dịch', 'violet', [
       tile('#/tuvi', ILL.taiji(), 'Tử Vi', 'violet'),
-      tile('#/numerology', ILL.num(), 'Thần số học', 'violet'),
+      tile('#/numerology', ILL.num(), 'Thần số', 'violet'),
       tile('#/iching', ILL.hexa(), 'Kinh Dịch', 'violet'),
-      tile('#/culture', ILL.face(), 'Hồ sơ của bạn', 'violet')
+      tile('#/culture', ILL.face(), 'Hồ sơ', 'violet')
     ]) : ''}
     <section class="card pad col contact" style="gap:12px" aria-label="Liên hệ tác giả">
       <div class="row" style="gap:12px"><span class="contact-m">${mascot('phone', 64)}</span>

@@ -1,4 +1,5 @@
 // Lập lịch thông báo cục bộ từ danh sách sự kiện. Không cần server.
+import { nextChayDays } from './tet.js';
 import { listEvents, jdOfDate } from './events.js';
 import { jdToDate } from './lunar.js';
 import { vanKhanFor } from './vankhan.js';
@@ -58,6 +59,13 @@ export function buildSchedule(now, state) {
     }
     if (ev.kind === 'le' && s.holidayOn) {
       push(ev.key + '-morn', ev.jd, '07:00', `Hôm nay: ${ev.title}`, `${ev.solar.day}/${ev.solar.month} · ${lunarTxt}`);
+    }
+  }
+  // Ngày chay: nhắc tối hôm trước
+  if (s.chay && s.chay !== 'off' && s.chayRemind !== false) {
+    for (const d of nextChayDays(s.chay, fromJd, 45)) {
+      cur = { kind: 'chay', jd: d.jd };
+      push('chay-' + d.jd, d.jd - 1, s.chayTime || '19:00', 'Mai là ngày ăn chay', `${d.lunar.day}/${d.lunar.month} âm lịch · chuẩn bị món chay cho cả nhà`, '');
     }
   }
   out.sort((a, b) => a.at - b.at);

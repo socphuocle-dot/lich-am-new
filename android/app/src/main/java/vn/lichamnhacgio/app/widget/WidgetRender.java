@@ -76,6 +76,47 @@ public final class WidgetRender {
         return d.good ? "Ngày Hoàng đạo" : "Ngày Hắc đạo";
     }
 
+    private static final String[] CHI = {"Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"};
+
+    static int drawable(Context ctx, String name) {
+        return ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
+    }
+
+    /** Ảnh trăng đúng pha theo ngày âm (1–30) */
+    static int moonRes(Context ctx, CalendarStore.Day d) {
+        int ld = CalendarStore.hasLunar(d) ? Math.max(1, Math.min(30, d.ld)) : 15;
+        return drawable(ctx, String.format(java.util.Locale.US, "widget_moon_%02d", ld));
+    }
+
+    /** Ảnh con giáp theo chi (lấy từ chữ cuối của can chi, vd "Kỷ Hợi" → Lợn) */
+    static int giapRes(Context ctx, String canChi) {
+        String last = canChi == null ? "" : canChi.trim();
+        int sp = last.lastIndexOf(' ');
+        if (sp >= 0) last = last.substring(sp + 1);
+        for (int i = 0; i < 12; i++) if (CHI[i].equals(last)) return drawable(ctx, String.format(java.util.Locale.US, "widget_giap_%02d", i));
+        return 0;
+    }
+
+    static int giapOfYear(Context ctx, int lunarYear) {
+        return drawable(ctx, String.format(java.util.Locale.US, "widget_giap_%02d", Math.floorMod(lunarYear + 8, 12)));
+    }
+
+    /** Biểu tượng màu cho từng loại sự kiện trong danh sách */
+    static int eventIcon(Context ctx, UserStore.Item it) {
+        if (it.kind == 3) {
+            if (it.title.startsWith("Sinh nhật")) return drawable(ctx, "widget_ic_bday");
+            if (it.title.startsWith("Cúng")) return drawable(ctx, "widget_ic_lotus");
+            if (!it.title.startsWith("Giỗ")) return drawable(ctx, "widget_ic_kyniem");
+            return drawable(ctx, "widget_ic_gio");
+        }
+        return drawable(ctx, it.kind == 1 ? "widget_ic_moon" : "widget_ic_le");
+    }
+
+    private static void setImage(RemoteViews v, int viewId, int res) {
+        if (res != 0) { v.setImageViewResource(viewId, res); v.setViewVisibility(viewId, View.VISIBLE); }
+        else v.setViewVisibility(viewId, View.GONE);
+    }
+
     private static void fillSheet(Context ctx, RemoteViews v, CalendarStore.Day d, boolean longBand) {
         v.setTextViewText(R.id.band, (longBand ? "THÁNG " : "TH ") + d.m + " · " + d.y);
         v.setTextViewText(R.id.day, String.valueOf(d.d));
@@ -87,9 +128,10 @@ public final class WidgetRender {
     public static RemoteViews icon(Context ctx) {
         CalendarStore.Day d = CalendarStore.day(ctx, CalendarStore.todayEpoch());
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_icon);
-        v.setTextViewText(R.id.weekday, d.wd == 0 ? "CN" : "THỨ " + (d.wd + 1));
+        v.setTextViewText(R.id.weekday, CalendarStore.THU[d.wd].toUpperCase(new java.util.Locale("vi")));
         v.setTextViewText(R.id.day, String.valueOf(d.d));
-        v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) + " ÂL" : "");
+        v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) : "");
+        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }
@@ -100,6 +142,8 @@ public final class WidgetRender {
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_sheet);
         fillSheet(ctx, v, d, true);
         v.setTextViewText(R.id.note, todayNote(ctx, d));
+        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
+        setImage(v, R.id.giap, giapRes(ctx, d.canChi));
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }
@@ -116,6 +160,7 @@ public final class WidgetRender {
         CalendarStore.Day d = CalendarStore.day(ctx, today);
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_agenda);
         fillSheet(ctx, v, d, false);
+        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
         List<UserStore.Item> items = UserStore.upcoming(ctx, today, 120, 3);
         for (int i = 0; i < ROW.length; i++) {
             if (i < items.size()) {
@@ -126,7 +171,7 @@ public final class WidgetRender {
                 v.setTextViewText(TITLE[i], it.title);
                 v.setTextViewText(COUNT[i], "· " + countText(it.epoch - today));
                 v.setTextColor(DATE[i], ctx.getColor(it.kind == 3 ? R.color.widget_ink : it.kind == 1 ? R.color.widget_gold_ink : R.color.widget_accent));
-                v.setInt(DOT[i], "setBackgroundResource", it.kind == 3 ? R.drawable.widget_dot_gio : it.kind == 1 ? R.drawable.widget_dot_moon : R.drawable.widget_dot_le);
+                setImage(v, DOT[i], eventIcon(ctx, it));
             } else {
                 v.setViewVisibility(ROW[i], View.GONE);
             }
@@ -153,6 +198,7 @@ public final class WidgetRender {
             sub = "Âm: tháng " + f.lm + (f.lm != l.lm ? "–" + l.lm : "") + " " + CalendarStore.yearName(ctx, l.ly);
         }
         v.setTextViewText(R.id.subtitle, sub);
+        setImage(v, R.id.giap, CalendarStore.hasLunar(t) ? giapOfYear(ctx, t.ly) : 0);
         int accent = ctx.getColor(R.color.widget_accent);
         int muted = ctx.getColor(R.color.widget_muted);
         int gold = ctx.getColor(R.color.widget_gold_ink);
@@ -160,6 +206,12 @@ public final class WidgetRender {
         int onAccent = ctx.getColor(R.color.widget_on_accent);
         int totalCells = lead + (int) (nextFirst - first);
         v.setViewVisibility(R.id.week5, totalCells > 35 ? View.VISIBLE : View.GONE);
+        java.util.Map<Long, Boolean> bdays = new java.util.HashMap<>();
+        for (UserStore.Item g : UserStore.gios(ctx, first, (int) (nextFirst - first))) {
+            boolean b = g.title.startsWith("Sinh nhật") || (!g.title.startsWith("Giỗ") && !g.title.startsWith("Cúng"));
+            Boolean prev = bdays.get(g.epoch);
+            bdays.put(g.epoch, prev == null ? b : (prev && b)); // ngày có cả giỗ và sinh nhật: ưu tiên chấm giỗ
+        }
         for (int i = 0; i < 42; i++) {
             int id = ctx.getResources().getIdentifier("cell_" + i, "id", ctx.getPackageName());
             if (id == 0) continue;
@@ -180,13 +232,21 @@ public final class WidgetRender {
             int dayColor = isToday ? onAccent : (d.wd == 0 ? accent : ink);
             sb.setSpan(new ForegroundColorSpan(dayColor), 0, num.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             if (CalendarStore.hasLunar(d)) {
-                String lun = "\n" + (d.ld == 1 ? d.ld + "/" + d.lm : String.valueOf(d.ld)) + (gio ? " •" : "");
+                String lun = "\n" + (d.ld == 1 ? d.ld + "/" + d.lm : String.valueOf(d.ld));
                 int s = sb.length();
                 sb.append(lun);
                 sb.setSpan(new RelativeSizeSpan(0.72f), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 int lc = isToday ? onAccent : (moon ? gold : d.kind == 2 ? accent : muted);
                 sb.setSpan(new ForegroundColorSpan(lc), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                if (moon || gio) sb.setSpan(new StyleSpan(Typeface.BOLD), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (moon) sb.setSpan(new StyleSpan(Typeface.BOLD), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                // Chấm màu theo loại: đỏ = giỗ, hồng = sinh nhật/kỷ niệm, vàng = lễ
+                int dot = gio ? (Boolean.TRUE.equals(bdays.get(e)) ? 0xFFE0568A : 0xFFB3261E) : d.kind == 2 ? 0xFFD29A34 : 0;
+                if (dot != 0) {
+                    int s2 = sb.length();
+                    sb.append("\n●");
+                    sb.setSpan(new RelativeSizeSpan(0.5f), s2, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    sb.setSpan(new ForegroundColorSpan(isToday ? onAccent : dot), s2, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
             }
             v.setTextViewText(id, sb);
             v.setInt(id, "setBackgroundResource", isToday ? R.drawable.widget_cell_today : (moon ? R.drawable.widget_cell_moon : 0));
@@ -210,11 +270,50 @@ public final class WidgetRender {
             int[] c = CalendarStore.civil(it.epoch);
             CalendarStore.Day d = CalendarStore.day(ctx, it.epoch);
             v.setTextViewText(R.id.title, it.title);
+            setImage(v, R.id.mascot, drawable(ctx, it.title.startsWith("Sinh nhật") ? "widget_mascot_cake" : it.title.startsWith("Tết") ? "widget_mascot_lantern" : it.title.startsWith("Giỗ") ? "widget_mascot_pray" : "widget_mascot_star"));
             v.setTextViewText(R.id.number, diff <= 0 ? "Hôm nay" : String.valueOf(diff));
             v.setTextViewText(R.id.unit, diff <= 0 ? "" : "ngày nữa");
             v.setTextViewText(R.id.date, CalendarStore.THU[d.wd] + ", " + c[2] + "/" + c[1]
                     + (CalendarStore.hasLunar(d) ? " · " + CalendarStore.lunarShort(d) + " Âm" : ""));
         }
+        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+        return v;
+    }
+
+    /* 5. Bé Thỏ nhắc (4×1) — linh vật + lời nhắn theo ngày */
+    public static RemoteViews tip(Context ctx) {
+        long today = CalendarStore.todayEpoch();
+        CalendarStore.Day d = CalendarStore.day(ctx, today);
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_tip);
+        int h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        String greet = h < 11 ? "Chào buổi sáng!" : h < 14 ? "Chào buổi trưa!" : h < 18 ? "Chào buổi chiều!" : "Chào buổi tối!";
+        v.setTextViewText(R.id.tip_title, greet + " " + CalendarStore.THU[d.wd] + " " + d.d + "/" + d.m);
+        String text;
+        String pose = "wave";
+        List<UserStore.Item> next = UserStore.upcoming(ctx, today, 8, 1);
+        if (!next.isEmpty()) {
+            UserStore.Item it = next.get(0);
+            long diff = it.epoch - today;
+            text = (diff <= 0 ? "Hôm nay: " : diff == 1 ? "Ngày mai: " : "Còn " + diff + " ngày nữa là ") + it.title;
+            pose = it.title.startsWith("Sinh nhật") ? "cake" : it.kind == 1 ? "lantern" : it.kind == 3 ? "pray" : "star";
+        } else if (CalendarStore.hasLunar(d) && (d.ld == 1 || d.ld == 15)) {
+            text = "Hôm nay " + (d.ld == 15 ? "Rằm" : "mùng Một") + ", nhớ thắp nén hương nhé";
+            pose = "lantern";
+        } else if (CalendarStore.hasLunar(d)) {
+            int n = 0;
+            String target = "";
+            for (int i = 1; i <= 31; i++) {
+                CalendarStore.Day x = CalendarStore.day(ctx, today + i);
+                if (x.ld == 1 || x.ld == 15) { n = i; target = x.ld == 15 ? "Rằm" : "mùng Một"; break; }
+            }
+            text = n > 0 ? "Còn " + n + " ngày nữa đến " + target + " · " + (d.good ? "ngày Hoàng đạo" : "ngày Hắc đạo") : lunarLine(ctx, d);
+        } else {
+            text = "Mở app để xem lịch âm hôm nay";
+        }
+        v.setTextViewText(R.id.tip_text, text);
+        setImage(v, R.id.mascot, drawable(ctx, "widget_mascot_" + pose));
+        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
+        v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) : "");
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }

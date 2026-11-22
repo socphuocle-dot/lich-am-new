@@ -3,6 +3,6 @@
     android:minWidth="40dp" android:minHeight="40dp"
     android:targetCellWidth="1" android:targetCellHeight="1"
     android:updatePeriodMillis="1800000"
-    android:initialLayout="@layout/widget_icon" android:previewLayout="@layout/widget_icon"
+    android:initialLayout="@layout/widget_icon" android:previewLayout="@layout/widget_icon" android:previewImage="@drawable/widget_preview_icon"
     android:resizeMode="horizontal|vertical" android:widgetCategory="home_screen"
     android:description="@string/widget_icon_desc" />

@@ -66,6 +66,10 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_month_info" />
         </receiver>
+        <receiver android:name=".widget.TipWidget" android:label="Bé Thỏ nhắc" android:exported="false">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tip_info" />
+        </receiver>
         <receiver android:name=".widget.CountdownWidget" android:label="Đếm ngược" android:exported="false">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_countdown_info" />

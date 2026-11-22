@@ -17,4 +17,6 @@
     <color name="widget_lacquer_deep">#5C0A07</color>
     <color name="widget_on_lacquer_gold">#F6D891</color>
     <color name="widget_on_lacquer_soft">#F6DDD7</color>
+    <color name="widget_icon_top">#2A221D</color>
+    <color name="widget_icon_bottom">#1C1612</color>
 </resources>

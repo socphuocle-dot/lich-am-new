@@ -67,6 +67,19 @@ export const OCCASIONS = [
     mam: ['Hương, nến', 'Hoa tươi', 'Hoa quả', 'Trầu cau, rượu, nước', 'Heo quay hoặc thịt luộc (tùy dịp)', 'Vàng thỏi giấy (nếu gia đình dùng)']
   },
   {
+    id: 'giaihan', title: 'Văn khấn dâng sao giải hạn', group: 'Hằng tháng', when: 'Ngày cúng của sao chiếu mệnh (đầu năm, hoặc hằng tháng), buổi tối, ngoài trời hướng theo sao',
+    text: [PHAT, LAY_TROI,
+      'Con kính lạy Đức Hiệu Thiên chí tôn Kim Quyết Ngọc Hoàng Thượng đế.\nCon kính lạy Đức Trung Thiên Tinh chủ Bắc Cực Tử Vi Tràng Sinh Đại đế.\nCon kính lạy Đức Tả Nam Tào Lục Ty Duyên Thọ Tinh quân, Đức Hữu Bắc Đẩu Cửu Hàm Giải Ách Tinh quân.',
+      'Con kính lạy Đức {baiVi}.\nCon kính lạy Đức Thượng Thanh Bản mệnh Nguyên Thần Chân quân.',
+      'Hôm nay là {ngayAm} năm {nam}.',
+      TIN_CHU,
+      'Năm nay {saoHan}.',
+      'Chúng con thành tâm sắm lễ hương hoa, đèn nến, phẩm vật, thắp nén tâm hương dâng lên trước án, kính dâng sao giải hạn.',
+      'Cúi xin chư vị Tinh quân giáng lâm chứng giám, giải trừ vận hạn, ban phúc lộc thọ, cho toàn gia bình an, mạnh khỏe, công việc hanh thông, vạn sự tốt lành.',
+      ...KET],
+    mam: ['Hương, hoa tươi, mâm ngũ quả', 'Đèn hoặc nến đúng số của sao chiếu mệnh', 'Bài vị ghi tên sao (đặt giữa mâm)', 'Ngũ oản (5 chén xôi, chè hoặc bánh)', 'Trầu cau, trà, rượu, nước sạch', 'Tiền vàng, gạo, muối', 'Hình nhân thế mạng (tùy nơi, nếu gia đình dùng)']
+  },
+  {
     id: 'ongtao', title: 'Văn khấn ông Công ông Táo', group: 'Tết', when: 'Trước 12 giờ trưa ngày 23 tháng Chạp',
     text: [PHAT, LAY_TROI,
       'Con kính lạy ngài Đông Trù Tư mệnh Táo phủ Thần quân.',
@@ -221,6 +234,51 @@ export const OCCASIONS = [
   },
   // ===== Việc lớn =====
   {
+    id: 'tambao', title: 'Văn khấn lễ Phật tại chùa (Tam Bảo)', group: 'Đi lễ chùa, đền, phủ', when: 'Khi đến chùa, lễ tại chính điện sau khi lễ Đức Ông',
+    text: ['Nam mô A Di Đà Phật! (3 lần)',
+      'Con kính lạy mười phương chư Phật, chư vị Bồ Tát, chư Hiền thánh Tăng.\nCon kính lạy Đức Bản sư Thích Ca Mâu Ni Phật, Đức A Di Đà Phật, Đức Quán Thế Âm Bồ Tát.',
+      'Hôm nay là {ngayAm} năm {nam}.',
+      TIN_CHU,
+      'Đệ tử con thành tâm đến chùa, kính dâng lễ chay, hương hoa, quả thực lên trước Tam Bảo.',
+      'Cúi xin chư Phật, chư Bồ Tát từ bi gia hộ cho đệ tử cùng gia đình thân tâm an lạc, tai qua nạn khỏi, phúc tuệ tăng trưởng, mọi việc hanh thông.',
+      'Đệ tử con xin nguyện sống thiện lành, giữ lòng thanh tịnh, làm điều phúc đức.',
+      'Nam mô A Di Đà Phật! (3 lần)'],
+    mam: ['Hương, hoa tươi (sen, huệ, cúc)', 'Hoa quả tươi', 'Oản, xôi chè, bánh kẹo (lễ chay)', 'Nước sạch', 'Không dâng đồ mặn, vàng mã ở ban Phật']
+  },
+  {
+    id: 'ducong', title: 'Văn khấn Đức Ông (Đức Chúa Ông)', group: 'Đi lễ chùa, đền, phủ', when: 'Lễ đầu tiên khi vào chùa, tại ban Đức Ông',
+    text: ['Nam mô A Di Đà Phật! (3 lần)',
+      'Con kính lạy Đức Ông Tu Đạt Đa Cấp Cô Độc Trưởng giả, Già Lam Chân Tể, cùng chư vị Hộ pháp Thiện thần trong cảnh chùa.',
+      'Hôm nay là {ngayAm} năm {nam}.',
+      TIN_CHU,
+      'Con thành tâm đến cửa chùa, kính dâng hương hoa lễ vật, kính xin Đức Ông chứng minh cho con được vào lễ Phật, lễ Thánh.',
+      'Cúi xin Đức Ông che chở cho gia đình con bình an, mạnh khỏe, công việc thuận lợi.',
+      'Con lễ bạc tâm thành, cúi xin chứng giám.', 'Nam mô A Di Đà Phật! (3 lần)'],
+    mam: ['Hương, hoa tươi', 'Hoa quả', 'Oản, xôi chè', 'Có thể dâng lễ mặn ở ban Đức Ông (tùy chùa)', 'Nước sạch']
+  },
+  {
+    id: 'thanhmau', title: 'Văn khấn Thánh Mẫu tại đền, phủ', group: 'Đi lễ chùa, đền, phủ', when: 'Lễ tại ban Mẫu ở đền, phủ (thường đầu năm, mùng 1, rằm)',
+    text: ['Nam mô A Di Đà Phật! (3 lần)',
+      'Con kính lạy Tam tòa Thánh Mẫu: Mẫu Thượng Thiên, Mẫu Thượng Ngàn, Mẫu Thoải.\nCon kính lạy chư vị Thánh hiền, Quan lớn, Chầu bà, Ông Hoàng, Cô, Cậu trong đền phủ.',
+      'Hôm nay là {ngayAm} năm {nam}.',
+      TIN_CHU,
+      'Con thành tâm đến cửa đền, kính dâng hương hoa, lễ vật, kính lễ trước án Thánh Mẫu.',
+      'Cúi xin Thánh Mẫu và chư vị Thánh hiền thương xót, phù hộ độ trì cho con cùng gia đình mạnh khỏe, bình an, buôn bán hanh thông, cầu tài đắc tài, cầu lộc đắc lộc.',
+      'Con lễ bạc tâm thành, cúi xin chứng giám.', 'Nam mô A Di Đà Phật! (3 lần)'],
+    mam: ['Hương, hoa tươi', 'Mâm ngũ quả', 'Trầu cau, rượu, nước', 'Oản, xôi chè, bánh kẹo', 'Lễ đồ sơn trang: gương, lược, quạt (tùy phủ)', 'Tiền vàng (tùy đền)']
+  },
+  {
+    id: 'thanhhoang', title: 'Văn khấn Thành Hoàng tại đình làng', group: 'Đi lễ chùa, đền, phủ', when: 'Khi lễ đình làng: đầu năm, ngày hội làng',
+    text: ['Nam mô A Di Đà Phật! (3 lần)',
+      'Con kính lạy Đức Thành Hoàng bản cảnh, chư vị Tôn thần cai quản đình làng {diaChi}.',
+      'Hôm nay là {ngayAm} năm {nam}.',
+      TIN_CHU,
+      'Con thành tâm đến đình làng, kính dâng hương hoa, lễ vật, tưởng nhớ công đức các ngài đã che chở cho dân làng.',
+      'Cúi xin các ngài phù hộ cho dân làng an khang thịnh vượng, mưa thuận gió hòa, gia đình con bình an, mọi sự tốt lành.',
+      'Con lễ bạc tâm thành, cúi xin chứng giám.', 'Nam mô A Di Đà Phật! (3 lần)'],
+    mam: ['Hương, hoa tươi', 'Mâm ngũ quả', 'Trầu cau, rượu, nước', 'Xôi, gà luộc (tùy lệ làng)', 'Tiền vàng']
+  },
+  {
     id: 'nhaptrach', title: 'Văn khấn nhập trạch (về nhà mới)', group: 'Việc lớn', when: 'Ngày giờ tốt khi dọn về nhà mới',
     text: [PHAT, LAY_TROI, LAY_THAN,
       'Con kính lạy các ngài Thần linh, Thổ địa, Táo quân và chư vị Tôn thần cai quản ngôi nhà này.',
@@ -330,3 +388,51 @@ export function fillText(paragraphs, ctx) {
 
 /** Văn bản thuần để sao chép / chia sẻ */
 export const plainText = (filled) => filled.map((p) => p.map((x) => x.t).join('')).join('\n\n');
+
+/* ===== Mâm cúng theo vùng miền (Bắc · Trung · Nam). Không có thì dùng danh sách chung ở trên. ===== */
+export const REGIONS = [['chung', 'Chung'], ['bac', 'Miền Bắc'], ['trung', 'Miền Trung'], ['nam', 'Miền Nam']];
+const TET = {
+  bac: ['Hương, nến (đèn dầu)', 'Hoa đào, hoa cúc', 'Mâm ngũ quả: chuối xanh, bưởi, phật thủ, quất, hồng', 'Bánh chưng', 'Gà luộc, xôi gấc', 'Giò lụa, nem rán, thịt đông', 'Canh măng, canh bóng hoặc canh miến', 'Dưa hành', 'Trầu cau, rượu, chè, bánh mứt'],
+  trung: ['Hương, nến', 'Hoa mai, hoa cúc', 'Mâm ngũ quả tùy mùa: chuối, dưa hấu, phật thủ, thanh long', 'Bánh tét hoặc bánh chưng', 'Gà luộc, xôi', 'Thịt heo ngâm nước mắm, tré, nem chua', 'Giò, chả', 'Dưa món, củ kiệu', 'Trầu cau, rượu, trà, bánh mứt'],
+  nam: ['Hương, nến', 'Hoa mai vàng, cúc vạn thọ', 'Mâm ngũ quả "cầu vừa đủ xài": mãng cầu, dừa, đu đủ, xoài, sung', 'Bánh tét', 'Thịt kho hột vịt', 'Canh khổ qua nhồi thịt', 'Chả giò', 'Dưa giá, củ kiệu tôm khô', 'Trầu cau, rượu, trà, bánh mứt']
+};
+export const MAM_VUNG = {
+  tet: TET, tatnien: TET, giaothua: { bac: TET.bac, trung: TET.trung, nam: TET.nam },
+  gio: {
+    bac: ['Hương, nến', 'Hoa cúc, hoa huệ', 'Mâm ngũ quả', 'Xôi, gà luộc', 'Giò lụa, nem rán', 'Canh măng hoặc canh miến', 'Món xào, dưa hành', 'Trầu cau, rượu, nước', 'Vàng mã (nếu gia đình dùng)'],
+    trung: ['Hương, nến', 'Hoa cúc, hoa huệ', 'Hoa quả', 'Xôi, gà luộc', 'Thịt heo luộc, bánh tráng', 'Nem, chả, tré', 'Bánh ít, bánh tét', 'Canh, món xào', 'Trầu cau, rượu, nước'],
+    nam: ['Hương, nến', 'Hoa cúc, hoa huệ', 'Mâm ngũ quả', 'Thịt kho hột vịt', 'Canh khổ qua hoặc canh bóng', 'Gỏi, chả giò', 'Xôi, chè', 'Bánh ít lá gai', 'Trầu cau, rượu, trà']
+  },
+  ongtao: {
+    bac: ['Hương, nến', 'Hoa tươi, mâm ngũ quả', 'Mũ ông Công (2 mũ ông, 1 mũ bà), áo, hia', 'Cá chép sống thả chậu nước (phóng sinh sau lễ)', 'Xôi, gà luộc, giò', 'Canh, món xào', 'Trầu cau, rượu, nước', 'Vàng mã'],
+    trung: ['Hương, nến', 'Hoa tươi, hoa quả', 'Mũ áo ông Táo, ngựa giấy', 'Cá chép giấy', 'Xôi, chè', 'Gà luộc hoặc mâm chay', 'Trầu cau, rượu, nước', 'Vàng mã'],
+    nam: ['Hương, nến', 'Hoa cúc vạn thọ, hoa quả', 'Mũ áo ông Táo, cá chép hoặc ngựa giấy', 'Kẹo mè, kẹo thèo lèo', 'Chè, xôi', 'Trầu cau, rượu, trà', 'Vàng mã']
+  },
+  ram: {
+    bac: ['Hương, nến', 'Hoa tươi (cúc, hồng)', 'Hoa quả', 'Trầu cau, rượu, nước', 'Xôi, chè hoặc vài món mặn (tùy gia đình)'],
+    trung: ['Hương, nến', 'Hoa tươi', 'Hoa quả', 'Nước sạch, trầu cau', 'Mâm chay hoặc vài món đơn giản'],
+    nam: ['Hương, nến', 'Bông cúc vạn thọ, hoa huệ', 'Trái cây (mãng cầu, xoài, dưa hấu)', 'Chè, xôi', 'Nước sạch, trà']
+  },
+  mung1: {
+    bac: ['Hương, nến', 'Hoa tươi', 'Hoa quả', 'Trầu cau, rượu, nước'],
+    trung: ['Hương, nến', 'Hoa tươi', 'Hoa quả', 'Nước sạch, trầu cau'],
+    nam: ['Hương, nến', 'Bông cúc vạn thọ', 'Trái cây', 'Nước sạch, trà']
+  },
+  vulan: {
+    bac: ['Hương, nến', 'Hoa sen, hoa cúc', 'Mâm ngũ quả', 'Xôi, gà luộc hoặc mâm chay', 'Canh, nem, giò', 'Quần áo giấy, vàng mã', 'Trầu cau, rượu, nước'],
+    trung: ['Hương, nến', 'Hoa sen', 'Hoa quả', 'Mâm cỗ chay (đậu hũ, rau củ)', 'Bánh ít, chè', 'Quần áo giấy', 'Trầu cau, nước'],
+    nam: ['Hương, nến', 'Hoa sen, hoa huệ', 'Trái cây', 'Mâm chay: đậu hũ, chả chay, canh rau củ', 'Chè, xôi', 'Nước, trà']
+  },
+  doanngo: {
+    bac: ['Hương, nến', 'Hoa tươi', 'Rượu nếp cái', 'Bánh tro (bánh gio)', 'Mận, vải, dưa hấu', 'Chè kê hoặc xôi', 'Trầu cau, nước'],
+    trung: ['Hương, nến', 'Hoa tươi', 'Cơm rượu (rượu nếp)', 'Bánh ú, chè kê', 'Trái cây (mận, dưa hấu)', 'Trầu cau, nước'],
+    nam: ['Hương, nến', 'Hoa tươi', 'Bánh ú tro, bánh ú nhân thịt', 'Chè trôi nước, xôi', 'Trái cây (mận, xoài, chôm chôm)', 'Vịt luộc (tùy gia đình)', 'Nước, trà']
+  }
+};
+MAM_VUNG.tienthuong = MAM_VUNG.gio; MAM_VUNG.giodau = MAM_VUNG.gio; MAM_VUNG.giohet = MAM_VUNG.gio; MAM_VUNG.ramgieng = MAM_VUNG.ram;
+
+/** Danh sách đồ lễ theo vùng (rơi về danh sách chung nếu dịp này không có bản riêng) */
+export function mamFor(o, region = 'chung') {
+  return (region !== 'chung' && MAM_VUNG[o.id]?.[region]) || o.mam;
+}
+export const hasRegional = (o) => !!MAM_VUNG[o.id];

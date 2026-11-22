@@ -38,7 +38,7 @@ describe('Văn khấn', () => {
     for (const o of OCCASIONS) {
       expect(o.text.length).toBeGreaterThan(4);
       expect(o.mam.length).toBeGreaterThan(3);
-      for (const p of o.text) for (const k of p.matchAll(/\{(\w+)\}/g)) expect(['ngayAm', 'nam', 'tinChu', 'diaChi', 'hoTen', 'nguoiMat', 'tenBe']).toContain(k[1]);
+      for (const p of o.text) for (const k of p.matchAll(/\{(\w+)\}/g)) expect(['ngayAm', 'nam', 'tinChu', 'diaChi', 'hoTen', 'nguoiMat', 'tenBe', 'baiVi', 'saoHan']).toContain(k[1]);
     }
   });
   it('chọn đúng bài theo ngày', () => {

@@ -42,7 +42,8 @@ export function renderCalendar() {
     const evs = byJd.get(jd) || [];
     const moon = l.day === 1 || l.day === 15;
     const cls = ['cell', wd === 0 ? 'sun' : '', moon ? 'moon' : '', jd === todayJd ? 'today' : ''].join(' ');
-    const mk = evs.some((e) => e.kind === 'gio') ? '<span class="mk gio"></span>' : evs.some((e) => e.kind === 'le') ? '<span class="mk le"></span>' : '';
+    const kinds = new Set(evs.map((e) => (e.kind === 'gio' ? (['sinhnhat', 'kyniem'].includes(e.gio?.type) ? 'bd' : 'gio') : e.kind === 'le' ? 'le' : '')).filter(Boolean));
+    const mk = kinds.size ? `<span class="dots">${['gio', 'bd', 'le'].filter((k) => kinds.has(k)).map((k) => `<i class="ev ${k}"></i>`).join('')}</span>` : '';
     const lt = l.day === 1 ? `${l.day}/${l.month}${l.leap ? 'N' : ''}` : l.day;
     cells += `<button type="button" class="${cls}" data-jd="${jd}" aria-pressed="${jd === ui.sel}" aria-label="Ngày ${d} tháng ${ui.m}, âm lịch ${l.day} tháng ${l.month}${evs.length ? ', ' + esc(evs.map((e) => e.title).join(', ')) : ''}"><span class="d">${d}</span><span class="l">${lt}</span>${mk}</button>`;
   }
@@ -64,9 +65,10 @@ export function renderCalendar() {
       <div class="cal-grid">${cells}</div>
     </section>
     <div class="legend">
-      <span><b style="color:var(--gold-ink)">1/10</b> Mùng 1, Rằm</span>
-      <span><i class="mk gio" style="position:static;display:inline-block"></i> Ngày giỗ</span>
-      <span><i class="mk le" style="position:static;display:inline-block"></i> Ngày lễ</span>
+      <span><i class="ev moon"></i> Rằm, mùng 1</span>
+      <span><i class="ev gio"></i> Giỗ</span>
+      <span><i class="ev bd"></i> Sinh nhật</span>
+      <span><i class="ev le"></i> Lễ</span>
       ${ui.sel !== todayJd || ui.m !== now.getMonth() + 1 || ui.y !== now.getFullYear() ? '<button type="button" class="link" data-act="today">Về hôm nay</button>' : ''}
     </div>
     <section class="card pad col" style="gap:10px" aria-label="Chi tiết ngày đã chọn" data-test="detail">
