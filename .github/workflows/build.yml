@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 21 }
+        with: { distribution: temurin, java-version: 21, cache: gradle }
       - run: npm ci
       - name: Lấy khóa ký từ GitHub Secrets
         env:
@@ -57,7 +57,9 @@ jobs:
         run: |
           npm run build
           npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew --no-daemon assembleRelease
+          cd android && chmod +x gradlew
+          # Thử lại tối đa 3 lần nếu kho thư viện Maven báo quá tải (lỗi 429)
+          for i in 1 2 3; do ./gradlew --no-daemon assembleRelease && break; [ $i = 3 ] && exit 1; echo "Thử lại sau 60 giây..."; sleep 60; done
           mkdir -p ../out && cp app/build/outputs/apk/release/app-release.apk ../out/LichAm-NhacGio.apk
       # AAB cho Google Play: ẩn mã QR (chính sách cửa hàng), cập nhật qua Play
       - name: Build AAB (Google Play)
@@ -68,7 +70,8 @@ jobs:
         run: |
           npm run build
           npx cap sync android
-          cd android && ./gradlew --no-daemon bundleRelease
+          cd android
+          for i in 1 2 3; do ./gradlew --no-daemon bundleRelease && break; [ $i = 3 ] && exit 1; echo "Thử lại sau 60 giây..."; sleep 60; done
           cp app/build/outputs/bundle/release/app-release.aab ../out/LichAm-NhacGio-GooglePlay.aab
       - uses: actions/upload-artifact@v4
         with: { name: android, path: out/* }

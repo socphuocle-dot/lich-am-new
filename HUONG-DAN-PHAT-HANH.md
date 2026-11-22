@@ -77,7 +77,7 @@ Link gửi khách:
 ## Cập nhật về sau
 
 Sửa code → GitHub Desktop: Commit → Push → trang web tự cập nhật.
-Muốn khách Android nhận bản mới: tạo release mới với tag lớn hơn (`v1.0.1`, `v1.5.0`…). Link tải APK cũ tự trỏ sang bản mới.
+Muốn khách Android nhận bản mới: tạo release mới với tag lớn hơn (`v1.0.1`, `v1.5.1`…). Link tải APK cũ tự trỏ sang bản mới.
 
 ## Lưu ý quan trọng
 
@@ -89,19 +89,23 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.5.0)
+## Cập nhật lên phiên bản mới (ví dụ 1.5.1)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.5.0` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.5.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.5.0` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.5.1` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.5.1` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.5.1` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.5.1
+- Sửa: một số máy mở app chỉ thấy màn hình vàng trống. App nay hiện giao diện ngay, không chờ các thành phần của máy (khôi phục sao lưu, link từ widget) — các việc đó chạy nền.
+- Nếu vẫn có lỗi khi mở, app hiện thông báo lỗi cụ thể để chụp gửi tác giả thay vì màn hình trống.
+- Build Android tự thử lại khi kho thư viện báo quá tải.
 
 ## Có gì mới ở 1.5.0
 - **Linh vật Bé Thỏ Ngọc** (thỏ trên cung trăng) với 9 dáng: vẫy chào, cầm đèn lồng, chắp tay, cầm sao, bưng bánh, cầm thư, cầm điện thoại, ôm sách, ngồi trên trăng — có lời nhắn theo ngày ở màn Hôm nay.
 - **12 con giáp kiểu Việt** (Mão = Mèo, Sửu = Trâu): ở năm/ngày/tháng can chi, giờ hoàng đạo, tuổi xung, tam hợp, giờ tốt, hồ sơ; **con giáp của năm** đứng cạnh Bé Thỏ, tự đổi theo năm âm.
 - **Trăng đúng pha** theo ngày âm trên tờ lịch; mây cát tường, đèn lồng, sao lấp lánh.
 - **23 biểu tượng màu** (bát hương, bánh sinh nhật, nhẫn cưới, hoa sen, mâm ngũ quả, cá chép ông Táo…) trong ô pastel nổi khối; mỗi bài văn khấn có biểu tượng riêng; băng-rôn minh họa đầu các màn.
-- Build: thống nhất một phiên bản Kotlin cho mọi plugin Android.
 
 ## Có gì mới ở 1.4.0
 - **Người mới mất**: bật khi thêm ngày giỗ → app tự tính và nhắc cúng tuần đầu (7 ngày), 49 ngày, 100 ngày, giỗ đầu (tiểu tường), giỗ hết (đại tường).

@@ -74,6 +74,13 @@ function parseHash() {
 
 let current = null;
 function render(scrollTop = false) {
+  try { renderInner(scrollTop); } catch (e) {
+    console.error(e);
+    (window.__showBootError || ((m) => { app.textContent = m; }))(`${e && e.message}\n${(e && e.stack) || ''}\nTrang: ${location.hash}\n\n${navigator.userAgent}`);
+  }
+}
+
+function renderInner(scrollTop = false) {
   let { name, params } = parseHash();
   let route = ROUTES[name];
   if (getState().onboarded && name === 'welcome') { replacing = true; location.replace('#/today'); return; }
@@ -173,17 +180,24 @@ if (Capacitor.isNativePlatform()) {
   CapApp.addListener('appUrlOpen', ({ url }) => { const h = routeFromUrl(url); if (h && location.hash !== h) location.hash = h; }).catch(() => {});
 }
 
+// Không để lời gọi plugin của máy chặn việc hiện giao diện: chờ tối đa vài giây rồi đi tiếp
+const withTimeout = (p, ms) => Promise.race([Promise.resolve(p).catch(() => null), new Promise((r) => setTimeout(() => r(null), ms))]);
+
 async function start() {
   if (Capacitor.isNativePlatform()) {
-    try { const l = await CapApp.getLaunchUrl(); const h = routeFromUrl(l?.url); if (h) { replacing = true; location.replace(h); } } catch { /* */ }
+    const l = await withTimeout(CapApp.getLaunchUrl(), 1200);
+    const h = routeFromUrl(l?.url);
+    if (h) { replacing = true; location.replace(h); }
   }
-  // Máy mới / cài lại: lấy lại dữ liệu từ bản sao lưu của hệ thống (Google / iCloud)
-  if (await restoreFromSystemIfEmpty()) setTimeout(() => toast('Đã khôi phục dữ liệu từ bản sao lưu của máy'), 600);
   applyLook();
   render(true);
   reschedule(getState(), 50);
   pushWidgetData(getState(), 100);
-  mirrorToSystem(getState());
+  // Máy mới / cài lại: lấy lại dữ liệu từ bản sao lưu của hệ thống (Google / iCloud) — chạy nền
+  withTimeout(restoreFromSystemIfEmpty(), 4000).then((ok) => {
+    if (ok) { applyLook(); render(true); setTimeout(() => toast('Đã khôi phục dữ liệu từ bản sao lưu của máy'), 400); }
+    mirrorToSystem(getState());
+  });
   if (getState().calSync?.enabled) autoSyncCalendar();
   setTimeout(() => checkUpdate(), 3000);
 }

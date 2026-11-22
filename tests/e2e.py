@@ -407,7 +407,7 @@ with sync_playwright() as p:
             expect(page.locator('[data-test="detail"]')).to_contain_text('Hỷ thần')
             page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
             page.click('[data-act="copy"]'); expect(page.locator('.toast')).to_contain_text('viết vài dòng')
-            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.5.0')
+            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.5.1')
             page.click('[data-act="copy"]')
             assert 'Thử góp ý' in page.evaluate('navigator.clipboard.readText()')
         check(f'[{vp_name}] Người mới mất: mốc 7/49/100 ngày, giỗ đầu, giỗ hết; văn khấn tang lễ; sao, hướng; góp ý', t_tang)

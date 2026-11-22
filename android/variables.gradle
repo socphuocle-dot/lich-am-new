@@ -1,7 +1,4 @@
 ext {
-    // Một phiên bản Kotlin chung cho mọi plugin (tránh lỗi nạp nhiều bản Kotlin)
-    kotlin_version = '2.2.20'
-    kotlinxCoroutinesVersion = '1.10.2'
     minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36
