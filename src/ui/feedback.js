@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { getState } from '../store.js';
 import { APP_VERSION, CHANNEL, REPO, CONTACT_PHONE, ZALO_URL } from '../config.js';
 import { esc, ICON, backHeader, toast } from './common.js';
+import { mascot } from './art.js';
 
 const fb = { kind: 'loi', text: '', info: true };
 const KINDS = [['loi', 'Báo lỗi'], ['gopy', 'Góp ý'], ['khac', 'Khác']];
@@ -33,7 +34,7 @@ export function renderFeedback() {
   ${backHeader('Góp ý & báo lỗi', '#/settings', 'Mỗi góp ý giúp app tốt hơn')}
   <main class="body" style="gap:14px">
     <section class="card pad col contact" style="gap:12px" aria-label="Liên hệ nhanh">
-      <div class="row" style="gap:12px"><span class="nudge-ic">${ICON.phone(20)}</span>
+      <div class="row" style="gap:12px"><span class="contact-m">${mascot('phone', 60)}</span>
         <span class="col grow"><b>Cần gấp? Gọi hoặc nhắn Zalo</b><span class="small muted">Lê Hữu Phước · ${CONTACT_PHONE.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')}</span></span></div>
       <div class="row" style="gap:8px"><a class="btn" style="flex:1;height:44px" href="tel:${CONTACT_PHONE}">${ICON.phone(18)} Gọi</a>
         <a class="btn ghost" style="flex:1;height:44px" href="${ZALO_URL}" rel="noopener">Nhắn Zalo</a></div></section>

@@ -2,6 +2,7 @@ import { getState, setState } from '../store.js';
 import { canChiYear, CHI, solarToLunar } from '../lib/lunar.js';
 import { lifePath, nameNumbers, birthdayNumber, personalYear, birthChart, MEANINGS, YEAR_MEANINGS } from '../lib/numerology.js';
 import { tossCoins, readCast, isYang, isMoving } from '../lib/iching.js';
+import { giap, giapName } from './zodiac.js';
 import { esc, ICON, nav, backHeader, toast } from './common.js';
 
 const HOURS = CHI.map((c, i) => { const s = (i * 2 + 23) % 24; return { i, label: `Giờ ${c} (${s}h–${(s + 2) % 24}h)` }; });
@@ -16,13 +17,14 @@ export function renderCulture() {
   if (ok) {
     const [y, m, d] = p.dob.split('-').map(Number);
     lp = lifePath(d, m, y).value;
-    tv = `${esc(p.name)} · ${d}/${m}/${y} · giờ ${CHI[p.hourChi]} · ${p.gender} · tuổi ${canChiYear(solarToLunar(d, m, y).year)}`;
+    const ty = canChiYear(solarToLunar(d, m, y).year);
+    tv = `${d}/${m}/${y} · giờ ${CHI[p.hourChi]} · ${p.gender} · tuổi ${ty} (con ${giapName(ty)})`;
   }
   return `<div class="screen" data-screen="culture">
   <header class="top"><div class="grow"><h1 tabindex="-1">Văn hóa</h1><span class="sub">Tử Vi, Thần số, Kinh Dịch · tính ngay trên máy</span></div></header>
   <main class="body" style="gap:12px">
     <a class="card pad row" href="#/profile" style="text-decoration:none;color:var(--ink)">
-      <div class="tile ink" style="border-radius:24px;width:48px;height:48px"><b>${ok ? esc(initials(p.name)) : '?'}</b></div>
+      ${ok ? `<span class="pastel butter giap-avatar">${giap(canChiYear(solarToLunar(...p.dob.split('-').map(Number).reverse()).year), 40)}</span>` : '<div class="tile ink" style="border-radius:24px;width:48px;height:48px"><b>?</b></div>'}
       <div class="col grow"><b>${ok ? esc(p.name) : 'Nhập ngày giờ sinh của bạn'}</b><span class="small muted">${ok ? tv : 'Cần cho lá số Tử Vi và Thần số học'}</span></div>
       <span class="chip" style="height:38px;display:inline-flex;align-items:center">${ok ? 'Sửa' : 'Nhập'}</span>
     </a>

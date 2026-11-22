@@ -1,6 +1,7 @@
 import { getState, updateSettings, exportData, importData, resetAll } from '../store.js';
 import { CHANNEL, DONATE_ACCOUNTS, DONATE_NAME, APP_VERSION, WEB_URL, CONTACT_PHONE, ZALO_URL } from '../config.js';
 import { updateSupported, checkUpdate, cmpVersion } from '../update.js';
+import { mascot } from './art.js';
 import { esc, ICON, nav, sw, backHeader, toast, timeSelect } from './common.js';
 import { titleOf } from '../lib/events.js';
 import { getLastSchedule, isNative, ensurePermission } from '../notify.js';
@@ -27,7 +28,7 @@ export function renderDonate() {
       </section>`
     : `<section class="card pad col" style="gap:8px"><b>Cảm ơn bạn đã dùng app!</b><span class="small muted" style="line-height:1.6">Nếu thấy hữu ích, hãy đánh giá 5 sao trên cửa hàng và giới thiệu cho người thân, bạn bè. Đó là sự ủng hộ lớn nhất để app luôn miễn phí, không quảng cáo.</span></section>`;
   return `<div class="screen" data-screen="donate">
-  <header class="top"><h1 tabindex="-1">Ủng hộ tác giả</h1></header>
+  <header class="top"><h1 tabindex="-1">Ủng hộ tác giả</h1><span class="donate-m">${mascot('cake', 70, 'Bé Thỏ Ngọc cảm ơn bạn')}</span></header>
   <main class="body">
     <section class="card col" style="padding:16px;gap:12px">
       <b class="serif" style="font-size:1.2rem;line-height:1.35">Một người làm, miễn phí cho mọi nhà.</b>

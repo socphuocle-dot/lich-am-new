@@ -7,6 +7,7 @@ import { encodeList, decodeList, sameEvent } from '../lib/share.js';
 import { WEB_URL } from '../config.js';
 import { esc, ICON, backHeader, toast } from './common.js';
 import { isNative } from '../notify.js';
+import { mascot, cloud } from './art.js';
 
 const sh = { picked: null };
 const dateText = (g) => (g.cal === 'am' ? `${g.day} tháng ${LUNAR_MONTH_NAME[g.month]} âm lịch` : `${g.day}/${g.month} dương lịch`);
@@ -29,6 +30,7 @@ export function renderShare() {
   return `<div class="screen no-nav" data-screen="share">
   ${backHeader('Chia sẻ cho cả họ', '#/reminders', 'Gửi danh sách để người thân không phải nhập lại')}
   <main class="body" style="gap:14px">
+    <section class="banner red"><span class="bn-cloud a">${cloud(80, '#F6D27A', .45)}</span><div class="col grow" style="gap:4px"><b>Gửi cả họ cùng nhớ</b><span>Chọn ngày giỗ, gửi link qua Zalo hoặc cho quét mã QR.</span></div><div class="bn-mascot">${mascot('letter', 92)}</div></section>
     ${st.gios.length ? `<div class="h2row"><h2 class="h" style="margin:0">Chọn ngày muốn gửi (${pick.length})</h2>
       <button type="button" class="chip" data-act="all">${pick.length === st.gios.length ? 'Bỏ chọn' : 'Chọn tất cả'}</button></div>
     <section class="card list" aria-label="Danh sách ngày">${st.gios.map((g) => `<button type="button" class="item" data-pick="${esc(g.id)}" role="checkbox" aria-checked="${sh.picked.has(g.id)}">
@@ -86,7 +88,8 @@ export function renderImport(params) {
   return `<div class="screen no-nav" data-screen="import">
   ${backHeader('Nhập từ người thân', st.onboarded ? '#/reminders' : '#/today', 'Danh sách giỗ người trong họ gửi cho bạn')}
   <main class="body" style="gap:14px">
-    ${!im.items ? `<section class="card pad col" style="gap:10px">
+    ${!im.items ? `<section class="banner red"><span class="bn-cloud a">${cloud(80, '#F6D27A', .45)}</span><div class="col grow" style="gap:4px"><b>Nhận danh sách giỗ</b><span>Người trong họ gửi link — bấm một chạm là có đủ ngày, khỏi gõ lại.</span></div><div class="bn-mascot">${mascot('letter', 92)}</div></section>
+    <section class="card pad col" style="gap:10px">
       <label class="lb" for="im-code">Dán link hoặc mã nhận được</label>
       <textarea id="im-code" class="input" rows="3" placeholder="https://…#/nhap?d=1…" spellcheck="false" autocomplete="off">${esc(im.code)}</textarea>
       ${im.error ? `<p class="err" role="alert">${esc(im.error)}</p>` : ''}

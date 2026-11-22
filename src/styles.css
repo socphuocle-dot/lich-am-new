@@ -445,3 +445,118 @@ body { background: radial-gradient(120% 60% at 50% -10%, var(--paper) 0%, var(--
 .contact .btn svg { margin-right: 4px; }
 .tile.bday { background: linear-gradient(165deg, #F7A3B5, #D2456A 55%, #A02446); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 4px rgba(0,0,0,.2), 0 6px 12px -6px rgba(160,36,70,.6); }
 .tile.bday span { color: rgba(255,255,255,.9); }
+
+/* Thông tin điền vào văn khấn */
+.vk-info { padding: 0; overflow: hidden; }
+.vk-info summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+.vk-info summary::-webkit-details-marker { display: none; }
+.vk-info summary .chip { height: 34px; padding: 0 12px; display: inline-flex; align-items: center; flex: none; }
+.vk-info[open] summary { border-bottom: 1px dashed var(--line2); margin-bottom: 8px; }
+.vk-text [data-field] { cursor: pointer; border-bottom: 1.5px dotted currentColor; }
+.vk-text [data-field]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.big-read { flex: 1; height: 54px; font-size: 1.08rem; }
+
+/* ===================== Minh họa: linh vật, trăng, mây, đèn lồng ===================== */
+.mascot { display: block; overflow: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-mascot .mascot, .bn-mascot .mascot, .welcome-art .mascot { animation: bob 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+  .hero-mascot .m-wave g, .hero-mascot .m-wave { animation: none; }
+  .bn-lanterns svg, .w-lanterns svg { animation: sway 4s ease-in-out infinite; transform-origin: 50% 0; }
+  .sheet-spark svg, .w-spark svg { animation: twinkle 2.4s ease-in-out infinite; }
+}
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+@keyframes twinkle { 0%, 100% { opacity: .35; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* Đầu màn Hôm nay: linh vật + bong bóng lời nhắn */
+.hero-top { align-items: flex-end; gap: 6px; padding-bottom: 2px; }
+.hero-mascot { flex: none; margin: 0 -4px -6px -6px; filter: drop-shadow(0 6px 8px rgba(90,40,20,.18)); }
+.bubble-wrap { min-width: 0; padding-bottom: 8px; }
+.bubble { position: relative; background: var(--card); border: 1px solid var(--line2); border-radius: 18px 18px 18px 6px; padding: 8px 12px 9px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 6px 14px -8px rgba(70,30,15,.35); }
+.bubble::before { content: ''; position: absolute; left: -7px; bottom: 8px; width: 12px; height: 12px; background: var(--card); border-left: 1px solid var(--line2); border-bottom: 1px solid var(--line2); transform: rotate(45deg); border-radius: 0 0 0 3px; }
+.bubble h1 { font-size: 1.22rem; margin: 0; line-height: 1.2; }
+.bubble .sub { font-size: .8rem; }
+.bubble-tip { display: block; font-size: .78rem; color: var(--accent); font-weight: 600; margin-top: 2px; line-height: 1.35; }
+
+/* Tờ lịch: trăng đúng pha, mây trong dải, sao lấp lánh */
+.sheet { position: relative; overflow: hidden; }
+.sheet-band { position: relative; overflow: hidden; }
+.band-cloud { position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; display: flex; }
+.band-cloud.l { left: -18px; } .band-cloud.r { right: -18px; transform: translateY(-50%) scaleX(-1); }
+.sheet-moon { position: absolute; right: 14px; top: 52px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .76rem; font-weight: 700; color: var(--gold-ink, #8C5F12); letter-spacing: .04em; }
+.sheet-spark { position: absolute; pointer-events: none; } .sheet-spark.s1 { left: 22px; top: 70px; } .sheet-spark.s2 { left: 52px; top: 104px; }
+
+/* Ô biểu tượng màu pastel (Hôm nay + Tiện ích): nổi khối, bóng kính */
+.pastel { position: relative; width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; flex: none;
+  background: linear-gradient(165deg, var(--p1), var(--p2)); border: 1px solid rgba(255,255,255,.7);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.95), inset 0 -3px 6px var(--p3), 0 1px 1px rgba(70,30,15,.08), 0 10px 16px -9px var(--p4); transition: transform .12s ease; }
+.pastel::before { content: ''; position: absolute; inset: 3px 5px auto; height: 42%; border-radius: 14px 14px 50% 50% / 14px 14px 18px 18px; background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0)); pointer-events: none; }
+.pastel svg { position: relative; width: 36px; height: 36px; filter: drop-shadow(0 2px 1.5px rgba(70,30,15,.18)); }
+.pastel.rose { --p1: #FFF3EF; --p2: #FFD0C4; --p3: rgba(220,90,70,.18); --p4: rgba(200,57,44,.45); }
+.pastel.butter { --p1: #FFF9E8; --p2: #FBE1A0; --p3: rgba(200,150,40,.2); --p4: rgba(180,130,30,.5); }
+.pastel.mint { --p1: #F0FBF5; --p2: #C4EBD6; --p3: rgba(40,140,90,.16); --p4: rgba(30,120,80,.4); }
+.pastel.peach { --p1: #FFF5EA; --p2: #FFD8B0; --p3: rgba(230,130,40,.18); --p4: rgba(220,120,40,.45); }
+.pastel.sky { --p1: #F1F7FF; --p2: #CFE2FA; --p3: rgba(60,110,190,.16); --p4: rgba(60,100,170,.4); }
+.pastel.lilac { --p1: #F7F2FF; --p2: #DED0F7; --p3: rgba(110,70,180,.16); --p4: rgba(100,60,170,.42); }
+:root[data-theme="dark"] .pastel { border-color: rgba(255,255,255,.12); filter: saturate(.95) brightness(.96); }
+.svc:active .pastel, .tool:active .pastel { transform: translateY(2px) scale(.97); }
+.tool .pastel { width: 50px; height: 50px; border-radius: 16px; }
+.tool .pastel svg { width: 32px; height: 32px; }
+.tool { gap: 7px; }
+@media (max-width: 370px) { .pastel { width: 50px; height: 50px; border-radius: 16px; } .pastel svg { width: 32px; height: 32px; } }
+
+/* Băng-rôn đầu màn (sơn mài + mây + linh vật) */
+.banner { position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; min-height: 104px; padding: 14px 6px 0 18px; border-radius: 22px; color: #FFF6EA;
+  background: radial-gradient(ellipse at 85% 20%, rgba(255,214,140,.32), transparent 55%), var(--grad-accent); box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(246,210,122,.5); }
+.banner.gold { background: radial-gradient(ellipse at 85% 20%, rgba(255,255,255,.35), transparent 55%), linear-gradient(160deg, #F1C866, #C98E25 55%, #8C5F12); color: #3A2508; }
+.banner b { font-family: 'Noto Serif', Georgia, serif; font-size: 1.15rem; line-height: 1.25; }
+.banner span { font-size: .82rem; opacity: .92; line-height: 1.4; }
+.banner .col { padding-bottom: 14px; z-index: 1; }
+.bn-mascot { flex: none; align-self: flex-end; margin-bottom: -6px; filter: drop-shadow(0 6px 8px rgba(0,0,0,.25)); z-index: 1; }
+.bn-cloud { position: absolute; pointer-events: none; } .bn-cloud.a { left: -14px; bottom: -6px; } .bn-cloud.b { right: 90px; top: 4px; }
+.bn-lanterns { position: absolute; right: 6px; top: -6px; pointer-events: none; opacity: .95; }
+.hub-banner .bn-mascot { margin-right: 2px; }
+
+/* Màn chào */
+.welcome-art { position: relative; min-height: 250px; display: grid; place-items: center; }
+.welcome-art .w-moon { position: absolute; right: 8%; top: 4px; }
+.welcome-art .w-lanterns { position: absolute; left: 0; top: -6px; }
+.welcome-art .w-cloud { position: absolute; } .welcome-art .w-cloud.a { left: 2%; bottom: 36px; } .welcome-art .w-cloud.b { right: 4%; bottom: 70px; }
+.welcome-art .w-spark { position: absolute; right: 20%; top: 18px; }
+.welcome-art .mascot { position: relative; filter: drop-shadow(0 10px 14px rgba(90,40,20,.22)); }
+
+/* Trạng thái trống, liên hệ, ủng hộ */
+.empty-art { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 18px 20px 22px; }
+.empty-art span { font-size: .86rem; color: var(--muted); max-width: 260px; line-height: 1.5; }
+.contact-m { flex: none; margin: -8px -4px -10px -6px; }
+.donate-m { margin-left: auto; margin-bottom: -10px; }
+.pastel.sm { width: 42px; height: 42px; border-radius: 13px; } .pastel.sm svg { width: 28px; height: 28px; }
+.pastel.sm::before { border-radius: 10px 10px 50% 50% / 10px 10px 14px 14px; }
+.bn-lanterns { right: 70px; top: -14px; transform: scale(.72); transform-origin: 100% 0; opacity: .85; }
+.banner .col { max-width: 64%; }
+
+/* ===== 12 con giáp ===== */
+.giap { display: inline-block; flex: none; vertical-align: middle; filter: drop-shadow(0 1.5px 1.5px rgba(70,30,15,.18)); }
+.hour { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 2px 7px; }
+.hour .giap { margin-bottom: 1px; }
+.hour.now .giap { filter: drop-shadow(0 0 0 #fff) drop-shadow(0 1px 2px rgba(0,0,0,.35)); background: rgba(255,255,255,.85); border-radius: 50%; }
+.year-giap { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; margin-top: 2px; }
+.year-giap .giap { grid-row: span 2; }
+.year-giap b { font-size: .9rem; line-height: 1.2; } .year-giap span { font-size: .78rem; color: var(--muted); line-height: 1.2; }
+.sheet-foot .r .cc { display: inline-flex; align-items: center; gap: 4px; }
+.xung { display: inline-flex; align-items: center; gap: 4px; }
+.cc-line { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.kv-giap { display: inline-flex; align-items: center; gap: 4px; }
+.gd-hours { display: flex; flex-wrap: wrap; gap: 6px; }
+.gd-hours > span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 4px; border-radius: 999px; background: var(--card); border: 1px solid var(--line2); color: var(--ink); font-weight: 600; font-size: .85rem; }
+.gd-hours small { color: var(--muted); font-weight: 500; }
+.giap-avatar { width: 52px; height: 52px; border-radius: 26px; }
+.giap-avatar::before { border-radius: 24px 24px 50% 50%; }
+/* Con giáp của năm đứng cạnh Bé Thỏ */
+.hero-mascot { position: relative; }
+.year-pal { position: absolute; right: -10px; bottom: 2px; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 40% 30%, #FFF9E8, #FBE1A0); border: 2px solid #fff; box-shadow: 0 6px 12px -6px rgba(160,110,20,.7), inset 0 -2px 4px rgba(200,150,40,.25); }
+:root[data-theme="dark"] .year-pal { border-color: #2A201B; }
+.year-tag { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .76rem; }
+@media (prefers-reduced-motion: no-preference) { .year-pal .giap { animation: bob 2.6s ease-in-out infinite reverse; } }

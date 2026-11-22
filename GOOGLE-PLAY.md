@@ -28,6 +28,7 @@ Lịch âm, nhắc giỗ, rằm, mùng 1, văn khấn và xem ngày tốt. Khôn
 Lịch Âm & Nhắc Giỗ giúp gia đình bạn không bao giờ quên ngày giỗ, ngày rằm, mùng 1 và lễ Tết — chạy hoàn toàn trên máy, không cần mạng, không quảng cáo, không cần tài khoản.
 
 📅 LỊCH ÂM CHÍNH XÁC
+• Linh vật Bé Thỏ Ngọc nhắc ngày, 12 con giáp, trăng đúng pha mỗi ngày
 • Tờ lịch hôm nay: ngày âm, can chi, tiết khí, giờ hoàng đạo
 • Lịch tháng đánh dấu rằm, mùng 1, ngày giỗ, ngày lễ
 • Đổi ngày âm ↔ dương nhanh

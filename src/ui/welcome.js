@@ -3,6 +3,7 @@ import { setState } from '../store.js';
 import { ensurePermission, isNative } from '../notify.js';
 import { ICON } from './common.js';
 import { enableCalendar } from './more.js';
+import { mascot, moonPhase, cloud, lanternString, sparkle } from './art.js';
 
 const ui = { step: 0 };
 
@@ -16,7 +17,7 @@ const art = `<svg viewBox="0 0 200 200" width="240" height="240" role="img" aria
 </svg>`;
 
 const STEPS = [
-  () => `<div class="art">${art}</div>
+  () => `<div class="art welcome-art"><span class="w-lanterns">${lanternString()}</span><span class="w-moon">${moonPhase(15, 96)}</span><span class="w-cloud a">${cloud(110)}</span><span class="w-cloud b">${cloud(80, '#E9C46A', .6)}</span>${mascot('wave', 190, 'Bé Thỏ Ngọc chào bạn')}</div>
     <h1 tabindex="-1">Lịch Âm &amp; Nhắc Giỗ</h1>
     <p>Xem ngày âm, giờ hoàng đạo và không bao giờ quên ngày giỗ, ngày rằm của gia đình.</p>`,
   () => `<div class="art col" style="gap:18px;align-items:stretch;justify-content:center">
@@ -25,10 +26,10 @@ const STEPS = [
       <div class="feature"><span class="ic">${ICON.shield(22)}</span><div><b>Riêng tư, không cần mạng</b><span class="muted">Mọi thứ nằm trên máy bạn. Không tài khoản, không quảng cáo.</span></div></div>
     </div>
     <h1 tabindex="-1">Mọi thứ chạy ngay trên máy</h1>`,
-  () => `<div class="art"><span style="width:120px;height:120px;border-radius:60px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${ICON.bell(56)}</span></div>
+  () => `<div class="art welcome-art"><span class="w-cloud a">${cloud(110)}</span><span class="w-spark">${sparkle(22)}</span>${mascot('lantern', 190, 'Bé Thỏ Ngọc cầm đèn lồng')}</div>
     <h1 tabindex="-1">Bật thông báo để được nhắc</h1>
     <p>App chỉ gửi nhắc ngày giỗ, rằm, mùng 1 và lễ Tết theo cài đặt của bạn. Có thể tắt bất cứ lúc nào.</p>`,
-  () => `<div class="art"><span style="width:120px;height:120px;border-radius:60px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center">${ICON.sync(56)}</span></div>
+  () => `<div class="art welcome-art"><span class="w-cloud a">${cloud(110)}</span>${mascot('letter', 190, 'Bé Thỏ Ngọc cầm phong thư')}</div>
     <h1 tabindex="-1">Hiện ngày giỗ trên Google Calendar</h1>
     <p>Ghi ngày giỗ, sinh nhật, lễ Tết vào lịch của máy (Google Calendar / Lịch iPhone). Xem được trên mọi thiết bị cùng tài khoản. Bật hay tắt lại trong Cài đặt.</p>`
 ];

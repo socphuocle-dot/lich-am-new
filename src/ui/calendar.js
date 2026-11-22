@@ -3,6 +3,7 @@ import { dayInfo, jdFromDate, jdToDate, solarToLunar, canChiYear, LUNAR_MONTH_NA
 import { listEvents } from '../lib/events.js';
 import { esc, ICON, nav } from './common.js';
 import { actionSheet } from './dialog.js';
+import { giap, giapName } from './zodiac.js';
 import { dayExtras, TRUC_Y } from '../lib/goodday.js';
 import { trucIndex, TRUC } from '../lib/lunar.js';
 
@@ -72,12 +73,12 @@ export function renderCalendar() {
       <div class="row">
         <div class="tile" style="width:58px;height:62px"><b class="serif" style="font-size:1.6rem">${L.day}</b><span>TH ${L.month}${L.leap ? 'N' : ''} ÂL</span></div>
         <div class="col"><b style="font-size:1.05rem">${info.weekday}, ${s.day}/${s.month}/${s.year}</b>
-          <span class="muted small">Ngày ${info.canChi.day} · Tháng ${info.canChi.month} · Năm ${info.canChi.year}</span></div>
+          <span class="muted small cc-line">${giap(info.canChi.day, 18)}Ngày ${info.canChi.day} · Tháng ${info.canChi.month} · ${giap(info.canChi.year, 18)}Năm ${info.canChi.year}</span></div>
       </div>
       <div class="grid3" style="gap:6px">
         <div class="kv ${info.spirit.good ? 'good' : ''}"><span class="k">Loại ngày</span><span class="v">${info.spirit.good ? 'Hoàng đạo' : 'Hắc đạo'}</span><span class="k">${info.spirit.name}</span></div>
-        <div class="kv"><span class="k">Tuổi xung</span><span class="v">Tuổi ${info.xung}</span></div>
-        <div class="kv"><span class="k">Tam hợp</span><span class="v">${info.tamHop.join(' · ')}</span></div>
+        <div class="kv"><span class="k">Tuổi xung</span><span class="v kv-giap">${giap(info.xung, 22)}${info.xung}</span><span class="k">Tuổi ${giapName(info.xung)}</span></div>
+        <div class="kv"><span class="k">Tam hợp</span><span class="v kv-giap">${info.tamHop.map((c) => giap(c, 20)).join('')}</span><span class="k">${info.tamHop.join(' · ')}</span></div>
       </div>
       <div class="small muted" style="line-height:1.5"><b style="color:var(--ink)">Giờ hoàng đạo:</b> ${info.hours.map((h) => `${h.chi} (${h.label})`).join(', ')}</div>
       <div class="small muted"><b style="color:var(--ink)">Tiết khí:</b> ${info.solarTerm} · <b style="color:var(--ink)">Trực ${TRUC[trucIndex(ui.sel)]}:</b> ${TRUC_Y[trucIndex(ui.sel)].toLowerCase()}</div>

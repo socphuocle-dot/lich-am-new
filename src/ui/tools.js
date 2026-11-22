@@ -7,6 +7,8 @@ import { ACTIVITIES, findGoodDays, rateDay, birthChi, yearWarnings } from '../li
 import { esc, ICON, backHeader, toast } from './common.js';
 import { isNative } from '../notify.js';
 import { speakParagraphs, stopSpeaking, ttsStatus, openVoiceInstall } from '../tts.js';
+import { mascot, ILL, cloud, sparkle, lanternString } from './art.js';
+import { giap, giapName } from './zodiac.js';
 
 /** "Ông" + "Nguyễn Văn A" → "Ông Nguyễn Văn A"; không lặp nếu tên đã có quan hệ ("Bà Cố") */
 export const withRel = (g) => (g.rel && g.rel !== 'Khác' && !g.name.toLowerCase().startsWith(g.rel.toLowerCase() + ' ') ? `${g.rel} ${g.name}` : g.name);
@@ -14,9 +16,18 @@ const todayJd = () => { const n = new Date(); return jdFromDate(n.getDate(), n.g
 const lunarOf = (jd) => { const s = jdToDate(jd); return { s, l: solarToLunar(s.day, s.month, s.year) }; };
 
 /* ============ VĂN KHẤN ============ */
-const vk = { tab: 'van', wake: null, editHost: false, reading: -1 };
+const vk = { tab: 'van', wake: null, editHost: false, reading: -1, deadText: '', autoFrom: '' };
 
 /** Dịp sắp tới gần nhất có văn khấn (để gợi ý đầu danh sách) */
+// Biểu tượng màu cho từng bài khấn
+const VK_ICON = {
+  gio: ['incense', 'rose'], tienthuong: ['incense', 'rose'], mung1: ['cal', 'butter'], ram: ['lantern', 'butter'], thantai: ['coin', 'butter'],
+  ongtao: ['fish', 'peach'], tatnien: ['tray', 'peach'], giaothua: ['lantern', 'rose'], tet: ['lantern', 'rose'], hoavang: ['card', 'rose'],
+  ramgieng: ['lantern', 'butter'], thanhminh: ['lotus', 'mint'], doanngo: ['tray', 'mint'], vulan: ['lotus', 'lilac'], chungsinh: ['lotus', 'lilac'],
+  cungtuan: ['lotus', 'lilac'], tuan100: ['lotus', 'lilac'], giodau: ['incense', 'lilac'], giohet: ['incense', 'lilac'],
+  nhaptrach: ['house', 'sky'], dongtho: ['house', 'sky'], khaitruong: ['coin', 'butter'], daythang: ['cake', 'rose'], thoinoi: ['cake', 'rose']
+};
+
 export function nextOccasion() {
   const t = todayJd();
   for (let jd = t; jd < t + 32; jd++) {
@@ -37,12 +48,14 @@ export function renderVankhanList(params) {
   return `<div class="screen no-nav" data-screen="vankhan-list">
   ${backHeader(mamMode ? 'Mâm cúng theo dịp' : 'Văn khấn & mâm cúng', '#/today', mamMode ? 'Danh sách đồ lễ, đánh dấu khi đã chuẩn bị' : 'Bản cổ truyền · tự điền ngày, tên, địa chỉ')}
   <main class="body" style="gap:14px">
+    <section class="banner red" aria-hidden="false"><span class="bn-cloud a">${cloud(80, '#F6D27A', .5)}</span><span class="bn-cloud b">${cloud(60, '#F6D27A', .35)}</span>
+      <div class="col grow" style="gap:4px;position:relative"><b>Văn khấn cổ truyền</b><span>24 bài · tự điền ngày, tên, địa chỉ · đọc to cho ông bà nghe</span></div><div class="bn-mascot">${mascot('pray', 92)}</div></section>
     ${nxO ? `<a class="dark-card col" href="#/vankhan/${nx.id}?jd=${nx.jd}${mamMode ? '&tab=mam' : ''}" style="text-decoration:none;gap:6px">
       <span class="m small">${nx.diff === 0 ? 'Hôm nay' : nx.diff === 1 ? 'Ngày mai' : `Còn ${nx.diff} ngày`} · ${esc(nxO.when)}</span>
       <div class="h2row" style="align-items:center"><span class="serif" style="font-size:1.2rem;font-weight:700">${esc(nxO.title)}</span>${ICON.next(22)}</div></a>` : ''}
     ${groups.map((g) => `<section class="col" style="gap:8px"><h2 class="sec-title" style="margin:0">${esc(g)}</h2>
       <div class="card list">${OCCASIONS.filter((o) => o.group === g).map((o) => `<a class="item" href="#/vankhan/${o.id}${mamMode ? '?tab=mam' : ''}">
-        <span class="nudge-ic" style="width:36px;height:36px;border-radius:10px">${ICON.book(18)}</span>
+        <span class="pastel ${VK_ICON[o.id]?.[1] || 'rose'} sm">${(ILL[VK_ICON[o.id]?.[0]] || ILL.book)()}</span>
         <span class="grow col"><span class="t">${esc(o.title.replace('Văn khấn ', '').replace(/^./, (c) => c.toUpperCase()))}</span><span class="s">${esc(o.when)}</span></span>${ICON.next(18)}</a>`).join('')}</div></section>`).join('')}
     <p class="small muted" style="line-height:1.6;margin:0">Văn khấn soạn theo khuôn cổ truyền phổ biến. Mỗi vùng, mỗi nhà có thể khác — bạn cứ đọc theo lòng thành, không cần đúng từng chữ.</p>
   </main>
@@ -61,7 +74,7 @@ function vkContext(params) {
     jd, l, g,
     ctx: {
       ngayAm: ngayAmText(l.day, l.month, l.leap), nam: canChiYear(l.year), tinChu: host, diaChi: st.settings.address || '',
-      hoTen, nguoiMat: g ? withRel(g) : '',
+      hoTen, nguoiMat: g ? withRel(g) : vk.deadText,
       tenBe: st.settings.babyName || ''
     }
   };
@@ -70,6 +83,7 @@ function vkContext(params) {
 export function renderVankhan(params) {
   const o = occasion(params.id) || OCCASIONS[0];
   if (vk.tabFrom !== location.hash) { vk.tab = params.tab === 'mam' ? 'mam' : 'van'; vk.tabFrom = location.hash; vk.editHost = false; }
+  if (vk.idFrom !== o.id) { vk.idFrom = o.id; vk.deadText = ''; }
   const st = getState();
   const { jd, l, ctx, g } = vkContext(params);
   const filled = fillText(o.text, ctx);
@@ -78,25 +92,33 @@ export function renderVankhan(params) {
   const ckKey = `${o.id}:${g ? g.id + ':' : ''}${l.year}-${l.month}-${l.day}`;
   const checked = new Set(st.checklists[ckKey] || []);
   const s = jdToDate(jd);
-  const ask = (vk.editHost || missing.has('tinChu') || missing.has('diaChi')) ? `<section class="card pad col" style="gap:10px" aria-label="Điền thông tin gia chủ">
-      <b>Điền một lần, tự dùng cho mọi bài khấn</b>
-      <div class="field"><label class="lb" for="vk-host">Họ tên gia chủ</label><input id="vk-host" class="input" maxlength="60" placeholder="Ví dụ: Nguyễn Văn An" value="${esc(st.settings.hostName || st.profile.name || '')}" autocomplete="name"></div>
-      <div class="field"><label class="lb" for="vk-addr">Địa chỉ nhà</label><input id="vk-addr" class="input" maxlength="120" placeholder="Ví dụ: số 12 đường Lê Lợi, phường…, tỉnh…" value="${esc(st.settings.address || '')}" autocomplete="street-address"></div>
-      <button type="button" class="btn" data-act="save-host" style="height:46px">Lưu và điền vào bài khấn</button></section>` : '';
   const needsDead = o.text.some((p) => p.includes('{nguoiMat}'));
-  const deadList = st.gios.filter((x) => (x.type || 'gio') === 'gio');
-  const pickDead = needsDead && !g && deadList.length ? `<label class="field"><span class="lb">Khấn cho ai?</span>
-      <select class="input" data-pickdead><option value="">— Chọn người đã khuất —</option>${deadList.map((x) => `<option value="${esc(x.id)}">${esc(titleOf(x))}</option>`).join('')}</select></label>` : '';
   const needsBaby = o.text.some((p) => p.includes('{tenBe}'));
-  const babyField = needsBaby ? `<div class="field"><label class="lb" for="vk-baby">Tên bé</label><input id="vk-baby" class="input" maxlength="40" placeholder="Ví dụ: Nguyễn Gia Bảo" value="${esc(st.settings.babyName || '')}" data-baby></div>` : '';
+  const deadList = st.gios.filter((x) => (x.type || 'gio') === 'gio');
+  const open = vk.editHost || missing.size > 0;
+  const iso = `${s.year}-${String(s.month).padStart(2, '0')}-${String(s.day).padStart(2, '0')}`;
+  const summary = [`${ctx.ngayAm} năm ${ctx.nam}`, ctx.tinChu, needsDead ? ctx.nguoiMat : '', needsBaby ? ctx.tenBe : ''].filter(Boolean).join(' · ');
+  const infoCard = `<details class="card vk-info" ${open ? 'open' : ''} data-info>
+    <summary><span class="ico3d red sm" aria-hidden="true">${ICON.card(20)}</span><span class="col grow"><b>Thông tin trong bài khấn</b><span class="small muted">${missing.size ? `Còn ${missing.size} chỗ trống — điền để đọc trọn bài` : esc(summary)}</span></span><span class="chip">${open ? 'Thu gọn' : 'Sửa'}</span></summary>
+    <div class="col" style="gap:12px;padding:4px 16px 16px">
+      <div class="field"><label class="lb" for="vk-date">Ngày cúng</label><input id="vk-date" class="input" type="date" value="${iso}" data-vk="date">
+        <span class="small muted">Tức ${esc(ctx.ngayAm)} năm ${esc(ctx.nam)} — tự điền vào bài</span></div>
+      <div class="field"><label class="lb" for="vk-host">Họ tên gia chủ (người khấn)</label><input id="vk-host" class="input" maxlength="60" placeholder="Ví dụ: Nguyễn Văn An" value="${esc(st.settings.hostName || st.profile.name || '')}" autocomplete="name" data-vk="host"></div>
+      <div class="field"><label class="lb" for="vk-addr">Địa chỉ nhà</label><input id="vk-addr" class="input" maxlength="120" placeholder="Ví dụ: số 12 đường Lê Lợi, phường…, tỉnh…" value="${esc(st.settings.address || '')}" autocomplete="street-address" data-vk="addr"></div>
+      ${needsDead ? `<div class="field"><label class="lb" for="vk-dead">Khấn cho ai</label>
+        ${deadList.length ? `<select id="vk-dead" class="input" data-vk="dead"><option value="">${vk.deadText ? 'Người khác (nhập tên bên dưới)' : '— Chọn người đã khuất —'}</option>${deadList.map((x) => `<option value="${esc(x.id)}" ${g && g.id === x.id ? 'selected' : ''}>${esc(withRel(x))}</option>`).join('')}</select>` : ''}
+        ${!g ? `<input id="vk-deadtext" class="input" maxlength="60" placeholder="Ví dụ: Ông nội Nguyễn Văn Bình" value="${esc(vk.deadText)}" data-vk="deadtext" ${deadList.length ? 'style="margin-top:8px"' : ''}>` : ''}</div>` : ''}
+      ${needsBaby ? `<div class="field"><label class="lb" for="vk-baby">Tên bé</label><input id="vk-baby" class="input" maxlength="40" placeholder="Ví dụ: Nguyễn Gia Bảo" value="${esc(st.settings.babyName || '')}" data-vk="baby"></div>` : ''}
+      <span class="small muted">Tên, địa chỉ được nhớ cho mọi bài khấn. Bấm vào chữ tô màu trong bài để sửa nhanh.</span>
+    </div></details>`;
   const body = vk.tab === 'mam'
     ? `<section class="card list" aria-label="Mâm cúng gợi ý">${o.mam.map((m, i) => `<button type="button" class="item" data-ck="${i}" role="checkbox" aria-checked="${checked.has(i)}">
         <span class="tick ${checked.has(i) ? 'on' : ''}" aria-hidden="true"></span><span class="grow t" style="${checked.has(i) ? 'text-decoration:line-through;color:var(--muted)' : ''}">${esc(m)}</span></button>`).join('')}</section>
       <span class="small muted">Đã chuẩn bị ${checked.size}/${o.mam.length} · đánh dấu được lưu riêng cho dịp này</span>`
-    : `${pickDead}${babyField}${ask}<div class="tts-bar" role="group" aria-label="Đọc to">
-        <button type="button" class="btn ${vk.reading >= 0 ? 'ghost' : ''}" data-act="${vk.reading >= 0 ? 'tts-stop' : 'tts-play'}" style="height:46px;flex:1">${vk.reading >= 0 ? '■ Dừng đọc' : '▶ Đọc to'}</button>
+    : `${infoCard}<div class="tts-bar" role="group" aria-label="Đọc to">
+        <button type="button" class="btn big-read ${vk.reading >= 0 ? 'ghost' : ''}" data-act="${vk.reading >= 0 ? 'tts-stop' : 'tts-play'}">${vk.reading >= 0 ? '■ Dừng đọc' : '▶ Đọc to'}</button>
         <div class="seg" style="flex:1.3" aria-label="Tốc độ đọc">${[[0.8, 'Chậm'], [1, 'Vừa'], [1.15, 'Nhanh']].map(([v, lb]) => `<button type="button" data-rate="${v}" aria-pressed="${(st.settings.ttsRate ?? 1) === v}">${lb}</button>`).join('')}</div></div>
-      <article class="vk-text size-${size}" aria-label="${esc(o.title)}">${filled.map((p, i) => `<p class="${vk.reading === i ? 'reading' : ''}" data-p="${i}">${p.map((x) => x.fill ? `<b class="vk-fill">${esc(x.t)}</b>` : x.missing ? `<mark title="Chưa có thông tin">${esc(x.t)}</mark>` : esc(x.t).replace(/\n/g, '<br>')).join('')}</p>`).join('')}</article>`;
+      <article class="vk-text size-${size}" aria-label="${esc(o.title)}">${filled.map((p, i) => `<p class="${vk.reading === i ? 'reading' : ''}" data-p="${i}">${p.map((x) => x.fill ? `<b class="vk-fill" data-field="${x.key}" role="button" tabindex="0" title="Bấm để sửa">${esc(x.t)}</b>` : x.missing ? `<mark data-field="${x.key}" role="button" tabindex="0" title="Bấm để điền">${esc(x.t)}</mark>` : esc(x.t).replace(/\n/g, '<br>')).join('')}</p>`).join('')}</article>`;
   return `<div class="screen no-nav" data-screen="vankhan">
   ${backHeader(o.title.replace('Văn khấn ', '').replace(/^./, (c) => c.toUpperCase()), '#/vankhan', `${THU[(jd + 1) % 7]} ${s.day}/${s.month} · âm ${l.day}/${l.month}${l.leap ? ' nhuận' : ''}`)}
   <main class="body" style="gap:14px">
@@ -108,7 +130,7 @@ export function renderVankhan(params) {
       <button type="button" class="chip" data-act="bigger" aria-label="Chữ to hơn">A+</button>
       <button type="button" class="chip" data-act="copy">${ICON.copy(16)} Sao chép</button>
       <button type="button" class="chip" data-act="share">${ICON.share(16)} Gửi</button>
-      ${ctx.tinChu || ctx.diaChi ? '<button type="button" class="chip" data-act="edit-host">Sửa tên, địa chỉ</button>' : ''}
+      <button type="button" class="chip" data-act="auto-read" aria-pressed="${!!st.settings.autoRead}">${st.settings.autoRead ? '✓ ' : ''}Tự đọc khi mở bài</button>
     </div>` : ''}
   </main>
 </div>`;
@@ -124,14 +146,42 @@ export function mountVankhan(root, rerender, params) {
   }
   const offTts = () => { if (!location.hash.startsWith('#/vankhan/' + o.id)) { stopSpeaking(); vk.reading = -1; window.removeEventListener('hashchange', offTts); } };
   window.addEventListener('hashchange', offTts);
+  const go = (patch) => {
+    const q = new URLSearchParams({ ...(params.jd ? { jd: params.jd } : {}), ...(params.gid ? { gid: params.gid } : {}), ...(params.tab ? { tab: params.tab } : {}), ...patch });
+    for (const [k, v] of [...q]) if (!v) q.delete(k);
+    vk.tabFrom = `#/vankhan/${o.id}?${q}`; vk.editHost = true; // giữ thẻ thông tin đang mở
+    location.hash = vk.tabFrom;
+  };
   root.addEventListener('change', (e) => {
-    if (e.target.matches('[data-pickdead]') && e.target.value) {
-      const q = new URLSearchParams({ ...(params.jd ? { jd: params.jd } : {}), gid: e.target.value });
-      location.hash = `#/vankhan/${o.id}?${q}`;
-    }
-    if (e.target.matches('[data-baby]')) updateSettings({ babyName: e.target.value.trim() });
+    const k = e.target.dataset.vk;
+    if (!k) return;
+    vk.editHost = true;
+    const v = e.target.value.trim();
+    if (k === 'date' && v) { const [y, m, d] = v.split('-').map(Number); go({ jd: String(jdFromDate(d, m, y)) }); }
+    if (k === 'host') updateSettings({ hostName: v });
+    if (k === 'addr') updateSettings({ address: v });
+    if (k === 'baby') updateSettings({ babyName: v });
+    if (k === 'dead') { vk.deadText = ''; go({ gid: v }); }
+    if (k === 'deadtext') { vk.deadText = v; rerender(); }
   });
+  root.querySelector('[data-info]')?.addEventListener('toggle', (e) => { vk.editHost = e.target.open; const c = e.target.querySelector('summary .chip'); if (c) c.textContent = e.target.open ? 'Thu gọn' : 'Sửa'; });
+  // Bấm chữ tô màu trong bài → mở ô tương ứng
+  const FIELD = { ngayAm: 'vk-date', nam: 'vk-date', tinChu: 'vk-host', hoTen: 'vk-host', diaChi: 'vk-addr', nguoiMat: 'vk-dead', tenBe: 'vk-baby' };
+  const editField = (key) => {
+    vk.editHost = true; rerender();
+    const app = document.querySelector('[data-screen="vankhan"]');
+    const el = app?.querySelector('#' + FIELD[key]) || app?.querySelector('#vk-deadtext');
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); el?.focus({ preventScroll: true });
+  };
+  root.addEventListener('keydown', (e) => { const f = e.target.closest?.('[data-field]'); if (f && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); editField(f.dataset.field); } });
+  // Tự đọc khi mở bài (người lớn tuổi): chỉ một lần mỗi lần mở
+  if (getState().settings.autoRead && vk.tab === 'van' && vk.autoFrom !== location.hash) {
+    vk.autoFrom = location.hash;
+    setTimeout(() => root.querySelector('[data-act="tts-play"]')?.click(), 700);
+  }
   root.addEventListener('click', async (e) => {
+    const fd = e.target.closest('[data-field]');
+    if (fd) { editField(fd.dataset.field); return; }
     const t = e.target.closest('[data-tab]');
     if (t) { vk.tab = t.dataset.tab; rerender(); return; }
     const rt = e.target.closest('[data-rate]');
@@ -173,6 +223,7 @@ export function mountVankhan(root, rerender, params) {
     if (act === 'tts-stop') { await stopSpeaking(); vk.reading = -1; rerender(); return; }
     if (act === 'bigger') updateSettings({ vkSize: Math.min(3, sz + 1) });
     if (act === 'smaller') updateSettings({ vkSize: Math.max(0, sz - 1) });
+    if (act === 'auto-read') { updateSettings({ autoRead: !getState().settings.autoRead }); toast(getState().settings.autoRead ? 'Mở bài khấn là tự đọc to' : 'Đã tắt tự đọc'); return; }
     if (act === 'save-host') {
       updateSettings({ hostName: root.querySelector('#vk-host').value.trim(), address: root.querySelector('#vk-addr').value.trim() });
       vk.editHost = false;
@@ -204,11 +255,13 @@ export function renderGoodDays() {
   return `<div class="screen no-nav" data-screen="goodday">
   ${backHeader('Xem ngày tốt', '#/today', 'Theo hoàng đạo, 12 trực, ngày kỵ và tuổi')}
   <main class="body" style="gap:14px">
+    <section class="banner gold" aria-hidden="false"><span class="bn-cloud a">${cloud(80, '#F6D27A', .5)}</span><span class="bn-cloud b">${cloud(60, '#F6D27A', .35)}</span>
+      <div class="col grow" style="gap:4px;position:relative"><b>Chọn ngày lành tháng tốt</b><span>Bé Thỏ tìm giúp ngày hợp việc, hợp tuổi bạn</span></div><div class="bn-mascot">${mascot('star', 92)}</div></section>
     <div class="field" role="group" aria-label="Việc cần làm"><span class="lb">Bạn định làm việc gì?</span>
       <div class="chips">${ACTIVITIES.map((a) => `<button type="button" class="chip" data-gact="${a.id}" aria-pressed="${gd.act === a.id}">${a.label}</button>`).join('')}</div></div>
     <div class="seg" role="group" aria-label="Khoảng thời gian">${[[30, '30 ngày'], [60, '2 tháng'], [180, '6 tháng']].map(([v, lb]) => `<button type="button" data-gdays="${v}" aria-pressed="${gd.days === v}">${lb}</button>`).join('')}</div>
     ${chi == null ? `<a class="note" href="#/profile" style="text-decoration:none;color:var(--ink)"><span style="color:var(--accent)">${ICON.star(18)}</span><span>Nhập ngày sinh ở <b>Hồ sơ</b> để loại những ngày xung tuổi của bạn.</span></a>`
-      : `<span class="small muted">Đã loại ngày xung tuổi ${esc(canChiYear(by))} của ${esc(st.profile.name || 'bạn')}.</span>`}
+      : `<span class="small muted cc-line">${giap(canChiYear(by), 22)}Đã loại ngày xung tuổi ${esc(canChiYear(by))} (con ${giapName(canChiYear(by))}) của ${esc(st.profile.name || 'bạn')}.</span>`}
     ${warn.map((w) => `<div class="note warn" role="note"><span>⚠</span><span>${esc(w)}</span></div>`).join('')}
     <h2 class="h" style="margin:0">${res.length} ngày tốt để ${esc(act.label.toLowerCase())}</h2>
     <section class="card list" aria-label="Danh sách ngày tốt">
@@ -221,7 +274,7 @@ export function renderGoodDays() {
           <span class="gd-badge ${r.score >= 5 ? 'best' : ''}">${r.score >= 5 ? 'Rất tốt' : lv[r.level]}</span></button>
           ${open ? `<div class="gd-detail">${r.reasons.map((x) => `<span class="${x.ok ? 'ok' : x.ok === false ? 'no' : ''}">${x.ok ? '✓' : x.ok === false ? '✕' : '·'} ${esc(x.text)}</span>`).join('')}
             <span>· ${esc(r.trucY)}</span>
-            <span><b>Giờ tốt:</b> ${r.hours.map((h) => `${h.chi} (${h.label})`).join(', ')}</span>
+            <span><b>Giờ tốt:</b></span><span class="gd-hours">${r.hours.map((h) => `<span>${giap(h.chi, 22)}${h.chi} <small>${h.label}</small></span>`).join('')}</span>
             <span><b>Hướng xuất hành:</b> Hỷ thần ${r.extras.hyThan} · Tài thần ${r.extras.taiThan}</span>
             ${GD_VK[gd.act] ? `<a class="chip" style="align-self:flex-start;height:38px;display:inline-flex;align-items:center;gap:6px" href="#/vankhan/${GD_VK[gd.act]}?jd=${r.jd}">${ICON.book(16)} Văn khấn &amp; mâm cúng</a>` : ''}
             <a class="chip" style="align-self:flex-start;height:38px;display:inline-flex;align-items:center;gap:6px" href="#/add?type=kyniem&cal=duong&ld=${r.solar.day}&lm=${r.solar.month}&name=${encodeURIComponent(act.label)}&once=1">${ICON.plus(16)} Đặt nhắc ngày này</a></div>` : ''}`;
@@ -433,10 +486,10 @@ export function mountInvite(root, rerender, params) {
 /* ============ Lối tắt tiện ích trên màn Hôm nay ============ */
 export function toolsRow() {
   return `<section class="tools" aria-label="Tiện ích">
-    <a class="tool" href="#/vankhan"><span class="ti">${ICON.book(22)}</span>Văn khấn</a>
-    <a class="tool" href="#/ngaytot"><span class="ti">${ICON.star(22)}</span>Ngày tốt</a>
-    <button type="button" class="tool" data-act="conv" aria-expanded="${cv.open}"><span class="ti">${ICON.swap(22)}</span>Đổi ngày</button>
-    <a class="tool" href="#/vankhan?tab=mam"><span class="ti">${ICON.tray(22)}</span>Mâm cúng</a>
+    <a class="tool" href="#/vankhan"><span class="pastel rose">${ILL.book()}</span>Văn khấn</a>
+    <a class="tool" href="#/ngaytot"><span class="pastel butter">${ILL.star()}</span>Ngày tốt</a>
+    <button type="button" class="tool" data-act="conv" aria-expanded="${cv.open}"><span class="pastel mint">${ILL.swap()}</span>Đổi ngày</button>
+    <a class="tool" href="#/vankhan?tab=mam"><span class="pastel peach">${ILL.tray()}</span>Mâm cúng</a>
   </section>`;
 }
 

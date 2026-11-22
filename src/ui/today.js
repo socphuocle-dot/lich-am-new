@@ -9,6 +9,8 @@ import { setState } from '../store.js';
 import { backupToCloud, daysSinceBackup } from '../sync.js';
 import { toolsRow, converterCard, toggleConverter, onConverterEvent, nextOccasion } from './tools.js';
 import { occasion, vanKhanFor } from '../lib/vankhan.js';
+import { mascot, moonPhase, cloud, sparkle, lanternString, ILL } from './art.js';
+import { giap, giapName } from './zodiac.js';
 
 export function upcomingEvents(now, days = 120) {
   const st = getState();
@@ -45,21 +47,26 @@ export function renderToday() {
   const greet = hourNow < 11 ? 'Chào buổi sáng' : hourNow < 14 ? 'Chào buổi trưa' : hourNow < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
 
   return `<div class="screen has-fab" data-screen="today">
-  <header class="top">
-    <div class="grow"><span class="sub">${greet}, hôm nay là</span><h1 tabindex="-1" style="font-size:1.35rem">${info.weekday}, ${now.getDate()}/${now.getMonth() + 1}</h1></div>
-    <a class="icon-btn" href="#/settings" aria-label="Cài đặt">${ICON.gear(22)}</a>
-    <a class="icon-btn" href="#/reminders" aria-label="Xem nhắc việc">${ICON.bell(22)}${hasSoon ? '<span class="dot"></span>' : ''}</a>
+  <header class="top hero-top">
+    <div class="hero-mascot">${mascot(l.day === 15 || l.day === 14 ? 'lantern' : 'wave', 78)}
+      <span class="year-pal" title="Linh vật năm ${canChiYear(l.year)}">${giap(canChiYear(l.year), 38)}</span></div>
+    <div class="grow col bubble-wrap"><div class="bubble"><span class="sub">${greet}! <span class="year-tag">Năm ${canChiYear(l.year)} · con ${giapName(canChiYear(l.year))}</span></span><h1 tabindex="-1">${info.weekday}, ${now.getDate()}/${now.getMonth() + 1}</h1>
+      <span class="bubble-tip">${tipOf(ev, todayJd, l, info)}</span></div></div>
+    <div class="col" style="gap:6px"><a class="icon-btn" href="#/settings" aria-label="Cài đặt">${ICON.gear(22)}</a>
+    <a class="icon-btn" href="#/reminders" aria-label="Xem nhắc việc">${ICON.bell(22)}${hasSoon ? '<span class="dot"></span>' : ''}</a></div>
   </header>
   <main class="body">
     <section class="card sheet" aria-label="Tờ lịch hôm nay">
-      <div class="sheet-band"><span>THÁNG ${now.getMonth() + 1} · ${now.getFullYear()}</span><span>${info.weekday.toUpperCase()}</span></div>
+      <div class="sheet-band"><span class="band-cloud l">${cloud(64, '#F6D27A', .55)}</span><span>THÁNG ${now.getMonth() + 1} · ${now.getFullYear()}</span><span>${info.weekday.toUpperCase()}</span><span class="band-cloud r">${cloud(64, '#F6D27A', .55)}</span></div>
+      <div class="sheet-moon">${moonPhase(l.day, 58)}<span>Trăng ${l.day}</span></div>
+      <span class="sheet-spark s1">${sparkle(12)}</span><span class="sheet-spark s2">${sparkle(9, '#E9A23B')}</span>
       <div class="sheet-day">${now.getDate()}</div>
       <div class="center"><span class="pill ${info.spirit.good ? '' : 'neutral'}">Ngày ${info.spirit.good ? 'Hoàng đạo' : 'Hắc đạo'} · ${info.spirit.name}</span></div>
       <div class="sheet-foot">
         <div class="col"><span class="muted small">Âm lịch</span>
           <span class="big-lunar" data-test="lunar">${l.day}<span class="muted" style="font-size:1.1rem">/${l.month}${l.leap ? ' nhuận' : ''}</span></span>
-          <b style="font-size:.9rem">Năm ${canChiYear(l.year)}</b></div>
-        <div class="r"><span>Ngày <b>${info.canChi.day}</b></span><span>Tháng <b>${info.canChi.month}</b></span><span>Tiết <b>${info.solarTerm}</b></span></div>
+          <span class="year-giap">${giap(canChiYear(l.year), 34)}<b>Năm ${canChiYear(l.year)}</b><span>Năm con ${giapName(canChiYear(l.year))}</span></span></div>
+        <div class="r"><span class="cc">${giap(info.canChi.day, 20)}Ngày <b>${info.canChi.day}</b></span><span class="cc">${giap(info.canChi.month, 20)}Tháng <b>${info.canChi.month}</b></span><span>Tiết <b>${info.solarTerm}</b></span></div>
       </div>
     </section>
     ${updateCard(st)}
@@ -68,8 +75,8 @@ export function renderToday() {
     ${converterCard()}
 
     <section aria-label="Giờ hoàng đạo" class="col" style="gap:8px">
-      <div class="h2row"><h2 class="h">Giờ hoàng đạo</h2><span class="muted small">Tuổi xung ngày: ${info.xung}</span></div>
-      <div class="hours">${info.hours.map((h) => `<div class="hour ${inHour(h) ? 'now' : ''}"><b>${h.chi}</b><span>${h.label}</span></div>`).join('')}</div>
+      <div class="h2row"><h2 class="h">Giờ hoàng đạo</h2><span class="muted small xung">Tuổi xung ngày: ${giap(info.xung, 20)}<b>${info.xung}</b> (${giapName(info.xung)})</span></div>
+      <div class="hours">${info.hours.map((h) => `<div class="hour ${inHour(h) ? 'now' : ''}">${giap(h.chi, 30)}<b>${h.chi}</b><span>${h.label}</span></div>`).join('')}</div>
     </section>
 
     <section aria-label="Sắp tới" class="col" style="gap:8px">
@@ -94,6 +101,15 @@ export function renderToday() {
   <a class="fab" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
   ${nav('today')}
 </div>`;
+}
+
+/** Lời nhắn của linh vật: sự kiện gần nhất hoặc ngày tốt/xấu */
+function tipOf(ev, todayJd, l, info) {
+  const e = ev.find((x) => x.jd - todayJd <= 7);
+  if (e) { const d = e.jd - todayJd; return `${d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : `Còn ${d} ngày nữa là`} ${esc(e.title)} 🌸`; }
+  if (l.day === 1 || l.day === 15) return `Hôm nay ${l.day === 15 ? 'Rằm' : 'mùng Một'}, nhớ thắp nén hương nhé 🙏`;
+  const toRam = l.day < 15 ? 15 - l.day : null;
+  return toRam ? `Còn ${toRam} ngày nữa đến Rằm · ${info.spirit.good ? 'ngày Hoàng đạo ✨' : 'ngày Hắc đạo'}` : `Âm lịch ${l.day}/${l.month} · ${info.spirit.good ? 'ngày Hoàng đạo ✨' : 'ngày Hắc đạo'}`;
 }
 
 function updateCard(st) {

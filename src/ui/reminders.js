@@ -2,6 +2,7 @@ import { getState, setState, updateSettings, saveGio, deleteGio, uid } from '../
 import { jdFromDate, LUNAR_MONTH_NAME, canChiYear } from '../lib/lunar.js';
 import { nextGioDate, describeDate, titleOf, EVENT_TYPES, deathJd, listEvents, TANG_MILESTONES } from '../lib/events.js';
 import { jdToDate, THU } from '../lib/lunar.js';
+import { mascot } from './art.js';
 import { esc, ICON, nav, sw, backHeader, toast, timeSelect } from './common.js';
 import { solarToLunar } from '../lib/lunar.js';
 import { upcomingEvents, eventRow } from './today.js';
@@ -52,7 +53,7 @@ export function renderReminders() {
     </section>
     ${savedList(st, todayJd)}
     <section class="col" style="gap:8px"><h2 class="h">Sắp tới · ${KIND[ui.filter] || 'Tất cả'}</h2>
-      <div class="card">${rows || '<div class="empty">Không có sự kiện</div>'}</div></section>
+      <div class="card">${rows || `<div class="empty-art">${mascot('moon', 110)}<b>Chưa có sự kiện nào</b><span>Bấm "Thêm" để ghi ngày giỗ, sinh nhật — Bé Thỏ sẽ nhắc bạn.</span></div>`}</div></section>
   </main>
   <a class="fab accent" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
   ${nav('reminders')}

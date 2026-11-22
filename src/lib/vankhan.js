@@ -319,7 +319,7 @@ export function fillText(paragraphs, ctx) {
     p.replace(/\{(\w+)\}/g, (m, k, i) => {
       if (i > last) parts.push({ t: p.slice(last, i) });
       const v = ctx[k];
-      parts.push(v ? { t: v, fill: true } : { t: '……', missing: true, key: k });
+      parts.push(v ? { t: v, fill: true, key: k } : { t: '……', missing: true, key: k });
       last = i + m.length;
       return m;
     });

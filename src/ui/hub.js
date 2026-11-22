@@ -3,6 +3,7 @@ import { getState } from '../store.js';
 import { ICON, nav } from './common.js';
 import { CONTACT_PHONE, ZALO_URL, CHANNEL } from '../config.js';
 import { isNative } from '../notify.js';
+import { mascot, ILL, cloud, lanternString, sparkle } from './art.js';
 
 export const fmtPhone = (p) => p.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
 
@@ -19,7 +20,8 @@ const I = {
   coin: svg('<circle cx="12" cy="12" r="8.5"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/>')
 };
 
-const tile = (href, icon, label, tone) => `<a class="svc ${tone}" href="${href}"><span class="ico3d">${icon}</span><span class="lbl">${label}</span></a>`;
+const tile = (href, icon, label, tone) => `<a class="svc ${tone}" href="${href}"><span class="pastel ${PASTEL[tone]}">${icon}</span><span class="lbl">${label}</span></a>`;
+const PASTEL = { red: 'rose', gold: 'butter', jade: 'mint', ink: 'sky', violet: 'lilac' };
 
 function group(title, sub, tone, tiles) {
   return `<section class="svc-group" aria-label="${title}">
@@ -35,38 +37,41 @@ export function renderHub() {
   return `<div class="screen" data-screen="hub">
   <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div></header>
   <main class="body" style="gap:16px">
+    <section class="banner red hub-banner"><span class="bn-lanterns">${lanternString()}</span><span class="bn-cloud a">${cloud(90, '#F6D27A', .45)}</span>
+      <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — Bé Thỏ Ngọc lo hết!</span></div>
+      <div class="bn-mascot">${mascot('book', 96)}</div></section>
     ${group('Ngày của gia đình', `${count('gio')} giỗ · ${count('sinhnhat')} sinh nhật · ${count('kyniem')} kỷ niệm`, 'red', [
-      tile('#/add?type=gio', I.incense, 'Ngày giỗ', 'red'),
-      tile('#/add?type=sinhnhat', I.cake, 'Sinh nhật', 'red'),
-      tile('#/add?type=kyniem', I.rings, 'Kỷ niệm', 'red'),
-      tile('#/add?type=gio&tang=1', I.lotus, 'Người mới mất', 'red')
+      tile('#/add?type=gio', ILL.incense(), 'Ngày giỗ', 'red'),
+      tile('#/add?type=sinhnhat', ILL.cake(), 'Sinh nhật', 'red'),
+      tile('#/add?type=kyniem', ILL.rings(), 'Kỷ niệm', 'red'),
+      tile('#/add?type=gio&tang=1', ILL.lotus(), 'Người mới mất', 'red')
     ])}
     ${group('Cúng lễ', 'Văn khấn, đồ lễ, mời họ hàng', 'gold', [
-      tile('#/vankhan', I.book, 'Văn khấn', 'gold'),
-      tile('#/vankhan?tab=mam', I.tray, 'Mâm cúng', 'gold'),
-      tile(firstGio ? `#/thiep/${firstGio.id}` : '#/thiep', I.card, 'Thiệp mời giỗ', 'gold'),
-      tile('#/vankhan/thantai', I.coin, 'Thần Tài', 'gold')
+      tile('#/vankhan', ILL.book(), 'Văn khấn', 'gold'),
+      tile('#/vankhan?tab=mam', ILL.tray(), 'Mâm cúng', 'gold'),
+      tile(firstGio ? `#/thiep/${firstGio.id}` : '#/thiep', ILL.card(), 'Thiệp mời giỗ', 'gold'),
+      tile('#/vankhan/thantai', ILL.coin(), 'Thần Tài', 'gold')
     ])}
     ${group('Xem ngày', 'Tốt xấu, đổi ngày, giờ hoàng đạo', 'jade', [
-      tile('#/ngaytot', I.star, 'Ngày tốt', 'jade'),
-      tile('#/doingay', I.swap, 'Đổi ngày', 'jade'),
-      tile('#/calendar', I.cal, 'Lịch tháng', 'jade'),
-      tile('#/today', I.sun, 'Giờ hoàng đạo', 'jade')
+      tile('#/ngaytot', ILL.star(), 'Ngày tốt', 'jade'),
+      tile('#/doingay', ILL.swap(), 'Đổi ngày', 'jade'),
+      tile('#/calendar', ILL.cal(), 'Lịch tháng', 'jade'),
+      tile('#/today', ILL.sun(), 'Giờ hoàng đạo', 'jade')
     ])}
     ${group('Kết nối gia đình', 'Chia sẻ, đồng bộ, sao lưu', 'ink', [
-      tile('#/chiase', I.share, 'Chia sẻ cả họ', 'ink'),
-      tile('#/nhap', I.users, 'Nhập từ người thân', 'ink'),
-      tile('#/contacts', I.cake, 'Sinh nhật danh bạ', 'ink'),
-      tile('#/settings', I.cloud, 'Đồng bộ, sao lưu', 'ink')
+      tile('#/chiase', ILL.family(), 'Chia sẻ cả họ', 'ink'),
+      tile('#/nhap', ILL.inbox(), 'Nhập từ người thân', 'ink'),
+      tile('#/contacts', ILL.contacts(), 'Sinh nhật danh bạ', 'ink'),
+      tile('#/settings', ILL.cloud(), 'Đồng bộ, sao lưu', 'ink')
     ])}
     ${culture ? group('Văn hóa', 'Tử Vi, Thần số, Kinh Dịch', 'violet', [
-      tile('#/tuvi', I.taiji, 'Tử Vi', 'violet'),
-      tile('#/numerology', I.num, 'Thần số học', 'violet'),
-      tile('#/iching', I.taiji, 'Kinh Dịch', 'violet'),
-      tile('#/culture', I.face, 'Hồ sơ của bạn', 'violet')
+      tile('#/tuvi', ILL.taiji(), 'Tử Vi', 'violet'),
+      tile('#/numerology', ILL.num(), 'Thần số học', 'violet'),
+      tile('#/iching', ILL.hexa(), 'Kinh Dịch', 'violet'),
+      tile('#/culture', ILL.face(), 'Hồ sơ của bạn', 'violet')
     ]) : ''}
     <section class="card pad col contact" style="gap:12px" aria-label="Liên hệ tác giả">
-      <div class="row" style="gap:12px"><span class="ico3d red sm">${ICON.phone(22)}</span>
+      <div class="row" style="gap:12px"><span class="contact-m">${mascot('phone', 64)}</span>
         <div class="col grow"><b>Liên hệ tác giả · Lê Hữu Phước</b><span class="small muted">Hỏi cách dùng, báo lỗi, đặt làm app theo yêu cầu</span></div></div>
       <div class="row" style="gap:8px">
         <a class="btn" style="flex:1;height:46px" href="tel:${CONTACT_PHONE}" aria-label="Gọi ${fmtPhone(CONTACT_PHONE)}">${ICON.phone(18)} ${fmtPhone(CONTACT_PHONE)}</a>
