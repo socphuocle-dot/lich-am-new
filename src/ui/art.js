@@ -1,16 +1,145 @@
 // Hình minh họa riêng của app (tự vẽ bằng SVG, không dùng tài nguyên bên ngoài):
 // linh vật "Bé Thỏ Ngọc", mây cát tường, đèn lồng, sao, trăng theo ngày âm, biểu tượng màu cho dịch vụ.
 let seq = 0;
-const uid = (p) => `${p}${++seq}`;
+// Bộ nhớ đệm hình SVG: dựng một lần thành "khuôn", mỗi lần dùng chỉ thay mã id gradient cho khỏi trùng.
+// (Dựng lại hình vẽ phức tạp mỗi lần vẽ màn là phần tốn thời gian nhất khi chuyển màn.)
+let tpl = null;
+const uid = (p) => (tpl ? `${p}\u0001${tpl.n++}\u0002` : `${p}${++seq}`);
+const T = new Map();
+/**
+ * Hình vẽ nhiều chi tiết → một nút <image> duy nhất (SVG nhúng dạng data URL).
+ * Trình duyệt vẽ hình một lần rồi dùng lại; DOM nhẹ hơn hàng trăm nút mỗi màn, chuyển màn và cuộn mượt hơn.
+ * Giữ thẻ <svg> bên ngoài để CSS, kích thước, nhãn đọc màn hình như cũ.
+ */
+const IMG = new Map();
+export function svgImage(key, build, vb, outerAttrs) {
+  let href = IMG.get(key);
+  if (!href) {
+    const saved = tpl; tpl = null;
+    let raw;
+    try { raw = build(); } finally { tpl = saved; }
+    raw = raw.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(raw);
+    if (IMG.size > 400) IMG.clear();
+    IMG.set(key, href);
+  }
+  const [w, h] = vb;
+  return `<svg ${outerAttrs} viewBox="0 0 ${w} ${h}"><image href="${href}" width="${w}" height="${h}"/></svg>`;
+}
 
-/* ================= LINH VẬT: BÉ THỎ NGỌC ================= */
+export function cachedSvg(key, build) {
+  let t = T.get(key);
+  if (t === undefined) {
+    const saved = tpl; tpl = { n: 0 };
+    try { t = build(); } finally { tpl = saved; }
+    if (T.size > 600) T.clear();
+    T.set(key, t);
+  }
+  if (t.indexOf('\u0001') < 0) return t;
+  if (tpl) return t; // đang dựng một khuôn lớn hơn: giữ nguyên dấu để khuôn ngoài thay một lượt
+  const base = ++seq;
+  return t.replace(/\u0001(\d+)\u0002/g, (_, n) => `x${base}_${n}`);
+}
+
+/* ================= LINH VẬT (chọn được trong Cài đặt) ================= */
+// Các nhân vật đều tự vẽ, dùng chung thân, khăn và đồ cầm tay; khác nhau ở màu lông, tai/sừng và mặt.
+export const MASCOTS = {
+  chuot: { pick: 'Chuột', chi: 'Tý', name: 'Chuột Nhắt', short: 'Chuột Nhắt', fur: ['#EEF0F3', '#B9BEC7'], line: '#A3A9B3', foot: '#F7D3D9', cheek: '#FF9DB0', wmouth: true },
+  nghe: { pick: 'Trâu', chi: 'Sửu', name: 'Nghé Con', short: 'Nghé Con', fur: ['#E6E9EE', '#AEB6C1'], line: '#9AA3AF', foot: '#5C5752', cheek: '#FFB0B8' },
+  ho: { pick: 'Hổ', chi: 'Dần', name: 'Hổ Con', short: 'Hổ Con', fur: ['#FFC67A', '#F0892B'], line: '#D6741F', foot: '#FFF3E0', cheek: '#FF9D8A' },
+  meo: { pick: 'Mèo', chi: 'Mão', name: 'Mèo Mướp', short: 'Mèo Mướp', fur: ['#FFE2B8', '#F3A95C'], line: '#DE9450', foot: '#FFF1DE', cheek: '#FF9D8A', wmouth: true },
+  rong: { pick: 'Rồng', chi: 'Thìn', name: 'Rồng Ngọc', short: 'Rồng Ngọc', fur: ['#9FE3C2', '#2E9E6E'], line: '#23805A', foot: '#F6D27A', cheek: '#FFB37A' },
+  ran: { pick: 'Rắn', chi: 'Tỵ', name: 'Rắn Xanh', short: 'Rắn Xanh', fur: ['#C9EF8A', '#6DB33F'], line: '#4E9030', foot: '#E8F7C8', cheek: '#FF9DB0' },
+  ngua: { pick: 'Ngựa', chi: 'Ngọ', name: 'Ngựa Nâu', short: 'Ngựa Nâu', fur: ['#E2B58A', '#A86A3D'], line: '#8C5530', foot: '#3A2A22', cheek: '#FF9D8A' },
+  de: { pick: 'Dê', chi: 'Mùi', name: 'Dê Bông', short: 'Dê Bông', fur: ['#FFFFFF', '#EFE6D8'], line: '#D9CCB8', foot: '#8C7A66', cheek: '#FFB0B8' },
+  khi: { pick: 'Khỉ', chi: 'Thân', name: 'Khỉ Lém', short: 'Khỉ Lém', fur: ['#C69466', '#8A5A33'], line: '#6E4426', foot: '#F3D2B3', cheek: '#FF9D8A' },
+  ga: { pick: 'Gà', chi: 'Dậu', name: 'Gà Trống', short: 'Gà Trống', fur: ['#FFF4C2', '#F6C343'], line: '#D9A21E', foot: '#F08A24', cheek: '#FF9D8A' },
+  cun: { pick: 'Chó', chi: 'Tuất', name: 'Cún Vàng', short: 'Cún Vàng', fur: ['#FFE6B0', '#E9B565'], line: '#D49E52', foot: '#FFF3DA', cheek: '#FF9D8A' },
+  heo: { pick: 'Heo', chi: 'Hợi', name: 'Heo Hồng', short: 'Heo Hồng', fur: ['#FFDCE4', '#F59AB2'], line: '#E07B97', foot: '#FFC2D1', cheek: '#FF7A9C' },
+  tho: { pick: 'Thỏ', chi: '', name: 'Bé Thỏ Ngọc', short: 'Bé Thỏ', fur: ['#FFFFFF', '#F3E6D8'], line: '#E9D9C8', foot: '#FFFFFF', cheek: '#FF9DB0', wmouth: true },
+  lan: { pick: 'Lân', chi: '', name: 'Lân Con', short: 'Lân Con', fur: ['#FF7A5C', '#C8261A'], line: '#A31B12', foot: '#F6D27A', cheek: '#FFD27A' }
+};
+let currentMascot = 'tho';
+export const setMascot = (k) => { currentMascot = MASCOTS[k] ? k : 'tho'; };
+export const mascotKind = () => currentMascot;
+export const mascotName = (short = false) => MASCOTS[currentMascot][short ? 'short' : 'name'];
+
+/** Tai, sừng, bờm — vẽ sau lưng đầu */
+function headBack(kind, g, fur, line) {
+  if (kind === 'meo') return `<path d="M33 46 L36 18 L56 34 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/><path d="M38 40 L39 25 L50 34 z" fill="#FFB4A8"/>
+    <path d="M87 46 L84 18 L64 34 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/><path d="M82 40 L81 25 L70 34 z" fill="#FFB4A8"/>`;
+  if (kind === 'lan') return `${[[24, 40], [22, 58], [28, 74], [96, 40], [98, 58], [92, 74], [36, 28], [84, 28], [60, 22]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="12" fill="url(#${g}g)"/>`).join('')}
+    <path d="M60 4 l6 20 h-12z" fill="url(#${g}g)" stroke="#B07A1C" stroke-width="1"/><circle cx="60" cy="6" r="3.4" fill="#C8392C"/>`;
+  if (kind === 'nghe') return `<path d="M36 36 q-18 -6 -18 -22 q10 10 24 12z" fill="#F4EBDD" stroke="#C9B49F" stroke-width="1.2"/><path d="M84 36 q18 -6 18 -22 q-10 10 -24 12z" fill="#F4EBDD" stroke="#C9B49F" stroke-width="1.2"/>
+    <ellipse cx="26" cy="50" rx="11" ry="6" transform="rotate(-20 26 50)" fill="${fur}" stroke="${line}"/><ellipse cx="94" cy="50" rx="11" ry="6" transform="rotate(20 94 50)" fill="${fur}" stroke="${line}"/>`;
+  if (kind === 'cun') return '';
+  if (kind === 'chuot') return `<circle cx="34" cy="34" r="15" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="34" cy="34" r="9" fill="#F7B6C2"/>
+    <circle cx="86" cy="34" r="15" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="86" cy="34" r="9" fill="#F7B6C2"/>`;
+  if (kind === 'ho') return `<circle cx="37" cy="35" r="9" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="37" cy="35" r="4.5" fill="#3A2A22"/>
+    <circle cx="83" cy="35" r="9" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="83" cy="35" r="4.5" fill="#3A2A22"/>`;
+  if (kind === 'rong') return `<path d="M44 34 q-6 -14 -2 -26 q3 8 8 10 q-2 -8 2 -14 q4 10 0 30z" fill="url(#${g}g)" stroke="#B07A1C" stroke-width="1"/>
+    <path d="M76 34 q6 -14 2 -26 q-3 8 -8 10 q2 -8 -2 -14 q-4 10 0 30z" fill="url(#${g}g)" stroke="#B07A1C" stroke-width="1"/>
+    <path d="M30 46 l-8 -4 6 9 -9 1 10 5z M90 46 l8 -4 -6 9 9 1 -10 5z" fill="#F6D27A" stroke="#C08A2A" stroke-width=".8"/>`;
+  if (kind === 'ran') return '';
+  if (kind === 'ngua') return `<path d="M38 40 L40 16 L54 32 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/><path d="M82 40 L80 16 L66 32 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M50 30 q4 -14 10 -16 q-1 8 4 10 q2 -8 8 -8 q-3 8 0 14z" fill="#3A2A22"/>`;
+  if (kind === 'de') return `<path d="M44 34 q-16 -6 -14 -20 q8 -4 14 6 q-8 -2 -8 6 q2 4 8 2z" fill="#E9D7B8" stroke="#BFA57E" stroke-width="1.2"/><path d="M76 34 q16 -6 14 -20 q-8 -4 -14 6 q8 -2 8 6 q-2 4 -8 2z" fill="#E9D7B8" stroke="#BFA57E" stroke-width="1.2"/>
+    <ellipse cx="27" cy="54" rx="10" ry="5" transform="rotate(25 27 54)" fill="${fur}" stroke="${line}"/><ellipse cx="93" cy="54" rx="10" ry="5" transform="rotate(-25 93 54)" fill="${fur}" stroke="${line}"/>`;
+  if (kind === 'khi') return `<circle cx="27" cy="56" r="11" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="27" cy="56" r="6" fill="#F3D2B3"/>
+    <circle cx="93" cy="56" r="11" fill="${fur}" stroke="${line}" stroke-width="1.2"/><circle cx="93" cy="56" r="6" fill="#F3D2B3"/>`;
+  if (kind === 'ga') return `<path d="M50 32 q-2 -12 6 -12 q0 -8 8 -6 q6 -6 10 2 q6 2 2 10 q-6 4 -26 6z" fill="#E5322B" stroke="#B5261A" stroke-width="1"/>`;
+  if (kind === 'heo') return `<path d="M36 40 L34 20 L52 32 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/><path d="M84 40 L86 20 L68 32 z" fill="${fur}" stroke="${line}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  return `<g class="ears">
+    <ellipse cx="45" cy="24" rx="9.5" ry="22" transform="rotate(-12 45 24)" fill="${fur}" stroke="${line}" stroke-width="1.2"/>
+    <ellipse cx="45" cy="26" rx="4.6" ry="15" transform="rotate(-12 45 26)" fill="url(#${g}ear)"/>
+    <ellipse cx="76" cy="22" rx="9.5" ry="22" transform="rotate(14 76 22)" fill="${fur}" stroke="${line}" stroke-width="1.2"/>
+    <ellipse cx="76" cy="24" rx="4.6" ry="15" transform="rotate(14 76 24)" fill="url(#${g}ear)"/></g>`;
+}
+
+/** Chi tiết trên mặt (vẽ sau mặt): sọc, mõm, tai cụp, lông mày lân… */
+function headFront(kind, g, fur, line) {
+  if (kind === 'meo') return `<path d="M54 33 v7 M60 31 v8 M66 33 v7" stroke="#D9843A" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M30 62 l-12 -2 M30 66 l-12 2 M90 62 l12 -2 M90 66 l12 2" stroke="#B9835A" stroke-width="1.2" stroke-linecap="round"/>`;
+  if (kind === 'lan') return `<path d="M40 48 q8 -8 16 -2 M64 46 q8 -6 16 2" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M40 48 q8 -8 16 -2 M64 46 q8 -6 16 2" stroke="#F6D27A" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <ellipse cx="60" cy="72" rx="15" ry="6" fill="#FFF6EA" opacity=".9"/><path d="M48 72 h24" stroke="#C8392C" stroke-width="1.4"/>`;
+  if (kind === 'nghe') return `<ellipse cx="60" cy="68" rx="16" ry="10" fill="#F3D8CF" stroke="${line}" stroke-width="1"/><ellipse cx="54" cy="67" rx="2" ry="2.6" fill="#7A4A3E"/><ellipse cx="66" cy="67" rx="2" ry="2.6" fill="#7A4A3E"/>`;
+  if (kind === 'cun') return `<ellipse cx="31" cy="58" rx="9" ry="19" transform="rotate(18 31 58)" fill="#B9773A" stroke="${line}"/><ellipse cx="89" cy="58" rx="9" ry="19" transform="rotate(-18 89 58)" fill="#B9773A" stroke="${line}"/>
+    <ellipse cx="60" cy="68" rx="12" ry="8" fill="#FFF6EA"/><ellipse cx="60" cy="63.5" rx="4.2" ry="3" fill="#3A2A22"/>`;
+  if (kind === 'chuot') return `<path d="M30 63 l-12 -3 M30 67 l-12 1 M90 63 l12 -3 M90 67 l12 1" stroke="#8E949E" stroke-width="1.1" stroke-linecap="round"/>`;
+  if (kind === 'ho') return `<path d="M54 32 v6 M60 30 v9 M66 32 v6 M31 52 h7 M31 58 h6 M89 52 h-7 M89 58 h-6" stroke="#3A2A22" stroke-width="2.6" stroke-linecap="round"/>
+    <ellipse cx="60" cy="68" rx="13" ry="8" fill="#FFF6EA"/><path d="M57 63 h6 l-3 3z" fill="#3A2A22"/><path d="M55.5 68 q2.2 2.6 4.5 0 q2.3 2.6 4.5 0" stroke="#7A4A3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M44 68 l-14 -2 M44 71 l-14 3 M76 68 l14 -2 M76 71 l14 3" stroke="#B9835A" stroke-width="1" stroke-linecap="round"/>`;
+  if (kind === 'rong') return `<ellipse cx="60" cy="68" rx="14" ry="8" fill="#D8F5E5" stroke="${line}" stroke-width="1"/><circle cx="55" cy="66" r="1.8" fill="#23805A"/><circle cx="65" cy="66" r="1.8" fill="#23805A"/>
+    <path d="M47 70 q-14 4 -18 16 M73 70 q14 4 18 16" stroke="#F6D27A" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  if (kind === 'ran') return `<circle cx="46" cy="40" r="3" fill="#4E9030" opacity=".5"/><circle cx="60" cy="35" r="3.4" fill="#4E9030" opacity=".5"/><circle cx="74" cy="40" r="3" fill="#4E9030" opacity=".5"/>
+    <path d="M54 68 q6 5 12 0" stroke="#2F5C1E" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M60 71 v5 l-2 3 M60 76 l2 3" stroke="#E5322B" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  if (kind === 'ngua') return `<ellipse cx="60" cy="69" rx="14" ry="9" fill="#F0D2B4" stroke="${line}" stroke-width="1"/><ellipse cx="55" cy="68" rx="1.8" ry="2.4" fill="#5C3A22"/><ellipse cx="65" cy="68" rx="1.8" ry="2.4" fill="#5C3A22"/>`;
+  if (kind === 'de') return `<path d="M57.6 64 h4.8 l-2.4 2.4z" fill="#C9A68A"/><path d="M56 68 q4 3 8 0" stroke="#8C6A52" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    <path d="M56 80 q4 10 8 0" fill="#F4EBDD" stroke="#D9CCB8"/>`;
+  if (kind === 'khi') return `<path d="M60 44 c-6 -6 -18 -4 -18 8 c0 6 2 10 6 14 c-2 6 4 12 12 12 c8 0 14 -6 12 -12 c4 -4 6 -8 6 -14 c0 -12 -12 -14 -18 -8z" fill="#F3D2B3"/>
+    <ellipse cx="56" cy="66" rx="1.4" ry="1.8" fill="#5C3A22"/><ellipse cx="64" cy="66" rx="1.4" ry="1.8" fill="#5C3A22"/><path d="M54 71 q6 5 12 0" stroke="#7A4A3E" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  if (kind === 'ga') return `<path d="M54 64 l6 -4 6 4 -6 6z" fill="#F08A24" stroke="#C86A10" stroke-width="1"/><path d="M57 70 q3 10 6 0z" fill="#E5322B"/>`;
+  if (kind === 'heo') return `<ellipse cx="60" cy="67" rx="11" ry="8" fill="#FFB8CA" stroke="${line}" stroke-width="1.2"/><ellipse cx="56" cy="67" rx="2" ry="3" fill="#C2557A"/><ellipse cx="64" cy="67" rx="2" ry="3" fill="#C2557A"/>`;
+  return '';
+}
+
 /**
  * pose: 'wave' | 'lantern' | 'pray' | 'star' | 'cake' | 'letter' | 'moon' | 'phone' | 'book'
+ * kind: nhân vật (mặc định theo lựa chọn trong Cài đặt)
  */
-export function mascot(pose = 'wave', size = 120, label = 'Bé Thỏ Ngọc') {
+export function mascot(pose = 'wave', size = 120, label = '', kind = currentMascot) {
+  label = label || (MASCOTS[kind] || MASCOTS.tho).name;
+  return svgImage(`m|${pose}|${kind}`, () => mascotRaw(pose, 120, label, kind), [120, 122],
+    `class="mascot mascot-${kind}" width="${size}" height="${size}" role="img" aria-label="${label}"`);
+}
+function mascotRaw(pose, size, label, kind) {
+  const C = MASCOTS[kind] || MASCOTS.tho;
+  label = label || C.name;
   const g = uid('m');
   const fur = `url(#${g}f)`, scarf = `url(#${g}s)`, gold = `url(#${g}g)`;
-  const arm = (cx, cy, rot) => `<ellipse cx="${cx}" cy="${cy}" rx="7" ry="11" transform="rotate(${rot} ${cx} ${cy})" fill="${fur}" stroke="#E9D9C8" stroke-width="1"/>`;
+  const line = C.line;
+  const arm = (cx, cy, rot) => `<ellipse cx="${cx}" cy="${cy}" rx="7" ry="11" transform="rotate(${rot} ${cx} ${cy})" fill="${fur}" stroke="${line}" stroke-width="1"/>`;
   const props = {
     wave: `${arm(36, 88, 25)}${arm(90, 66, -150)}
       <path d="M100 50 l3 -6 M106 56 l6 -3 M104 62 l6 1" stroke="#E9A23B" stroke-width="2.4" stroke-linecap="round"/>`,
@@ -22,8 +151,8 @@ export function mascot(pose = 'wave', size = 120, label = 'Bé Thỏ Ngọc') {
       <path d="M96 82 h20 M97 75 q9 -3 18 0 M97 89 q9 3 18 0" stroke="#F6D27A" stroke-width="1.2" fill="none" opacity=".9"/>
       <rect x="101" y="96" width="10" height="4" rx="1.5" fill="${gold}"/>
       <path d="M104 100 v9 M106 100 v11 M108 100 v9" stroke="#C8392C" stroke-width="1.6" stroke-linecap="round"/>`,
-    pray: `<ellipse cx="55" cy="84" rx="7" ry="11" transform="rotate(28 55 84)" fill="${fur}" stroke="#E9D9C8"/>
-      <ellipse cx="65" cy="84" rx="7" ry="11" transform="rotate(-28 65 84)" fill="${fur}" stroke="#E9D9C8"/>
+    pray: `<ellipse cx="55" cy="84" rx="7" ry="11" transform="rotate(28 55 84)" fill="${fur}" stroke="${line}"/>
+      <ellipse cx="65" cy="84" rx="7" ry="11" transform="rotate(-28 65 84)" fill="${fur}" stroke="${line}"/>
       <path d="M60 104 c-8-3-11-9-10-15 4 1 7 4 8 7 1-5 1-9 2-12 1 3 1 7 2 12 1-3 4-6 8-7 1 6-2 12-10 15z" fill="url(#${g}lotus)"/>`,
     star: `${arm(36, 88, 25)}${arm(88, 68, -145)}
       <path d="M100 38 l4.2 8.6 9.4 1.4-6.8 6.6 1.6 9.4-8.4-4.4-8.4 4.4 1.6-9.4-6.8-6.6 9.4-1.4z" fill="${gold}" stroke="#B9831F" stroke-width="1"/>
@@ -48,10 +177,15 @@ export function mascot(pose = 'wave', size = 120, label = 'Bé Thỏ Ngọc') {
   const seat = pose === 'moon'
     ? `<path d="M14 100 a52 30 0 0 0 92 0 a46 22 0 0 1 -92 0z" fill="${gold}"/><circle cx="34" cy="112" r="2" fill="#B9831F" opacity=".5"/><circle cx="80" cy="116" r="2.6" fill="#B9831F" opacity=".5"/>`
     : `<ellipse cx="60" cy="116" rx="30" ry="4" fill="#5B2A1F" opacity=".16"/>`;
-  return `<svg class="mascot" viewBox="0 0 120 122" width="${size}" height="${size}" role="img" aria-label="${label}">
+  const lan = kind === 'lan';
+  const eyeR = lan ? [5, 6] : [3.8, 4.6];
+  const scarfDef = lan
+    ? `<linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBE3A2"/><stop offset="1" stop-color="#C08A2A"/></linearGradient>`
+    : `<linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E25A47"/><stop offset="1" stop-color="#8E140C"/></linearGradient>`;
+  return `<svg class="mascot mascot-${kind}" viewBox="0 0 120 122" width="${size}" height="${size}" role="img" aria-label="${label}">
   <defs>
-    <linearGradient id="${g}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F3E6D8"/></linearGradient>
-    <linearGradient id="${g}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E25A47"/><stop offset="1" stop-color="#8E140C"/></linearGradient>
+    <linearGradient id="${g}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.fur[0]}"/><stop offset="1" stop-color="${C.fur[1]}"/></linearGradient>
+    ${scarfDef}
     <linearGradient id="${g}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE3A2"/><stop offset=".6" stop-color="#E0A93F"/><stop offset="1" stop-color="#B07A1C"/></linearGradient>
     <radialGradient id="${g}lan" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FF8A6E"/><stop offset=".55" stop-color="#D2301F"/><stop offset="1" stop-color="#8E140C"/></radialGradient>
     <radialGradient id="${g}glow"><stop offset="0" stop-color="#FFD27A" stop-opacity=".55"/><stop offset="1" stop-color="#FFD27A" stop-opacity="0"/></radialGradient>
@@ -59,25 +193,22 @@ export function mascot(pose = 'wave', size = 120, label = 'Bé Thỏ Ngọc') {
     <radialGradient id="${g}ear" cx=".5" cy=".6" r=".6"><stop offset="0" stop-color="#FFB4C2"/><stop offset="1" stop-color="#F48BA2"/></radialGradient>
   </defs>
   ${seat}
-  <g class="ears">
-    <ellipse cx="45" cy="24" rx="9.5" ry="22" transform="rotate(-12 45 24)" fill="${fur}" stroke="#E9D9C8" stroke-width="1.2"/>
-    <ellipse cx="45" cy="26" rx="4.6" ry="15" transform="rotate(-12 45 26)" fill="url(#${g}ear)"/>
-    <ellipse cx="76" cy="22" rx="9.5" ry="22" transform="rotate(14 76 22)" fill="${fur}" stroke="#E9D9C8" stroke-width="1.2"/>
-    <ellipse cx="76" cy="24" rx="4.6" ry="15" transform="rotate(14 76 24)" fill="url(#${g}ear)"/>
-  </g>
-  <ellipse cx="60" cy="${pose === 'moon' ? 92 : 94}" rx="25" ry="21" fill="${fur}" stroke="#E9D9C8" stroke-width="1.2"/>
-  ${pose === 'moon' ? '' : '<ellipse cx="48" cy="112" rx="9" ry="5.5" fill="#FFFFFF" stroke="#E9D9C8"/><ellipse cx="72" cy="112" rx="9" ry="5.5" fill="#FFFFFF" stroke="#E9D9C8"/>'}
-  <ellipse cx="60" cy="56" rx="31" ry="27" fill="${fur}" stroke="#E9D9C8" stroke-width="1.2"/>
-  <path d="M38 47 q6-8 14-7" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".9"/>
-  <ellipse cx="48.5" cy="58" rx="3.8" ry="4.6" fill="#2B1B17"/><circle cx="49.8" cy="56.3" r="1.4" fill="#fff"/>
-  <ellipse cx="71.5" cy="58" rx="3.8" ry="4.6" fill="#2B1B17"/><circle cx="72.8" cy="56.3" r="1.4" fill="#fff"/>
-  <ellipse cx="41" cy="67" rx="5.5" ry="3.3" fill="#FF9DB0" opacity=".6"/><ellipse cx="79" cy="67" rx="5.5" ry="3.3" fill="#FF9DB0" opacity=".6"/>
-  <path d="M57.6 63.4 h4.8 l-2.4 2.6z" fill="#F07D95"/>
-  <path d="M55.5 67.5 q2.2 2.6 4.5 0 q2.3 2.6 4.5 0" stroke="#7A4A3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  ${headBack(kind, g, fur, line)}
+  <ellipse cx="60" cy="${pose === 'moon' ? 92 : 94}" rx="25" ry="21" fill="${fur}" stroke="${line}" stroke-width="1.2"/>
+  ${lan ? `<ellipse cx="60" cy="${pose === 'moon' ? 96 : 98}" rx="14" ry="12" fill="#F6D27A" opacity=".85"/>` : ''}
+  ${pose === 'moon' ? '' : `<ellipse cx="48" cy="112" rx="9" ry="5.5" fill="${C.foot}" stroke="${line}"/><ellipse cx="72" cy="112" rx="9" ry="5.5" fill="${C.foot}" stroke="${line}"/>`}
+  <ellipse cx="60" cy="56" rx="31" ry="27" fill="${fur}" stroke="${line}" stroke-width="1.2"/>
+  <path d="M38 47 q6-8 14-7" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+  ${headFront(kind, g, fur, line)}
+  ${kind === 'khi' ? '' : ''}<ellipse cx="48.5" cy="${lan ? 56 : 58}" rx="${eyeR[0]}" ry="${eyeR[1]}" fill="#2B1B17"/><circle cx="50" cy="${lan ? 54 : 56.3}" r="${lan ? 1.8 : 1.4}" fill="#fff"/>
+  <ellipse cx="71.5" cy="${lan ? 56 : 58}" rx="${eyeR[0]}" ry="${eyeR[1]}" fill="#2B1B17"/><circle cx="73" cy="${lan ? 54 : 56.3}" r="${lan ? 1.8 : 1.4}" fill="#fff"/>
+  <ellipse cx="41" cy="67" rx="5.5" ry="3.3" fill="${C.cheek}" opacity=".6"/><ellipse cx="79" cy="67" rx="5.5" ry="3.3" fill="${C.cheek}" opacity=".6"/>
+  ${C.wmouth ? `<path d="M57.6 63.4 h4.8 l-2.4 2.6z" fill="#F07D95"/>
+  <path d="M55.5 67.5 q2.2 2.6 4.5 0 q2.3 2.6 4.5 0" stroke="#7A4A3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>` : kind === 'cun' ? '<path d="M56 68 q4 3 8 0" stroke="#7A4A3E" stroke-width="1.5" fill="none" stroke-linecap="round"/>' : ''}
   <path d="M36 76 q24 12 48 0 l-2 7 q-22 10 -44 0z" fill="${scarf}"/>
-  <path d="M36.6 78 q23.4 11.6 46.8 0" stroke="#F6D27A" stroke-width="1.2" fill="none" opacity=".9"/>
+  <path d="M36.6 78 q23.4 11.6 46.8 0" stroke="${lan ? '#C8392C' : '#F6D27A'}" stroke-width="1.2" fill="none" opacity=".9"/>
   <path d="M62 82 l8 14 -9 -3 -4 7 -2 -15z" fill="${scarf}"/>
-  <circle cx="60" cy="82" r="3.6" fill="${gold}"/>
+  <circle cx="60" cy="82" r="3.6" fill="${lan ? '#C8392C' : gold}"/>
   <g class="m-${pose}">${props[pose] || props.wave}</g>
 </svg>`;
 }
@@ -102,6 +233,9 @@ export const lanternString = () => {
 
 /** Trăng đúng pha theo ngày âm (1 = trăng non, 15 = trăng tròn) */
 export function moonPhase(lday, size = 64) {
+  return cachedSvg(`moon|${lday}|${size}`, () => moonPhaseRaw(lday, size));
+}
+function moonPhaseRaw(lday, size) {
   const g = uid('mp');
   const p = ((lday - 1) % 30) / 29.5; // 0 → 1
   const lit = p <= 0.5 ? p * 2 : (1 - p) * 2; // 0..1..0
@@ -129,7 +263,7 @@ const lg = (id, a, b, c) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2=
 const GOLD = ['#FBE3A2', '#E0A93F', '#A8721A'];
 const RED = ['#FF8A6E', '#D2301F', '#8E140C'];
 
-export const ILL = {
+const ILL_RAW = {
   incense() { const a = G(), b = G(); return wrap(`
     <path d="M17 6 q-3 4 0 8 t0 8" stroke="#BFB1A6" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".8"/>
     <path d="M31 4 q3 4 0 8 t0 8" stroke="#BFB1A6" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".8"/>
@@ -278,7 +412,9 @@ export const ILL = {
     <circle cx="24" cy="22" r="13" fill="#FBD9BF"/><path d="M11 20 a13 13 0 0 1 26 0 q-6-6-13-4 q-7-2-13 4z" fill="#3A2A22"/>
     <circle cx="19" cy="23" r="1.6" fill="#3A2A22"/><circle cx="29" cy="23" r="1.6" fill="#3A2A22"/><path d="M20 28 q4 3 8 0" stroke="#C8392C" stroke-width="1.6" fill="none" stroke-linecap="round"/>
     <path d="M10 44 a14 10 0 0 1 28 0z" fill="#9B6BD6"/>`); }
-};
+};/** Biểu tượng màu (đã qua bộ nhớ đệm) */
+export const ILL = Object.fromEntries(Object.entries(ILL_RAW).map(([k, f]) => [k, (...a) => svgImage(`I|${k}|${a.join(',')}`, () => f(...a), [48, 48], 'width="34" height="34" aria-hidden="true"')]));
+
 
 /* ===== Giao diện theo mùa lễ (tính theo âm lịch) ===== */
 const flower = (x, y, r, c1, c2) => {

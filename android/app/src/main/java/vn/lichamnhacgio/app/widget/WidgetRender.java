@@ -78,6 +78,13 @@ public final class WidgetRender {
 
     private static final String[] CHI = {"Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"};
 
+    /** Ảnh linh vật theo lựa chọn trong app (Bé Thỏ dùng tên cũ widget_mascot_<dáng>) */
+    static int mascotRes(Context ctx, String pose) {
+        String k = UserStore.mascot(ctx);
+        int r = "tho".equals(k) ? 0 : drawable(ctx, "widget_mascot_" + k + "_" + pose);
+        return r != 0 ? r : drawable(ctx, "widget_mascot_" + pose);
+    }
+
     static int drawable(Context ctx, String name) {
         return ctx.getResources().getIdentifier(name, "drawable", ctx.getPackageName());
     }
@@ -273,7 +280,7 @@ public final class WidgetRender {
             int[] c = CalendarStore.civil(it.epoch);
             CalendarStore.Day d = CalendarStore.day(ctx, it.epoch);
             v.setTextViewText(R.id.title, it.title);
-            setImage(v, R.id.mascot, drawable(ctx, it.title.startsWith("Sinh nhật") ? "widget_mascot_cake" : it.title.startsWith("Tết") ? "widget_mascot_lantern" : it.title.startsWith("Giỗ") ? "widget_mascot_pray" : "widget_mascot_star"));
+            setImage(v, R.id.mascot, mascotRes(ctx, it.title.startsWith("Sinh nhật") ? "cake" : it.title.startsWith("Tết") ? "lantern" : it.title.startsWith("Giỗ") ? "pray" : "star"));
             v.setTextViewText(R.id.number, diff <= 0 ? "Hôm nay" : String.valueOf(diff));
             v.setTextViewText(R.id.unit, diff <= 0 ? "" : "ngày nữa");
             v.setTextViewText(R.id.date, CalendarStore.THU[d.wd] + ", " + c[2] + "/" + c[1]
@@ -318,7 +325,7 @@ public final class WidgetRender {
             text = "Mở app để xem lịch âm hôm nay";
         }
         v.setTextViewText(R.id.tip_text, text);
-        setImage(v, R.id.mascot, drawable(ctx, "widget_mascot_" + pose));
+        setImage(v, R.id.mascot, mascotRes(ctx, pose));
         setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
         v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) : "");
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));

@@ -1,3 +1,4 @@
+import { go as navGo } from '../nav.js';
 // Tiện ích: Văn khấn + mâm cúng, Xem ngày tốt, Đổi ngày âm ↔ dương, Thiệp mời giỗ.
 import { getState, setState, updateSettings } from '../store.js';
 import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, canChiYear, canChiDay, THU, LUNAR_MONTH_NAME, lunarMonthLength, leapMonthOfYear } from '../lib/lunar.js';
@@ -11,7 +12,7 @@ import { speakParagraphs, stopSpeaking, ttsStatus, openVoiceInstall } from '../t
 import { unlockAudio } from '../sounds.js';
 import { saveVoice, voiceUrl, deleteVoice, startRecording, stopRecording, cancelRecording, canRecord } from '../voice.js';
 import { confirmSheet } from './dialog.js';
-import { mascot, ILL, cloud, sparkle, lanternString } from './art.js';
+import { mascot, mascotName, ILL, cloud, sparkle, lanternString } from './art.js';
 import { giap, giapName } from './zodiac.js';
 
 /** "Ông" + "Nguyễn Văn A" → "Ông Nguyễn Văn A"; không lặp nếu tên đã có quan hệ ("Bà Cố") */
@@ -213,7 +214,7 @@ export function mountVankhan(root, rerender, params) {
     const q = new URLSearchParams({ ...(params.jd ? { jd: params.jd } : {}), ...(params.gid ? { gid: params.gid } : {}), ...(params.tab ? { tab: params.tab } : {}), ...patch });
     for (const [k, v] of [...q]) if (!v) q.delete(k);
     vk.tabFrom = `#/vankhan/${o.id}?${q}`; vk.editHost = true; // giữ thẻ thông tin đang mở
-    location.hash = vk.tabFrom;
+    navGo(vk.tabFrom, { replace: true });
   };
   root.addEventListener('change', (e) => {
     const k = e.target.dataset.vk;
@@ -391,7 +392,7 @@ export function renderGoodDays() {
   ${backHeader('Xem ngày tốt', '#/today', 'Theo hoàng đạo, 12 trực, ngày kỵ và tuổi')}
   <main class="body" style="gap:14px">
     <section class="banner gold" aria-hidden="false"><span class="bn-cloud a">${cloud(80, '#F6D27A', .5)}</span><span class="bn-cloud b">${cloud(60, '#F6D27A', .35)}</span>
-      <div class="col grow" style="gap:4px;position:relative"><b>Chọn ngày lành tháng tốt</b><span>Bé Thỏ tìm giúp ngày hợp việc, hợp tuổi bạn</span></div><div class="bn-mascot">${mascot('star', 92)}</div></section>
+      <div class="col grow" style="gap:4px;position:relative"><b>Chọn ngày lành tháng tốt</b><span>${mascotName(true)} tìm giúp ngày hợp việc, hợp tuổi bạn</span></div><div class="bn-mascot">${mascot('star', 92)}</div></section>
     <div class="field" role="group" aria-label="Việc cần làm"><span class="lb">Bạn định làm việc gì?</span>
       <div class="chips">${ACTIVITIES.map((a) => `<button type="button" class="chip" data-gact="${a.id}" aria-pressed="${gd.act === a.id}">${a.label}</button>`).join('')}</div></div>
     <div class="seg" role="group" aria-label="Khoảng thời gian">${[[30, '30 ngày'], [60, '2 tháng'], [180, '6 tháng']].map(([v, lb]) => `<button type="button" data-gdays="${v}" aria-pressed="${gd.days === v}">${lb}</button>`).join('')}</div>

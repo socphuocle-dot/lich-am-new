@@ -99,10 +99,16 @@ enum Art {
         return it.kind == 1 ? "widget_ic_moon" : "widget_ic_le"
     }
     static func mascot(for title: String, kind: Int) -> String {
-        if title.hasPrefix("Sinh nhật") { return "widget_mascot_cake" }
-        if title.hasPrefix("Tết") || kind == 1 { return "widget_mascot_lantern" }
-        if title.hasPrefix("Giỗ") || kind == 3 { return "widget_mascot_pray" }
-        return "widget_mascot_star"
+        if title.hasPrefix("Sinh nhật") { return pose("cake") }
+        if title.hasPrefix("Tết") || kind == 1 { return pose("lantern") }
+        if title.hasPrefix("Giỗ") || kind == 3 { return pose("pray") }
+        return pose("star")
+    }
+    /// Ảnh linh vật theo lựa chọn trong app (Bé Thỏ dùng tên cũ)
+    static func pose(_ p: String) -> String {
+        let k = UserStore().mascot
+        if k != "tho", ui("widget_mascot_\(k)_\(p)") != nil { return "widget_mascot_\(k)_\(p)" }
+        return "widget_mascot_\(p)"
     }
 }
 
@@ -462,7 +468,7 @@ struct IconView: View {
     }
 }
 
-// MARK: - 7. Bé Thỏ nhắc (vừa)
+// MARK: - 7. Lời nhắc hôm nay (vừa)
 
 struct TipView: View {
     let entry: DayEntry
@@ -503,20 +509,20 @@ struct TipView: View {
         for i in 1...30 {
             let x = CalStore.shared.day(today + i)
             if x.ld == 1 && x.lm == 1 && !x.leap {
-                return ("Còn \(i) ngày nữa là Tết \(CalStore.shared.yearName(x.ly))!", "widget_mascot_star")
+                return ("Còn \(i) ngày nữa là Tết \(CalStore.shared.yearName(x.ly))!", Art.pose("star"))
             }
         }
         if day.hasLunar && (day.ld == 1 || day.ld == 15) {
-            return ("Hôm nay \(day.ld == 15 ? "Rằm" : "mùng Một"), nhớ thắp nén hương nhé", "widget_mascot_lantern")
+            return ("Hôm nay \(day.ld == 15 ? "Rằm" : "mùng Một"), nhớ thắp nén hương nhé", Art.pose("lantern"))
         }
         if day.hasLunar {
             for i in 1...31 {
                 let x = CalStore.shared.day(today + i)
                 if x.ld == 1 || x.ld == 15 {
-                    return ("Còn \(i) ngày nữa đến \(x.ld == 15 ? "Rằm" : "mùng Một") · \(day.good ? "ngày Hoàng đạo" : "ngày Hắc đạo")", "widget_mascot_wave")
+                    return ("Còn \(i) ngày nữa đến \(x.ld == 15 ? "Rằm" : "mùng Một") · \(day.good ? "ngày Hoàng đạo" : "ngày Hắc đạo")", Art.pose("wave"))
                 }
             }
         }
-        return ("Mở app để xem lịch âm hôm nay", "widget_mascot_wave")
+        return ("Mở app để xem lịch âm hôm nay", Art.pose("wave"))
     }
 }

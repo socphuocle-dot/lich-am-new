@@ -1,7 +1,7 @@
 import { getState, updateSettings } from '../store.js';
 import { dayInfo, jdFromDate, canChiYear } from '../lib/lunar.js';
 import { listEvents, describeDate } from '../lib/events.js';
-import { esc, ICON, nav, MONTH_SHORT, toast } from './common.js';
+import { esc, ICON, MONTH_SHORT, toast } from './common.js';
 import { Capacitor } from '@capacitor/core';
 import { APK_URL, APP_VERSION } from '../config.js';
 import { pendingUpdate } from '../update.js';
@@ -43,7 +43,6 @@ export function renderToday() {
   const { todayJd, ev } = upcomingEvents(now);
   const st = getState();
   const soon = ev.filter((e) => !st.disabled[e.key]).slice(0, 3);
-  const hasSoon = ev.some((e) => e.jd - todayJd <= 3);
   const hourNow = now.getHours();
   const inHour = (h) => (h.from === 23 ? hourNow >= 23 || hourNow < 1 : hourNow >= h.from && hourNow < h.to);
   const l = info.lunar;
@@ -56,8 +55,6 @@ export function renderToday() {
       <span class="year-pal" title="Linh vật năm ${canChiYear(l.year)}">${giap(canChiYear(l.year), 36)}</span></div>
     <div class="grow col bubble-wrap"><div class="bubble"><span class="sub">${season ? season.greet : greet}!</span><h1 tabindex="-1">${info.weekday}, ${now.getDate()}/${now.getMonth() + 1}</h1>
       <span class="bubble-tip">${tipOf(ev, todayJd, l, info)}</span></div></div>
-    <div class="col" style="gap:6px"><a class="icon-btn" href="#/settings" aria-label="Cài đặt">${ICON.gear(22)}</a>
-    <a class="icon-btn" href="#/reminders" aria-label="Xem nhắc việc">${ICON.bell(22)}${hasSoon ? '<span class="dot"></span>' : ''}</a></div>
   </header>
   <main class="body">
     <section class="card sheet${season ? ' season-' + season.id : ''}" aria-label="Tờ lịch hôm nay">${seasonDecor(season)}
@@ -106,7 +103,6 @@ export function renderToday() {
     <a href="#/donate" class="center small muted" style="text-decoration:none;padding:4px 0">Miễn phí, không quảng cáo · <b style="color:var(--accent)">Mời tác giả ly cà phê</b></a>
   </main>
   <a class="fab" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
-  ${nav('today')}
 </div>`;
 }
 

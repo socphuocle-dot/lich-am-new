@@ -79,5 +79,5 @@ export function buildUserWidgetData(now, state) {
     for (const c of nextChayDays(k, fromJd, 40).slice(0, 2)) list.push({ d: ymd(c.solar), t: 'Ngày chay', l: `${c.lunar.day}/${c.lunar.month}`, r: 'anchay' });
     list.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
   }
-  return { v: 1, updated: now.toISOString(), gios: list, cd };
+  return { v: 1, updated: now.toISOString(), gios: list, cd, m: state.settings.mascot || 'tho' };
 }

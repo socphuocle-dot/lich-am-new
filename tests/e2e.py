@@ -82,7 +82,8 @@ with sync_playwright() as p:
             page.click('[data-rem="7"]')
             shot('add')
             page.click('[data-act="save"]')
-            page.wait_for_selector('[data-screen="reminders"]')
+            page.wait_for_selector('[data-screen="today"]')  # lưu xong đóng biểu mẫu, về đúng màn đã mở nó
+            page.goto(BASE + '#/reminders'); page.wait_for_selector('[data-screen="reminders"]')
             expect(page.get_by_text('Giỗ Ông nội <b>test</b>').first).to_be_visible()  # tên được escape, không chèn HTML
             assert page.locator('b:text-is("test")').count() == 0
             shot('reminders')
@@ -203,7 +204,8 @@ with sync_playwright() as p:
                 time.sleep(0.1)
             raise AssertionError('Ảnh QR không tải được')
         def t_donate():
-            page.goto(BASE + '#/culture'); page.click('nav a[href="#/donate"]'); page.wait_for_selector('[data-screen="donate"]')
+            page.goto(BASE + '#/culture'); page.click('nav a[href="#/canhan"]'); page.wait_for_selector('[data-screen="canhan"]')
+            page.click('a[href="#/donate"]'); page.wait_for_selector('[data-screen="donate"]')
             img = page.locator('[data-test="qr"]')
             expect(img).to_be_visible()
             wait_qr()
@@ -258,8 +260,23 @@ with sync_playwright() as p:
             page.goto(BASE + '#/today'); page.wait_for_selector('[data-screen="today"]')
             page.click('a.fab'); page.wait_for_selector('[data-screen="gio-form"]')
             page.click('[data-back]'); page.wait_for_selector('[data-screen="today"]')
+            page.click('nav a[href="#/canhan"]'); page.wait_for_selector('[data-screen="canhan"]')
+            expect(page.locator('[data-screen="canhan"] [data-back]')).to_have_count(0)  # màn gốc của tab không có Quay lại
             page.click('a[href="#/settings"]'); page.wait_for_selector('[data-screen="settings"]')
-            page.click('[data-back]'); page.wait_for_selector('[data-screen="today"]')
+            expect(page.locator('nav a[aria-current="page"]')).to_have_attribute('href', '#/canhan')  # màn con vẫn sáng đúng tab
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="canhan"]')
+            # Đổi tab rồi quay lại: giữ đúng chỗ cũ; bấm lại tab đang mở: về gốc
+            page.click('a[href="#/settings"]'); page.wait_for_selector('[data-screen="settings"]')
+            page.click('nav a[href="#/calendar"]'); page.wait_for_selector('[data-screen="calendar"]')
+            page.click('nav a[href="#/canhan"]'); page.wait_for_selector('[data-screen="settings"]')
+            page.click('nav a[href="#/canhan"]'); page.wait_for_selector('[data-screen="canhan"]')
+            # Biểu mẫu: ẩn thanh tab; lưu xong đóng biểu mẫu, Quay lại không mở lại biểu mẫu
+            page.goto(BASE + '#/hieuhi'); page.wait_for_selector('[data-screen="hieuhi"]')
+            expect(page.locator('[data-screen="hieuhi"] nav')).to_have_count(1)
+            page.click('a.fab'); page.wait_for_selector('[data-screen="hieuhi-form"]')
+            expect(page.locator('[data-screen="hieuhi-form"] nav')).to_have_count(0)
+            page.fill('#hh-person', 'Thử điều hướng'); page.click('[data-act="hh-save"]'); page.wait_for_selector('[data-screen="hieuhi"]')
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="hub"]')
             page.goto(BASE + '#/culture'); page.click('a[href="#/iching"]'); page.wait_for_selector('[data-screen="iching"]')
             page.click('[data-back]'); page.wait_for_selector('[data-screen="culture"]')
             # mở thẳng link (không có lịch sử) → về trang dự phòng
@@ -330,7 +347,8 @@ with sync_playwright() as p:
             page.wait_for_selector('[data-screen="gio-form"]')
             expect(page.locator('select[data-f="day"]')).to_have_value('18')
             page.fill('#g-name', 'Cụ Tổ'); page.click('[data-side="noi"]'); page.click('[data-act="save"]')
-            page.wait_for_selector('[data-screen="reminders"]')
+            page.wait_for_selector('[data-screen="calendar"]')  # thêm từ lịch → lưu xong về lại lịch
+            page.goto(BASE + '#/reminders'); page.wait_for_selector('[data-screen="reminders"]')
             expect(page.get_by_text('Bên Nội')).to_be_visible()
             page.locator('a.item[href^="#/edit/"]', has_text='Giỗ Cụ Tổ').first.click()
             page.click('a[href^="#/thiep/"]'); page.wait_for_selector('[data-screen="invite"] canvas')
@@ -407,7 +425,7 @@ with sync_playwright() as p:
             expect(page.locator('[data-test="detail"]')).to_contain_text('Hỷ thần')
             page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
             page.click('[data-act="copy"]'); expect(page.locator('.toast')).to_contain_text('viết vài dòng')
-            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.9.2')
+            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.10.1')
             page.click('[data-act="copy"]')
             assert 'Thử góp ý' in page.evaluate('navigator.clipboard.readText()')
         check(f'[{vp_name}] Người mới mất: mốc 7/49/100 ngày, giỗ đầu, giỗ hết; văn khấn tang lễ; sao, hướng; góp ý', t_tang)
@@ -424,10 +442,10 @@ with sync_playwright() as p:
             page.fill('#hh-person', 'chú hai tâm'); page.locator('#hh-person').dispatch_event('change')
             expect(page.locator('[aria-label="Lịch sử qua lại"]')).to_contain_text('500.000')
             page.click('[data-act="hh-save"]'); page.wait_for_selector('[data-screen="hieuhi"]')
-            expect(page.locator('#hh-list .item')).to_have_count(2)
+            expect(page.locator('#hh-list .item')).to_have_count(3)  # thêm 1 khoản từ bài kiểm tra điều hướng
             # Gia phả: thêm ông, thêm con, thêm vợ
             page.goto(BASE + '#/giapha'); page.wait_for_selector('[data-screen="giapha"]')
-            page.click('.bottom-bar a'); page.fill('#gp-name', 'Nguyễn Văn Tổ'); page.fill('#gp-born', '1930'); page.click('[data-act="gp-save"]')
+            page.click('.fab'); page.fill('#gp-name', 'Nguyễn Văn Tổ'); page.fill('#gp-born', '1930'); page.click('[data-act="gp-save"]')
             page.wait_for_selector('.gp-person'); page.click('.gp-add >> text=+ Con')
             page.fill('#gp-name', 'Nguyễn Văn Con'); page.click('[data-act="gp-save"]')
             page.wait_for_selector('.gp-tree ul ul .gp-person'); page.click('.gp-add >> text=+ Vợ/chồng >> nth=0')
@@ -505,6 +523,11 @@ with sync_playwright() as p:
             page.click('[data-act="v-prefer"]'); expect(page.locator('[data-act="tts-play"]')).to_be_visible()
             page.click('[data-act="v-del"]'); page.click('[data-ok]')
             expect(page.locator('[data-act="rec-start"]').first).to_be_visible()
+            # Đổi linh vật
+            page.goto(BASE + '#/settings'); page.click('[data-mascot="lan"]')
+            page.goto(BASE + '#/today'); page.wait_for_selector('[data-screen="today"]'); expect(page.locator('.hero-mascot .mascot-lan')).to_have_count(1)
+            page.goto(BASE + '#/tienich'); expect(page.locator('.hub-banner')).to_contain_text('Lân Con lo hết')
+            page.goto(BASE + '#/settings'); page.click('[data-mascot="tho"]')
             # Tìm nhanh tiện ích (không dấu), chia sẻ kèm gia phả, có gì mới
             page.goto(BASE + '#/tienich'); page.wait_for_selector('#hub-q')
             page.fill('#hub-q', 'xong dat'); expect(page.locator('#hub-res a.item').first).to_contain_text('Tuổi xông đất')
@@ -517,7 +540,7 @@ with sync_playwright() as p:
             expect(page.locator('[data-screen="import"] h2')).to_contain_text('gia phả 3 người')
             page.goto(BASE + '#/moi'); page.wait_for_selector('[data-screen="moi"]')
             page.goto(BASE + '#/today'); expect(page.locator('.whatsnew')).to_have_count(0)
-        check(f'[{vp_name}] Dòng họ: sổ hiếu hỉ, gia phả, chuẩn bị giỗ, tưởng nhớ, xem tuổi, mâm theo vùng, sao hạn, Tết, xông đất, xuất hành, ăn chay, mệnh, đi chùa, tìm nhanh, gửi gia phả, giọng đọc', t_dongho)
+        check(f'[{vp_name}] Dòng họ: sổ hiếu hỉ, gia phả, chuẩn bị giỗ, tưởng nhớ, xem tuổi, mâm theo vùng, sao hạn, Tết, xông đất, xuất hành, ăn chay, mệnh, đi chùa, tìm nhanh, gửi gia phả, giọng đọc, linh vật', t_dongho)
 
         def t_swipe():
             page.goto(BASE + '#/calendar'); page.wait_for_selector('[data-screen="calendar"]')

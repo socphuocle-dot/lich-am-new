@@ -1,8 +1,9 @@
+import { resetTo } from '../nav.js';
 import { getState, updateSettings, exportData, importData, resetAll } from '../store.js';
 import { CHANNEL, DONATE_ACCOUNTS, DONATE_NAME, APP_VERSION, WEB_URL, CONTACT_PHONE, ZALO_URL } from '../config.js';
 import { updateSupported, checkUpdate, cmpVersion } from '../update.js';
-import { mascot } from './art.js';
-import { esc, ICON, nav, sw, backHeader, toast, timeSelect } from './common.js';
+import { mascot, mascotName, MASCOTS } from './art.js';
+import { esc, ICON, sw, backHeader, toast, timeSelect } from './common.js';
 import { titleOf } from '../lib/events.js';
 import { getLastSchedule, isNative, ensurePermission } from '../notify.js';
 import { confirmSheet } from './dialog.js';
@@ -28,7 +29,7 @@ export function renderDonate() {
       </section>`
     : `<section class="card pad col" style="gap:8px"><b>Cảm ơn bạn đã dùng app!</b><span class="small muted" style="line-height:1.6">Nếu thấy hữu ích, hãy đánh giá 5 sao trên cửa hàng và giới thiệu cho người thân, bạn bè. Đó là sự ủng hộ lớn nhất để app luôn miễn phí, không quảng cáo.</span></section>`;
   return `<div class="screen" data-screen="donate">
-  <header class="top"><h1 tabindex="-1">Ủng hộ tác giả</h1><span class="donate-m">${mascot('cake', 70, 'Bé Thỏ Ngọc cảm ơn bạn')}</span></header>
+  ${backHeader(CHANNEL === 'direct' ? 'Ủng hộ tác giả' : 'Đánh giá app', '#/canhan', '', `<span class="donate-m">${mascot('cake', 64, mascotName() + ' cảm ơn bạn')}</span>`)}
   <main class="body">
     <section class="card col" style="padding:16px;gap:12px">
       <b class="serif" style="font-size:1.2rem;line-height:1.35">Một người làm, miễn phí cho mọi nhà.</b>
@@ -40,7 +41,6 @@ export function renderDonate() {
     <p class="small muted center" style="margin:0">Cảm ơn bạn rất nhiều! 🙏</p>
     <p class="small muted center" style="margin:4px 0 0">Liên hệ tác giả: <a class="link" href="tel:${CONTACT_PHONE}">${CONTACT_PHONE.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')}</a> · <a class="link" href="${ZALO_URL}" ${isNative() ? '' : 'target="_blank"'} rel="noopener">Zalo</a></p>
   </main>
-  ${nav('donate')}
 </div>`;
 }
 
@@ -61,16 +61,20 @@ export function mountDonate(root, rerender) {
 /* ---------- Cài đặt ---------- */
 export function renderSettings() {
   const s = getState().settings;
+  const by = Number(String(getState().profile.dob || '').slice(0, 4));
+  const myChi = by ? ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'][(((by + 8) % 12) + 12) % 12] : '';
   const seg = (key, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button type="button" data-seg="${key}" data-v="${v}" aria-pressed="${s[key] === v}">${l}</button>`).join('')}</div>`;
   const pending = getLastSchedule();
   const next = pending[0];
   return `<div class="screen no-nav" data-screen="settings">
-  ${backHeader('Cài đặt', '#/today')}
+  ${backHeader('Cài đặt', '#/canhan')}
   <main class="body">
     <h2 class="sec-title">Hiển thị</h2>
     <section class="card pad col" style="gap:14px">
       <div class="field"><span class="lb">Cỡ chữ</span>${seg('size', [[0, 'Vừa'], [1, 'Lớn'], [2, 'Rất lớn']])}</div>
       <div class="field"><span class="lb">Giao diện</span>${seg('theme', [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']])}</div>
+      <div class="field"><span class="lb">Linh vật · 12 con giáp</span><div class="mascot-pick" role="radiogroup" aria-label="Chọn linh vật">${Object.entries(MASCOTS).map(([k, m]) => `${k === 'tho' ? '</div><span class="lb" style="margin-top:6px">Linh vật khác</span><div class="mascot-pick" role="radiogroup" aria-label="Linh vật khác">' : ''}<button type="button" role="radio" class="mp ${(s.mascot || 'tho') === k ? 'on' : ''}" aria-checked="${(s.mascot || 'tho') === k}" data-mascot="${k}">${m.chi && m.chi === myChi ? '<i class="mp-me">tuổi bạn</i>' : ''}${mascot('wave', 64, m.name, k)}<span>${m.chi ? m.chi + ' · ' : ''}${m.pick}</span></button>`).join('')}</div>
+        <span class="small muted">Đổi linh vật trên mọi màn hình và widget.</span></div>
       <div class="row"><div class="col grow"><span class="lb">Hiện tab Văn hóa</span><span class="small muted">Tử Vi, Thần số, Kinh Dịch</span></div>${sw(s.culture, 'Hiện tab Văn hóa', 'data-tg="culture"')}</div>
       <div class="row"><div class="col grow"><span class="lb">Tuần bắt đầu từ Thứ Hai</span><span class="small muted">Tắt để bắt đầu từ Chủ Nhật</span></div>${sw(s.monday, 'Tuần bắt đầu từ Thứ Hai', 'data-tg="monday"')}</div>
     </section>
@@ -173,6 +177,8 @@ export function mountSettings(root, rerender) {
     writableCalendars().then((l) => { calList = l; if (l.length > 1) rerender(); }).catch(() => {});
   }
   root.addEventListener('click', async (e) => {
+    const mc = e.target.closest('[data-mascot]');
+    if (mc) { updateSettings({ mascot: mc.dataset.mascot }); toast('Đã đổi sang ' + MASCOTS[mc.dataset.mascot].name); return; }
     const sg = e.target.closest('[data-seg]');
     if (sg) { const k = sg.dataset.seg; const v = k === 'size' ? Number(sg.dataset.v) : sg.dataset.v; updateSettings({ [k]: v }); return; }
     const tg = e.target.closest('[data-tg]');
@@ -212,7 +218,7 @@ export function mountSettings(root, rerender) {
     }
     if (act === 'reset') {
       const ok = await confirmSheet({ title: 'Xóa toàn bộ dữ liệu?', message: 'Tất cả ngày giỗ, hồ sơ và cài đặt sẽ bị xóa khỏi máy. Nên sao lưu ra file trước.', ok: 'Xóa tất cả', danger: true });
-      if (ok) { resetAll(); toast('Đã xóa dữ liệu'); location.hash = '#/today'; }
+      if (ok) { resetAll(); toast('Đã xóa dữ liệu'); resetTo('#/today'); }
     }
     if (act === 'perm') { const p = await ensurePermission(); toast(p === 'granted' ? 'Đã có quyền thông báo' : 'Chưa có quyền. Hãy bật trong Cài đặt của máy.'); }
   });
@@ -221,7 +227,7 @@ export function mountSettings(root, rerender) {
     if (e.target.id === 's-cal') { setCal({ calendarId: e.target.value }); runSync('Đã chuyển lịch'); return; }
     if (e.target.id === 's-cd') { updateSettings({ widgetCountdown: e.target.value }); toast('Đã cập nhật widget'); }
     if (e.target.dataset.act === 'import' && e.target.files[0]) {
-      try { importData(await e.target.files[0].text()); toast('Đã khôi phục dữ liệu'); location.hash = '#/reminders'; }
+      try { importData(await e.target.files[0].text()); toast('Đã khôi phục dữ liệu'); resetTo('#/reminders'); }
       catch (err) { toast('Không đọc được file: ' + err.message); }
     }
   });

@@ -1,6 +1,5 @@
 // 12 con giáp theo cách gọi Việt Nam (Mão là Mèo, Sửu là Trâu) — tự vẽ bằng SVG.
-let n = 0;
-const id = () => `z${++n}`;
+const TPL = new Map();
 
 export const GIAP = ['Chuột', 'Trâu', 'Hổ', 'Mèo', 'Rồng', 'Rắn', 'Ngựa', 'Dê', 'Khỉ', 'Gà', 'Chó', 'Lợn'];
 const CHI = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
@@ -101,7 +100,14 @@ const DRAW = [
 export function giap(chi, size = 28) {
   const i = typeof chi === 'number' ? chi : CHI.indexOf(String(chi).trim().split(' ').pop());
   if (i < 0) return '';
-  return `<svg class="giap" viewBox="0 0 48 48" width="${size}" height="${size}" role="img" aria-label="${CHI[i]} — ${GIAP[i]}">${DRAW[i](id())}</svg>`;
+  // Khuôn dựng sẵn theo (con giáp, cỡ); mỗi lần dùng đổi mã id gradient cho khỏi trùng
+  // Vẽ thành một ảnh SVG nhúng (một nút DOM), dựng một lần cho mỗi con giáp
+  let href = TPL.get(i);
+  if (!href) {
+    href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${DRAW[i]('g')}</svg>`);
+    TPL.set(i, href);
+  }
+  return `<svg class="giap" viewBox="0 0 48 48" width="${size}" height="${size}" role="img" aria-label="${CHI[i]} — ${GIAP[i]}"><image href="${href}" width="48" height="48"/></svg>`;
 }
 
 /** Tên con giáp: 'Ngọ' → 'Ngựa' */

@@ -124,6 +124,8 @@ final class UserStore {
     struct Gio { let epoch: Int; let title: String; var route: String = "" }
     let gios: [Gio]
     let countdown: (epoch: Int, title: String)?
+    /// Linh vật người dùng chọn trong app: tho | meo | lan | nghe | cun
+    var mascot = "tho"
 
     init() {
         var g: [Gio] = []
@@ -136,6 +138,7 @@ final class UserStore {
                     g.append(Gio(epoch: e, title: item["t"] as? String ?? "", route: item["r"] as? String ?? ""))
                 }
             }
+            if let m = obj["m"] as? String { mascot = m }
             if let c = obj["cd"] as? [String: Any], let d = c["d"] as? String, let e = EpochDay.fromYmd(d) {
                 cd = (e, c["t"] as? String ?? "")
             }

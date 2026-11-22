@@ -1,3 +1,4 @@
+import { done as navDone } from '../nav.js';
 // Nhập ngày sinh người thân từ danh bạ → tạo nhắc sinh nhật (dương lịch)
 import { getState } from '../store.js';
 import { esc, backHeader, toast, ICON } from './common.js';
@@ -66,7 +67,7 @@ export function mountContacts(root, rerender) {
       const n = importBirthdays(st.list.filter((c) => st.picked.has(c.contactId)));
       st.picked = new Set();
       toast(`Đã thêm ${n} nhắc sinh nhật`);
-      location.hash = '#/reminders';
+      navDone('#/reminders');
       return;
     }
     const pk = e.target.closest('[data-pick]');

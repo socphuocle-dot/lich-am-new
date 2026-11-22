@@ -80,8 +80,8 @@ struct IconWidget: Widget {
 struct TipWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "TipWidget", provider: DayProvider()) { e in TipView(entry: e) }
-            .configurationDisplayName("Bé Thỏ nhắc")
-            .description("Bé Thỏ Ngọc nhắc ngày giỗ, rằm, sinh nhật sắp tới.")
+            .configurationDisplayName("Lời nhắc hôm nay")
+            .description("Linh vật nhắc ngày giỗ, rằm, ngày chay, Tết sắp tới.")
             .supportedFamilies([.systemMedium])
     }
 }

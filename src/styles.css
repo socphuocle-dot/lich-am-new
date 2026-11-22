@@ -798,3 +798,52 @@ body:has(.bottom-bar) .toast { bottom: calc(96px + var(--safe-bottom)); }
 .rec-dot { width: 14px; height: 14px; border-radius: 50%; background: #E0352B; box-shadow: 0 0 0 0 rgba(224,53,43,.6); animation: recpulse 1.2s infinite; }
 @keyframes recpulse { 0% { box-shadow: 0 0 0 0 rgba(224,53,43,.6); } 70% { box-shadow: 0 0 0 12px rgba(224,53,43,0); } 100% { box-shadow: 0 0 0 0 rgba(224,53,43,0); } }
 @media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
+/* Chọn linh vật */
+.mascot-pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.mp { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px 8px; border-radius: 16px; border: 2px solid transparent; background: var(--soft); color: var(--ink); font-size: var(--fs-xs); font-weight: 600; }
+.mp .mascot { width: 100%; max-width: 64px; height: auto; }
+.mp.on { border-color: var(--accent); background: var(--accent-soft); }
+.mp span { white-space: nowrap; }
+.mp { position: relative; }
+.mp-me { position: absolute; top: 2px; right: 2px; font-style: normal; font-size: .75rem; font-weight: 700; background: var(--accent); color: var(--on-accent); border-radius: 8px; padding: 1px 5px; }
+
+/* Tab Cá nhân */
+.me-card { gap: 12px; text-decoration: none; color: var(--ink); align-items: center; }
+.me-av { width: 64px; height: 64px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--gold-soft); overflow: hidden; }
+.me-giap { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); }
+
+/* ======================= Điều hướng: chuyển màn theo hướng đi ======================= */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-nav="fwd"] .screen.enter > header, :root[data-nav="fwd"] .screen.enter > main { animation: navFwd .26s var(--ease) both; }
+  :root[data-nav="back"] .screen.enter > header, :root[data-nav="back"] .screen.enter > main { animation: navBack .26s var(--ease) both; }
+  :root[data-nav="fwd"] .screen.enter > main > *, :root[data-nav="back"] .screen.enter > main > *,
+  :root[data-nav="none"] .screen.enter > main > *, :root[data-nav="none"] .screen.enter .sheet-day { animation: none; }
+  :root[data-nav="tab"] .screen.enter > header { animation: fadeIn .2s ease both; }
+}
+@keyframes navFwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes navBack { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* Màn nhiệm vụ (biểu mẫu) không có thanh tab: thanh Lưu dính đáy */
+.screen.no-nav .bottom-bar { position: sticky; bottom: 0; z-index: 6; }
+/* Màn con có thanh tab: chừa chỗ cho thanh tab */
+.screen:not(.no-nav) { padding-bottom: calc(var(--nav-h) + 16px + var(--safe-bottom)); }
+.screen:not(.no-nav).has-fab .body { padding-bottom: 110px; }
+
+/* ======================= Hiệu năng & độ mượt ======================= */
+/* Thanh tab: nền đặc thay cho làm mờ nền (backdrop-filter rất nặng khi cuộn trên máy Android tầm trung) */
+.nav { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--card); }
+/* Bóng cho biểu tượng nhỏ: bỏ filter drop-shadow (mỗi icon một lớp lọc riêng) — ô nền 3D đã đủ nổi */
+.pastel svg, .giap, .ico3d svg, .tool .ti svg, .nudge-ic svg, .svc.gold .ico3d svg, .tool:nth-child(2) .ti svg { filter: none; }
+.hour.now .giap { filter: none; }
+/* Chỉ một khối chuyển động khi vào màn (thay vì từng thẻ con) — ít lớp đồ họa, mượt hơn */
+@media (prefers-reduced-motion: no-preference) {
+  .screen.enter > main > *, .screen.enter .list > .item, .screen.enter .svc-grid > .svc { animation: none !important; }
+  :root[data-nav="tab"] .screen.enter > main { animation: rise .22s var(--ease) both; }
+  :root[data-nav="fwd"] .screen.enter > header, :root[data-nav="fwd"] .screen.enter > main { animation-duration: .2s; }
+  :root[data-nav="back"] .screen.enter > header, :root[data-nav="back"] .screen.enter > main { animation-duration: .2s; }
+}
+/* Phần nằm ngoài màn hình chưa cần vẽ: trình duyệt bỏ qua bố cục/vẽ cho tới khi cuộn tới */
+.svc-group, .body > section.col, .xt-year, .gp-tree, .mem-bio { content-visibility: auto; contain-intrinsic-size: auto 320px; }
+/* Cuộn mượt, không giật khi chạm */
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: none; }

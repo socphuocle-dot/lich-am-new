@@ -52,6 +52,11 @@ public final class UserStore {
         return cache;
     }
 
+    /** Linh vật người dùng chọn trong app: tho | meo | lan | nghe | cun */
+    public static String mascot(Context ctx) {
+        return data(ctx).optString("m", "tho");
+    }
+
     /** Ngày giỗ trong khoảng [from, from+days) */
     public static List<Item> gios(Context ctx, long from, int days) {
         List<Item> out = new ArrayList<>();

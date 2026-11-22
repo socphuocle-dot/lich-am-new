@@ -13,7 +13,7 @@ export const DEFAULT_STATE = {
   settings: {
     autoMoon: true, moonEveOn: true, moonEve: '19:00', moonMornOn: true, moonMorning: '06:00',
     holidayOn: true, gioTime: '07:00', size: 1, theme: 'light', culture: CULTURE_DEFAULT, monday: true, widgetCountdown: 'auto',
-    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: '', region: 'chung', chay: 'off', chayRemind: true, chayTime: '19:00', ttsStyle: 'tung', preferVoice: true
+    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: '', region: 'chung', chay: 'off', chayRemind: true, chayTime: '19:00', ttsStyle: 'tung', preferVoice: true, mascot: 'tho'
   },
   calSync: { enabled: false, moon: false, holidays: true, calendarId: '', ids: [] },
   lastBackup: '',

@@ -1,3 +1,4 @@
+import { done as navDone } from '../nav.js';
 // Gia đình & dòng họ: Sổ hiếu hỉ, Chuẩn bị đám giỗ, Trang tưởng nhớ, Gia phả, Xem tuổi.
 // Mọi dữ liệu nằm trên máy (cùng bản sao lưu với ngày giỗ).
 import { getState, setState, uid, saveGio } from '../store.js';
@@ -64,7 +65,7 @@ function renderHHList() {
       <span class="col grow"><span class="t">${esc(x.person)}</span><span class="s">${esc(label)}${x.note ? ' · ' + esc(x.note) : ''} · ${dd}/${mm}/${yy}</span></span>
       <span class="col" style="align-items:flex-end;gap:2px"><b class="hh-amt ${x.dir}">${x.dir === 'nhan' ? '+' : '−'}${x.amount ? money(x.amount) : ''}</b>${x.gift ? `<span class="small muted">${esc(x.gift)}</span>` : ''}</span></a>`;
   }).join('');
-  return `<div class="screen no-nav" data-screen="hieuhi">
+  return `<div class="screen has-fab" data-screen="hieuhi">
   ${backHeader('Sổ hiếu hỉ', '#/tienich', 'Ghi lại để đáp lễ cho chu đáo')}
   <main class="body">
     <section class="hh-sum" aria-label="Tổng kết">
@@ -75,7 +76,7 @@ function renderHHList() {
     ${all.length > 4 ? `<label class="search">${ICON.search(18)}<input id="hh-q" class="input" type="search" placeholder="Tìm theo tên người, việc…" aria-label="Tìm trong sổ"></label>` : ''}
     ${list.length ? `<section class="card list" id="hh-list">${rows}</section>` : `<section class="card empty-art">${mascot('letter', 96)}<b>Sổ còn trống</b><span>Ghi lại ai đã mừng cưới, phúng viếng, mừng tân gia… để lần sau đáp lễ cho đúng.</span></section>`}
   </main>
-  <div class="bottom-bar"><a class="btn" href="#/hieuhi/new">${ICON.plus()} Ghi một khoản</a></div>
+  <a class="fab" href="#/hieuhi/new" aria-label="Ghi một khoản hiếu hỉ">${ICON.plus()} Ghi khoản</a>
 </div>`;
 }
 
@@ -85,6 +86,11 @@ function hhInit(params) {
   hh.formKey = params.id;
   hh.form = old ? { ...old, amount: old.amount ? String(old.amount) : '' } : { id: '', dir: params.dir || 'nhan', kind: 'cuoi', person: params.person || '', note: '', date: isoToday(), amount: '', gift: '', error: '' };
   return hh.form;
+}
+
+function histHtml(f, hist) {
+  return hist.length ? `<section class="note occ col" style="align-items:stretch;gap:4px" aria-label="Lịch sử qua lại"><b>Qua lại với ${esc(f.person)}</b>
+      ${hist.slice(0, 4).map((x) => `<span class="small">${x.dir === 'nhan' ? 'Mình nhận' : 'Mình đi'} <b class="hh-amt ${x.dir}">${x.amount ? money(x.amount) : ''}</b>${x.gift ? ' + ' + esc(x.gift) : ''} · ${esc(kindOf(x.kind)[1].toLowerCase())}${x.note ? ' (' + esc(x.note) + ')' : ''}, ${x.date.split('-').reverse().join('/')}</span>`).join('')}</section>` : '';
 }
 
 function renderHHForm(params) {
@@ -101,8 +107,7 @@ function renderHHForm(params) {
     <div class="field"><label class="lb" for="hh-person">${f.dir === 'nhan' ? 'Ai mừng / phúng' : 'Mình mừng / phúng ai'}</label>
       <input id="hh-person" class="input" maxlength="60" list="hh-names" autocomplete="off" placeholder="Ví dụ: Gia đình chú Hai Tâm" value="${esc(f.person)}" data-hh="person">
       <datalist id="hh-names">${names.map((n) => `<option value="${esc(n)}">`).join('')}</datalist></div>
-    ${hist.length ? `<section class="note occ col" style="align-items:stretch;gap:4px" aria-label="Lịch sử qua lại"><b>Qua lại với ${esc(f.person)}</b>
-      ${hist.slice(0, 4).map((x) => `<span class="small">${x.dir === 'nhan' ? 'Mình nhận' : 'Mình đi'} <b class="hh-amt ${x.dir}">${x.amount ? money(x.amount) : ''}</b>${x.gift ? ' + ' + esc(x.gift) : ''} · ${esc(kindOf(x.kind)[1].toLowerCase())}${x.note ? ' (' + esc(x.note) + ')' : ''}, ${x.date.split('-').reverse().join('/')}</span>`).join('')}</section>` : ''}
+    <div id="hh-hist">${histHtml(f, hist)}</div>
     <div class="field"><label class="lb" for="hh-note">Việc gì <span class="muted small">(không bắt buộc)</span></label>
       <input id="hh-note" class="input" maxlength="80" placeholder="Ví dụ: cưới con trai, giỗ đầu bà nội" value="${esc(f.note)}" data-hh="note"></div>
     <div class="grid2">
@@ -130,7 +135,17 @@ export function mountHieuhi(root, rerender, params) {
     if (!k || !hh.form) return;
     hh.form[k] = k === 'amount' ? e.target.value.replace(/\D/g, '') : e.target.value;
   });
-  root.addEventListener('change', (e) => { if (e.target.dataset?.hh === 'person' || e.target.dataset?.hh === 'amount') rerender(); });
+  // Cập nhật tại chỗ (không vẽ lại cả màn) để cú bấm "Lưu" ngay sau khi gõ không bị mất
+  root.addEventListener('change', (e) => {
+    const k = e.target.dataset?.hh;
+    if (!hh.form) return;
+    if (k === 'person') { const box = root.querySelector('#hh-hist'); if (box) box.innerHTML = histHtml(hh.form, hhHistory(getState().hieuhi, hh.form.person, hh.form.id)); }
+    if (k === 'amount') {
+      const n = Number(String(hh.form.amount).replace(/\D/g, '')) || 0;
+      e.target.value = n ? n.toLocaleString('vi-VN') : '';
+      root.querySelectorAll('[data-amt]').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.amt) === n)));
+    }
+  });
   root.addEventListener('click', async (e) => {
     const t = e.target.closest('[data-hf],[data-dir],[data-kind],[data-amt],[data-act]');
     if (!t) return;
@@ -146,7 +161,7 @@ export function mountHieuhi(root, rerender, params) {
       setState((s) => ({ ...s, hieuhi: s.hieuhi.some((x) => x.id === rec.id) ? s.hieuhi.map((x) => (x.id === rec.id ? rec : x)) : [...s.hieuhi, rec] }));
       hh.form = null; hh.formKey = '';
       toast('Đã ghi vào sổ');
-      location.hash = '#/hieuhi';
+      navDone('#/hieuhi');
       return;
     }
     if (t.dataset.act === 'hh-del') {
@@ -155,7 +170,7 @@ export function mountHieuhi(root, rerender, params) {
       setState((s) => ({ ...s, hieuhi: s.hieuhi.filter((x) => x.id !== id) }));
       hh.form = null; hh.formKey = '';
       toast('Đã xóa');
-      location.hash = '#/hieuhi';
+      navDone('#/hieuhi');
     }
   });
   void params;
@@ -422,14 +437,14 @@ export function renderGiapha(params) {
       ${ch.length ? `<ul>${ch.map((c) => node(c, gen + 1)).join('')}</ul>` : ''}</li>`;
   };
   const tree = roots.map((r) => node(r, 1)).join('');
-  return `<div class="screen no-nav" data-screen="giapha">
+  return `<div class="screen has-fab" data-screen="giapha">
   ${backHeader('Gia phả', '#/tienich', ppl.length ? `${ppl.length} người · ${maxGen} đời` : 'Cây gia đình nhiều đời', ppl.length ? `<button type="button" class="icon-btn plain" data-act="gp-share" aria-label="Gửi gia phả cho người thân">${ICON.share(20)}</button>` : '')}
   <main class="body">
     ${ppl.length ? `<section class="card pad gp-tree" aria-label="Cây gia phả"><ul class="gp-root">${tree}</ul></section>
       <span class="small muted center">Bấm vào tên để sửa, nối với ngày giỗ và trang tưởng nhớ. Người đã mất có viền xám.</span>`
       : `<section class="card empty-art">${ILL.tree().replace('width="34" height="34"', 'width="96" height="96"')}<b>Bắt đầu từ ông bà</b><span>Thêm người đời đầu tiên mà gia đình còn nhớ, rồi thêm con cháu và vợ/chồng của từng người.</span></section>`}
   </main>
-  <div class="bottom-bar"><a class="btn" href="#/giapha/new">${ICON.plus()} ${ppl.length ? 'Thêm nhánh mới (người đời đầu)' : 'Thêm người đầu tiên'}</a></div>
+  <a class="fab" href="#/giapha/new" aria-label="${ppl.length ? 'Thêm nhánh mới (người đời đầu)' : 'Thêm người đầu tiên'}">${ICON.plus()} ${ppl.length ? 'Thêm nhánh' : 'Thêm người'}</a>
 </div>`;
 }
 
@@ -481,7 +496,7 @@ export function mountGiapha(root, rerender, params) {
       setState((s) => ({ ...s, people: s.people.some((p) => p.id === rec.id) ? s.people.map((p) => (p.id === rec.id ? rec : p)) : [...s.people, rec] }));
       gp.form = null; gp.key = '';
       toast('Đã lưu vào gia phả');
-      location.hash = '#/giapha?focus=' + rec.id;
+      navDone('#/giapha', { to: '#/giapha?focus=' + rec.id });
       return;
     }
     if (t.dataset.act === 'gp-share') {
@@ -502,7 +517,7 @@ export function mountGiapha(root, rerender, params) {
       const id = f.id;
       setState((s) => ({ ...s, people: s.people.filter((p) => p.id !== id) }));
       gp.form = null; gp.key = '';
-      location.hash = '#/giapha';
+      navDone('#/giapha');
     }
   });
 }

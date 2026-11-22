@@ -1,8 +1,9 @@
+import { go } from '../nav.js';
 import { isChay } from '../lib/tet.js';
 import { getState } from '../store.js';
 import { dayInfo, jdFromDate, jdToDate, solarToLunar, canChiYear, LUNAR_MONTH_NAME } from '../lib/lunar.js';
 import { listEvents } from '../lib/events.js';
-import { esc, ICON, nav } from './common.js';
+import { esc, ICON } from './common.js';
 import { actionSheet } from './dialog.js';
 import { giap, giapName } from './zodiac.js';
 import { dayExtras, TRUC_Y } from '../lib/goodday.js';
@@ -97,7 +98,6 @@ export function renderCalendar() {
       <span class="small muted">Mẹo: nhấn giữ một ngày trên lịch để thêm nhanh.</span>
     </section>
   </main>
-  ${nav('calendar')}
 </div>`;
 }
 
@@ -118,7 +118,7 @@ async function quickAdd(jd) {
       { value: 'kyniem', label: 'Thêm ngày kỷ niệm', sub: `${s.day}/${s.month} dương lịch`, icon: ICON.plus(20) }
     ]
   });
-  if (v) location.hash = addHref(v, s, L);
+  if (v) go(addHref(v, s, L));
 }
 
 function shift(dir) {

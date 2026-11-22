@@ -1,9 +1,10 @@
+import { done as navDone } from '../nav.js';
 import { getState, setState } from '../store.js';
 import { canChiYear, CHI, solarToLunar } from '../lib/lunar.js';
 import { lifePath, nameNumbers, birthdayNumber, personalYear, birthChart, MEANINGS, YEAR_MEANINGS } from '../lib/numerology.js';
 import { tossCoins, readCast, isYang, isMoving } from '../lib/iching.js';
 import { giap, giapName } from './zodiac.js';
-import { esc, ICON, nav, backHeader, toast } from './common.js';
+import { esc, ICON, backHeader, toast } from './common.js';
 
 const HOURS = CHI.map((c, i) => { const s = (i * 2 + 23) % 24; return { i, label: `Giờ ${c} (${s}h–${(s + 2) % 24}h)` }; });
 const hasProfile = () => { const p = getState().profile; return !!(p.dob && p.name); };
@@ -21,7 +22,7 @@ export function renderCulture() {
     tv = `${d}/${m}/${y} · giờ ${CHI[p.hourChi]} · ${p.gender} · tuổi ${ty} (con ${giapName(ty)})`;
   }
   return `<div class="screen" data-screen="culture">
-  <header class="top"><div class="grow"><h1 tabindex="-1">Văn hóa</h1><span class="sub">Tử Vi, Thần số, Kinh Dịch · tính ngay trên máy</span></div></header>
+  ${backHeader('Văn hóa', '#/tienich', 'Tử Vi, Thần số, Kinh Dịch · tính ngay trên máy')}
   <main class="body" style="gap:12px">
     <a class="card pad row" href="#/profile" style="text-decoration:none;color:var(--ink)">
       ${ok ? `<span class="pastel butter giap-avatar">${giap(canChiYear(solarToLunar(...p.dob.split('-').map(Number).reverse()).year), 40)}</span>` : '<div class="tile ink" style="border-radius:24px;width:48px;height:48px"><b>?</b></div>'}
@@ -46,7 +47,6 @@ export function renderCulture() {
     </div>
     <p class="small muted center" style="margin:0;line-height:1.5">Nội dung mang tính tham khảo văn hóa và giải trí,<br>không thay cho lời khuyên chuyên môn.</p>
   </main>
-  ${nav('tienich')}
 </div>`;
 }
 
@@ -81,7 +81,7 @@ export function mountProfile(root) {
       if (!dob || y < 1900 || y > 2100) { err.textContent = 'Vui lòng chọn ngày sinh hợp lệ (1900–2100)'; return; }
       setState((s) => ({ ...s, profile: { name, dob, hourChi: Number(root.querySelector('#p-hour').value), gender } }));
       toast('Đã lưu hồ sơ');
-      location.hash = '#/culture';
+      navDone('#/culture');
     }
   });
 }

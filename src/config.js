@@ -10,7 +10,7 @@ export const DONATE_ACCOUNTS = [
   { id: 'vcb', tab: 'Vietcombank', bank: 'Vietcombank', number: '0371000405296', copy: '0371000405296', qr: './qr/vcb.png' }
 ];
 export const DONATE_NAME = 'LE HUU PHUOC';
-export const APP_VERSION = '1.9.2';
+export const APP_VERSION = '1.10.1';
 
 // Link tải APK mới nhất (GitHub Releases) — workflow tự điền khi build bản web
 export const APK_URL = import.meta.env.VITE_APK_URL || 'https://github.com/socphuocle-dot/lich-am-new/releases/latest/download/LichAm-NhacGio.apk';

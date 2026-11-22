@@ -1,3 +1,4 @@
+import { go, done as navDone } from '../nav.js';
 // Chia sẻ danh sách giỗ cho cả họ (link + mã QR) và nhập danh sách từ người thân.
 import qrcode from 'qrcode-generator';
 import { getState, setState, saveGio, uid } from '../store.js';
@@ -10,6 +11,14 @@ import { isNative } from '../notify.js';
 import { mascot, cloud, ILL } from './art.js';
 
 const sh = { picked: null, people: true, memo: true };
+const qrCache = { k: '', v: '' };
+function makeQr(link) {
+  if (qrCache.k === link) return qrCache.v;
+  let v = '';
+  try { const qr = qrcode(0, 'L'); qr.addData(link); qr.make(); v = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch { v = ''; }
+  qrCache.k = link; qrCache.v = v;
+  return v;
+}
 const dateText = (g) => (g.cal === 'am' ? `${g.day} tháng ${LUNAR_MONTH_NAME[g.month]} âm lịch` : `${g.day}/${g.month} dương lịch`);
 
 const extras = (st) => ({ people: sh.people ? st.people : [], memo: sh.memo });
@@ -19,15 +28,9 @@ export function renderShare() {
   const st = getState();
   if (!sh.picked) sh.picked = new Set(st.gios.filter((g) => (g.type || 'gio') === 'gio').map((g) => g.id));
   const pick = st.gios.filter((g) => sh.picked.has(g.id));
-  let qrSvg = '';
-  if (pick.length) {
-    try {
-      const qr = qrcode(0, 'L');
-      qr.addData(shareLink(pick, extras(st)));
-      qr.make();
-      qrSvg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
-    } catch { qrSvg = ''; }
-  }
+  // Mã QR tính sau khi màn đã hiện (mount), và nhớ theo link để bật/tắt không tính lại
+  const link = pick.length || (sh.people && st.people.length) ? shareLink(pick, extras(st)) : '';
+  const qrSvg = link && qrCache.k === link ? qrCache.v : link ? '<span class="small muted" data-qr-pending>Đang tạo mã QR…</span>' : '';
   return `<div class="screen no-nav" data-screen="share">
   ${backHeader('Chia sẻ cho cả họ', '#/reminders', 'Gửi danh sách để người thân không phải nhập lại')}
   <main class="body" style="gap:14px">
@@ -55,6 +58,17 @@ function shareText(pick, st) {
 }
 
 export function mountShare(root, rerender) {
+  const pend = root.querySelector('[data-qr-pending]');
+  if (pend) {
+    const st = getState();
+    const pick = st.gios.filter((g) => sh.picked.has(g.id));
+    const link = shareLink(pick, extras(st));
+    setTimeout(() => {
+      const v = makeQr(link);
+      const box = pend.closest('.qr-box');
+      if (box && box.isConnected) box.innerHTML = v || '<span class="small muted">Danh sách quá dài để tạo mã QR — hãy gửi bằng link.</span>';
+    }, 30);
+  }
   root.addEventListener('click', async (e) => {
     const st = getState();
     const p = e.target.closest('[data-pick]');
@@ -124,7 +138,7 @@ export function mountImport(root, rerender) {
   root.addEventListener('click', (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'read') { im.code = root.querySelector('#im-code').value; im.items = null; im.error = ''; if (!im.code.trim()) im.error = 'Bạn chưa dán link hoặc mã'; rerender(); return; }
-    if (act === 'other') { im.code = ''; im.items = null; im.error = ''; if (location.hash.includes('?')) location.hash = '#/nhap'; else rerender(); return; }
+    if (act === 'other') { im.code = ''; im.items = null; im.error = ''; if (location.hash.includes('?')) go('#/nhap', { replace: true }); else rerender(); return; }
     if (act === 't-ppl') { im.withPeople = !im.withPeople; rerender(); return; }
     if (act === 'import') {
       const st = getState();
@@ -157,7 +171,7 @@ export function mountImport(root, rerender) {
       if (!getState().onboarded) setState((s) => ({ ...s, onboarded: true }));
       im.code = ''; im.items = null; im.people = [];
       toast(`Đã thêm ${n} ngày${added ? ` và ${added} người vào gia phả` : ''}. App sẽ tự nhắc hằng năm.`);
-      location.hash = '#/reminders';
+      navDone('#/reminders');
       return;
     }
     const p = e.target.closest('[data-ipick]');

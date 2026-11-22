@@ -32,13 +32,14 @@ export const ICON = {
   up: (w = 20) => svg('<path d="M12 21V9M7 14l5-5 5 5"/><path d="M5 3h14"/>', w),
   copy: (w = 18) => svg('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>', w),
   close: (w = 18) => svg('<path d="M18 6 6 18M6 6l12 12"/>', w, 'stroke-width="2.2"'),
+  user: (w = 24) => svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', w),
   face: (w = 24) => svg('<circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9.5 15a3.5 3.5 0 0 0 5 0"/>', w)
 };
 
 export function nav(active) {
   const tabs = [
     ['today', 'Hôm nay', ICON.sun], ['calendar', 'Lịch', ICON.cal], ['reminders', 'Nhắc việc', ICON.bell],
-    ['tienich', 'Tiện ích', ICON.grid], ['donate', 'Ủng hộ', ICON.heart]
+    ['tienich', 'Tiện ích', ICON.grid], ['canhan', 'Cá nhân', ICON.user]
   ];
   return `<nav class="nav" aria-label="Điều hướng chính">${tabs.map(([id, label, ic]) =>
     `<a href="#/${id}" ${id === active ? 'aria-current="page"' : ''}>${ic(24)}${label}</a>`).join('')}</nav>`;

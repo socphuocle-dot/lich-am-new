@@ -2,10 +2,10 @@
 import { getState } from '../store.js';
 import { jdFromDate, canChiYear } from '../lib/lunar.js';
 import { tetYear, lunarJd } from '../lib/tet.js';
-import { ICON, nav } from './common.js';
+import { ICON } from './common.js';
 import { CONTACT_PHONE, ZALO_URL, CHANNEL } from '../config.js';
 import { isNative } from '../notify.js';
-import { mascot, ILL, cloud, lanternString, sparkle } from './art.js';
+import { mascot, mascotName, ILL, cloud, lanternString, sparkle } from './art.js';
 
 export const fmtPhone = (p) => p.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
 
@@ -52,7 +52,7 @@ export function renderHub() {
     <label class="search hub-search">${ICON.search(18)}<input id="hub-q" class="input" type="search" placeholder="Tìm: xông đất, ăn chay, văn khấn…" aria-label="Tìm tiện ích" autocomplete="off"></label>
     <section id="hub-res" class="card list" hidden aria-live="polite"></section>
     <section class="banner red hub-banner"><span class="bn-lanterns">${lanternString()}</span><span class="bn-cloud a">${cloud(90, '#F6D27A', .45)}</span>
-      <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — Bé Thỏ Ngọc lo hết!</span></div>
+      <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — ${mascotName()} lo hết!</span></div>
       <div class="bn-mascot">${mascot('book', 96)}</div></section>
     ${tetSoon ? tetGroup : ''}
     ${group('Ngày của gia đình', `${count('gio')} giỗ · ${count('sinhnhat')} sinh nhật · ${count('kyniem')} kỷ niệm`, 'red', [
@@ -103,7 +103,6 @@ export function renderHub() {
         <a class="link" href="#/gopy">Góp ý &amp; báo lỗi</a><span class="muted">·</span><a class="link" href="#/donate">${CHANNEL === 'store' ? 'Đánh giá app' : 'Ủng hộ tác giả'}</a></div>
     </section>
   </main>
-  ${nav('tienich')}
 </div>`;
 }
 

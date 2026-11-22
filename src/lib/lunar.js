@@ -70,10 +70,22 @@ function sunLongitudeRad(jdn) {
   return L;
 }
 
-const getNewMoonDay = (k, tz = TZ) => INT(newMoon(k) + 0.5 + tz / 24);
+// Bộ nhớ đệm: các phép tính thiên văn lặp lại rất nhiều khi dựng lịch tháng, danh sách sự kiện
+const memo = (fn, max = 4000) => {
+  const m = new Map();
+  return (key, ...args) => {
+    let v = m.get(key);
+    if (v === undefined) { v = fn(...args); if (m.size >= max) m.delete(m.keys().next().value); m.set(key, v); }
+    return v;
+  };
+};
+const nmMemo = memo((k, tz) => INT(newMoon(k) + 0.5 + tz / 24));
+const getNewMoonDay = (k, tz = TZ) => nmMemo(tz === TZ ? k : `${k}|${tz}`, k, tz);
 const getSunLongitude = (dayNumber, tz = TZ) => INT((sunLongitudeRad(dayNumber - 0.5 - tz / 24) / PI) * 6);
 
-function getLunarMonth11(yy, tz = TZ) {
+const m11Memo = memo((yy, tz) => lunarMonth11(yy, tz), 400);
+const getLunarMonth11 = (yy, tz = TZ) => m11Memo(tz === TZ ? yy : `${yy}|${tz}`, yy, tz);
+function lunarMonth11(yy, tz = TZ) {
   const off = jdFromDate(31, 12, yy) - 2415021;
   const k = INT(off / 29.530588853);
   let nm = getNewMoonDay(k, tz);
@@ -95,8 +107,13 @@ function getLeapMonthOffset(a11, tz = TZ) {
   return i - 1;
 }
 
-/** Dương → Âm. Trả về { day, month, year, leap } */
+const s2lMemo = memo((dd, mm, yy, tz) => solarToLunarRaw(dd, mm, yy, tz), 6000);
+/** Dương → Âm. Trả về { day, month, year, leap } (bản sao, an toàn khi bên gọi sửa) */
 export function solarToLunar(dd, mm, yy, tz = TZ) {
+  const r = s2lMemo(tz === TZ ? yy * 10000 + mm * 100 + dd : `${yy}-${mm}-${dd}|${tz}`, dd, mm, yy, tz);
+  return { ...r };
+}
+function solarToLunarRaw(dd, mm, yy, tz = TZ) {
   const dayNumber = jdFromDate(dd, mm, yy);
   const k = INT((dayNumber - 2415021.076998695) / 29.530588853);
   let monthStart = getNewMoonDay(k + 1, tz);
@@ -127,8 +144,13 @@ export function solarToLunar(dd, mm, yy, tz = TZ) {
   return { day: lunarDay, month: lunarMonth, year: lunarYear, leap: lunarLeap === 1 };
 }
 
+const l2sMemo = memo((d, m, y, leap, tz) => lunarToSolarRaw(d, m, y, leap, tz), 4000);
 /** Âm → Dương. Trả về { day, month, year } hoặc null nếu ngày không tồn tại */
 export function lunarToSolar(lunarDay, lunarMonth, lunarYear, lunarLeap = false, tz = TZ) {
+  const r = l2sMemo(`${lunarYear}-${lunarMonth}-${lunarDay}-${lunarLeap ? 1 : 0}|${tz}`, lunarDay, lunarMonth, lunarYear, lunarLeap, tz);
+  return r && { ...r };
+}
+function lunarToSolarRaw(lunarDay, lunarMonth, lunarYear, lunarLeap = false, tz = TZ) {
   let a11, b11;
   if (lunarMonth < 11) {
     a11 = getLunarMonth11(lunarYear - 1, tz);

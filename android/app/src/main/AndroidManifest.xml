@@ -66,7 +66,7 @@
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_month_info" />
         </receiver>
-        <receiver android:name=".widget.TipWidget" android:label="Bé Thỏ nhắc" android:exported="false">
+        <receiver android:name=".widget.TipWidget" android:label="Lời nhắc hôm nay" android:exported="false">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tip_info" />
         </receiver>

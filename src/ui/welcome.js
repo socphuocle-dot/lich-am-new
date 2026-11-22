@@ -1,3 +1,4 @@
+import { resetTo } from '../nav.js';
 import { APP_VERSION } from '../config.js';
 // Màn chào lần đầu: giới thiệu ngắn + giải thích trước khi xin quyền thông báo.
 import { setState } from '../store.js';
@@ -55,7 +56,7 @@ export function renderWelcome() {
 function finish() {
   ui.step = 0;
   setState((s) => ({ ...s, onboarded: true, settings: { ...s.settings, seenNew: APP_VERSION } }));
-  location.hash = '#/today';
+  resetTo('#/today');
 }
 
 export function mountWelcome(root, rerender) {

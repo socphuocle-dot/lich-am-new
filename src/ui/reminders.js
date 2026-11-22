@@ -1,9 +1,10 @@
+import { done as navDone } from '../nav.js';
 import { getState, setState, updateSettings, saveGio, deleteGio, uid } from '../store.js';
 import { jdFromDate, LUNAR_MONTH_NAME, canChiYear } from '../lib/lunar.js';
 import { nextGioDate, describeDate, titleOf, EVENT_TYPES, deathJd, listEvents, TANG_MILESTONES } from '../lib/events.js';
 import { jdToDate, THU } from '../lib/lunar.js';
-import { mascot } from './art.js';
-import { esc, ICON, nav, sw, backHeader, toast, timeSelect } from './common.js';
+import { mascot, mascotName } from './art.js';
+import { esc, ICON, sw, backHeader, toast, timeSelect } from './common.js';
 import { solarToLunar } from '../lib/lunar.js';
 import { upcomingEvents, eventRow } from './today.js';
 import { ensurePermission } from '../notify.js';
@@ -53,10 +54,9 @@ export function renderReminders() {
     </section>
     ${savedList(st, todayJd)}
     <section class="col" style="gap:8px"><h2 class="h">Sắp tới · ${KIND[ui.filter] || 'Tất cả'}</h2>
-      <div class="card">${rows || `<div class="empty-art">${mascot('moon', 110)}<b>Chưa có sự kiện nào</b><span>Bấm "Thêm" để ghi ngày giỗ, sinh nhật — Bé Thỏ sẽ nhắc bạn.</span></div>`}</div></section>
+      <div class="card">${rows || `<div class="empty-art">${mascot('moon', 110)}<b>Chưa có sự kiện nào</b><span>Bấm "Thêm" để ghi ngày giỗ, sinh nhật — ${mascotName(true)} sẽ nhắc bạn.</span></div>`}</div></section>
   </main>
   <a class="fab accent" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
-  ${nav('reminders')}
 </div>`;
 }
 
@@ -281,7 +281,7 @@ export function mountGioForm(root, rerender, params) {
       if (!ok) return;
       deleteGio(g.id);
       form = null;
-      location.hash = '#/reminders';
+      navDone('#/reminders');
       toast(`Đã xóa ${t.charAt(0).toLowerCase() + t.slice(1)}`, { label: 'Hoàn tác', run: () => { saveGio(g); toast('Đã khôi phục'); } });
       return;
     }
@@ -312,7 +312,7 @@ export function mountGioForm(root, rerender, params) {
       form = null;
       const perm = await ensurePermission();
       toast(perm === 'denied' ? 'Đã lưu. Hãy bật quyền thông báo trong Cài đặt máy để được nhắc.' : 'Đã lưu');
-      location.hash = '#/reminders';
+      navDone('#/reminders');
     }
   });
   root.querySelector('#g-name')?.addEventListener('input', (e) => { f().name = e.target.value; });

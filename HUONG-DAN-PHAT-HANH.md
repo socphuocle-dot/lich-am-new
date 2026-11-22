@@ -89,12 +89,35 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.9.2)
+## Cập nhật lên phiên bản mới (ví dụ 1.10.1)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.9.2` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.9.2` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.9.2` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.10.1` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.10.1` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.10.1` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.10.1 — tối ưu tốc độ và độ mượt
+- Mở app nhanh hơn: gói chính nhẹ đi 1/3 (383 KB → 257 KB); các màn ít dùng (Dòng họ, Tết, Sao hạn, Chia sẻ, Văn hóa…) tách gói riêng, tự nạp sẵn lúc máy rảnh.
+- Hình minh họa (linh vật, 12 con giáp, biểu tượng màu) vẽ thành ảnh nhúng: mỗi màn ít hơn hàng trăm nút giao diện (Cài đặt 1025 → 323, Tiện ích 664 → 282, Hôm nay 514 → 245).
+- Lịch âm tính một lần rồi nhớ (bộ nhớ đệm): lịch tháng, danh sách nhắc việc dựng nhanh hơn.
+- Mã QR chia sẻ tạo sau khi màn đã hiện, không làm khựng.
+- Bỏ hiệu ứng làm mờ nền thanh tab và bóng lọc trên từng biểu tượng nhỏ (nặng khi cuộn trên Android tầm trung); hiệu ứng vào màn gọn một khối.
+- Phần nằm ngoài màn hình chưa vẽ cho tới khi cuộn tới; xử lý cuộn gộp theo khung hình.
+
+## Có gì mới ở 1.10.0 — điều hướng làm lại theo chuẩn
+- 5 tab ngang hàng: Hôm nay · Lịch · Nhắc việc · Tiện ích · **Cá nhân** (thay tab "Ủng hộ"; Ủng hộ, Cài đặt, Góp ý, Có gì mới nằm trong Cá nhân).
+- Thanh tab hiện trên mọi màn (trừ biểu mẫu đang nhập), luôn sáng đúng tab đang ở.
+- Mỗi tab nhớ chỗ đang xem: sang tab khác rồi quay lại vẫn đúng màn cũ. Bấm lại tab đang mở để về đầu tab.
+- Nút Quay lại (trên màn và nút cứng Android) lùi đúng một bước, giữ vị trí cuộn; màn gốc của tab không có nút Quay lại.
+- Lưu xong biểu mẫu thì đóng biểu mẫu, quay về đúng màn đã mở nó (không chồng màn mới, bấm Quay lại không mở lại biểu mẫu).
+- Mở từ thông báo, widget, link: Quay lại về màn gốc của tab tương ứng.
+- Android: ở màn Hôm nay bấm Quay lại 2 lần để thoát; hộp thoại đang mở thì Quay lại sẽ đóng hộp thoại trước.
+- Hiệu ứng chuyển màn theo hướng đi (tới: trượt từ phải, lùi: trượt từ trái, đổi tab: hiện dần).
+- Sửa lỗi: gõ tên ở Sổ hiếu hỉ rồi bấm Lưu ngay đôi khi không ăn.
+
+## Có gì mới ở 1.9.4
+- Chọn linh vật theo ý thích trong Cài đặt: đủ 12 con giáp (Chuột, Trâu, Hổ, Mèo, Rồng, Rắn, Ngựa, Dê, Khỉ, Gà, Chó, Heo) và Bé Thỏ Ngọc, Lân Con; con giáp đúng tuổi được đánh dấu "tuổi bạn" (đủ 9 dáng: vẫy tay, cầm đèn lồng, chắp tay, ngôi sao, bánh sinh nhật, phong thư, điện thoại, sách, ngồi trăng).
+- Widget đổi theo linh vật đã chọn; widget "Bé Thỏ nhắc" đổi tên thành "Lời nhắc hôm nay".
 
 ## Có gì mới ở 1.9.2
 - Đọc văn khấn 3 kiểu: Thường · Trầm, chậm · Chuông mõ (giọng trầm, ngắt theo vế, chuông mở đầu và kết thúc, mõ gõ nhịp — âm thanh tạo ngay trên máy).

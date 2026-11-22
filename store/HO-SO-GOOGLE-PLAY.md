@@ -51,6 +51,9 @@ TẾT & TÂM LINH
 • Sao hạn, cúng dâng sao giải hạn; xem tuổi Kim Lâu, Hoang Ốc, Tam Tai; mệnh và màu hợp tuổi
 • Lịch ăn chay 2 đến 10 ngày mỗi tháng, nhắc tối hôm trước
 
+LINH VẬT 12 CON GIÁP
+• Chọn linh vật theo ý thích: đủ 12 con giáp, Bé Thỏ Ngọc, Lân Con — đổi cả trên widget
+
 WIDGET MÀN HÌNH CHÍNH
 • Ngày hôm nay kiểu biểu tượng lịch, tờ lịch, lịch tháng, sắp tới, đếm ngược Tết, Bé Thỏ nhắc
 

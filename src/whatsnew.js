@@ -5,6 +5,16 @@ import { esc, ICON, backHeader } from './ui/common.js';
 import { ILL, mascot } from './ui/art.js';
 
 export const WHATS_NEW = [
+  { v: '1.10.1', items: [
+    ['Nhanh và mượt hơn', 'Mở app nhanh gần gấp đôi, chuyển màn và cuộn nhẹ hơn trên máy cấu hình thấp', '#/today', 'star']
+  ] },
+  { v: '1.10.0', items: [
+    ['Điều hướng mới, gọn và đúng chuẩn', 'Thanh tab luôn có ở mọi màn; mỗi tab nhớ chỗ đang xem; Quay lại đi lùi đúng một bước', '#/tienich', 'compass'],
+    ['Tab Cá nhân', 'Hồ sơ, cài đặt, chia sẻ cả họ, góp ý, ủng hộ — gom về một chỗ', '#/canhan', 'face']
+  ] },
+  { v: '1.9.4', items: [
+    ['Chọn linh vật 12 con giáp', 'Chuột, Trâu, Hổ, Mèo, Rồng, Rắn, Ngựa, Dê, Khỉ, Gà, Chó, Heo, thêm Thỏ Ngọc và Lân — đổi cả widget', '#/settings', 'face']
+  ] },
   { v: '1.9.2', items: [
     ['Đọc văn khấn kiểu tụng', 'Giọng trầm, chậm, ngắt theo vế; chuông mở đầu, mõ gõ nhịp', '#/vankhan/ram', 'lotus'],
     ['Ghi âm giọng người nhà', 'Ông bà, cha mẹ hay thầy ở chùa đọc một lần, con cháu nghe lại mãi', '#/vankhan/gio', 'face']

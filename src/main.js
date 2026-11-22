@@ -13,7 +13,10 @@ import '@fontsource/noto-serif/latin-700.css';
 import './styles.css';
 
 import { getState, subscribe } from './store.js';
-import { toast } from './ui/common.js';
+import { toast, nav as navBar } from './ui/common.js';
+import { initNav, go, back, done as navDone, switchTab, openExternal, handleHashChange, activeTab, navDirection, takeRestoreY, canGoBack, onNavigate, TABS, TAB_ROOT, isTabRoot } from './nav.js';
+import { renderCanhan } from './ui/canhan.js';
+import { setMascot } from './ui/art.js';
 import { reschedule } from './notify.js';
 import { pushWidgetData } from './widgets.js';
 import { renderWelcome, mountWelcome } from './ui/welcome.js';
@@ -22,25 +25,25 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { renderToday, mountToday } from './ui/today.js';
 import { renderCalendar, mountCalendar, resetCalendar } from './ui/calendar.js';
 import { renderReminders, mountReminders, renderGioForm, mountGioForm, clearGioForm } from './ui/reminders.js';
-import { renderCulture, renderProfile, mountProfile, renderTuvi, mountTuvi, renderNumerology, mountNumerology, renderIching, mountIching } from './ui/culture.js';
 import { renderDonate, mountDonate, renderSettings, mountSettings } from './ui/more.js';
-import { renderContacts, mountContacts, resetContacts } from './ui/contacts.js';
 import { renderVankhanList, renderVankhan, mountVankhan, renderGoodDays, mountGoodDays, renderInvite, mountInvite } from './ui/tools.js';
 import { listenNotificationActions } from './notify.js';
 import { checkUpdate } from './update.js';
 import { App as CapApp } from '@capacitor/app';
-import { renderFeedback, mountFeedback } from './ui/feedback.js';
 import { renderHub, mountHub } from './ui/hub.js';
 import { renderConvert, mountConvert } from './ui/tools.js';
-import { renderShare, mountShare, resetShare, renderImport, mountImport, resetImport } from './ui/family.js';
-import { renderHieuhi, mountHieuhi, renderPrep, mountPrep, renderMemorial, mountMemorial, renderGiapha, mountGiapha, renderXemtuoi, mountXemtuoi } from './ui/giadinh.js';
-import { renderSaohan, mountSaohan } from './ui/saohan.js';
-import { renderTetPrep, mountTetPrep, renderXongdat, mountXongdat, renderXuathanh, renderAnchay, mountAnchay, renderMenh, mountMenh } from './ui/tet.js';
 import { renderWhatsNew } from './whatsnew.js';
 import { restoreFromSystemIfEmpty, mirrorToSystem, autoSyncCalendar } from './sync.js';
 
 const app = document.getElementById('app');
 const needsProfile = new Set(['tuvi', 'numerology']);
+
+// Màn ít dùng: tách thành gói riêng, nạp khi cần (và nạp sẵn lúc rảnh sau khi mở app)
+const L = {
+  culture: () => import('./ui/culture.js'), contacts: () => import('./ui/contacts.js'), feedback: () => import('./ui/feedback.js'),
+  family: () => import('./ui/family.js'), giadinh: () => import('./ui/giadinh.js'), saohan: () => import('./ui/saohan.js'), tet: () => import('./ui/tet.js')
+};
+const lazy = (mod, r, m, extra = {}) => ({ ...extra, lazy: () => L[mod]().then((x) => ({ render: x[r], mount: m ? x[m] : undefined, mod: x })) });
 
 const ROUTES = {
   welcome: { render: renderWelcome, mount: mountWelcome },
@@ -49,35 +52,38 @@ const ROUTES = {
   reminders: { render: renderReminders, mount: mountReminders },
   add: { render: (p) => renderGioForm(p), mount: mountGioForm },
   edit: { render: (p) => renderGioForm(p), mount: mountGioForm },
-  culture: { render: renderCulture, culture: true },
-  profile: { render: renderProfile, mount: mountProfile, culture: true },
-  tuvi: { render: renderTuvi, mount: mountTuvi, culture: true },
-  numerology: { render: renderNumerology, mount: mountNumerology, culture: true },
-  iching: { render: renderIching, mount: mountIching, culture: true },
+  culture: lazy('culture', 'renderCulture', null, { culture: true }),
+  profile: lazy('culture', 'renderProfile', 'mountProfile'),
+  tuvi: lazy('culture', 'renderTuvi', 'mountTuvi', { culture: true }),
+  numerology: lazy('culture', 'renderNumerology', 'mountNumerology', { culture: true }),
+  iching: lazy('culture', 'renderIching', 'mountIching', { culture: true }),
   donate: { render: renderDonate, mount: mountDonate },
   settings: { render: renderSettings, mount: mountSettings },
-  contacts: { render: renderContacts, mount: mountContacts },
+  contacts: lazy('contacts', 'renderContacts', 'mountContacts'),
   vankhan: { render: (p) => (p.id ? renderVankhan(p) : renderVankhanList(p)), mount: (r, rr, p) => (p.id ? mountVankhan(r, rr, p) : null) },
   ngaytot: { render: renderGoodDays, mount: mountGoodDays },
   thiep: { render: renderInvite, mount: mountInvite },
-  chiase: { render: renderShare, mount: mountShare },
-  nhap: { render: renderImport, mount: mountImport },
-  gopy: { render: renderFeedback, mount: mountFeedback },
+  chiase: lazy('family', 'renderShare', 'mountShare'),
+  nhap: lazy('family', 'renderImport', 'mountImport'),
+  gopy: lazy('feedback', 'renderFeedback', 'mountFeedback'),
   tienich: { render: renderHub, mount: mountHub },
   doingay: { render: renderConvert, mount: mountConvert },
-  hieuhi: { render: renderHieuhi, mount: mountHieuhi },
-  chuanbi: { render: renderPrep, mount: mountPrep },
-  tuongnho: { render: renderMemorial, mount: mountMemorial },
-  giapha: { render: renderGiapha, mount: mountGiapha },
-  xemtuoi: { render: renderXemtuoi, mount: mountXemtuoi },
-  saohan: { render: renderSaohan, mount: mountSaohan },
-  chuanbitet: { render: renderTetPrep, mount: mountTetPrep },
-  xongdat: { render: renderXongdat, mount: mountXongdat },
-  xuathanh: { render: renderXuathanh },
-  anchay: { render: renderAnchay, mount: mountAnchay },
-  menh: { render: renderMenh, mount: mountMenh },
-  moi: { render: renderWhatsNew }
+  hieuhi: lazy('giadinh', 'renderHieuhi', 'mountHieuhi'),
+  chuanbi: lazy('giadinh', 'renderPrep', 'mountPrep'),
+  tuongnho: lazy('giadinh', 'renderMemorial', 'mountMemorial'),
+  giapha: lazy('giadinh', 'renderGiapha', 'mountGiapha'),
+  xemtuoi: lazy('giadinh', 'renderXemtuoi', 'mountXemtuoi'),
+  saohan: lazy('saohan', 'renderSaohan', 'mountSaohan'),
+  chuanbitet: lazy('tet', 'renderTetPrep', 'mountTetPrep'),
+  xongdat: lazy('tet', 'renderXongdat', 'mountXongdat'),
+  xuathanh: lazy('tet', 'renderXuathanh'),
+  anchay: lazy('tet', 'renderAnchay', 'mountAnchay'),
+  menh: lazy('tet', 'renderMenh', 'mountMenh'),
+  moi: { render: renderWhatsNew },
+  canhan: { render: renderCanhan }
 };
+// Màn "nhiệm vụ" (biểu mẫu, màn chào): ẩn thanh tab để người dùng tập trung, có nút Lưu ở dưới
+const TASK = new Set(['welcome', 'add', 'edit', 'profile', 'nhap']);
 
 function parseHash() {
   const h = location.hash.replace(/^#\/?/, '');
@@ -99,27 +105,57 @@ function render(scrollTop = false) {
 function renderInner(scrollTop = false) {
   let { name, params } = parseHash();
   let route = ROUTES[name];
-  if (getState().onboarded && name === 'welcome') { replacing = true; location.replace('#/today'); return; }
-  if (!getState().onboarded && name !== 'welcome' && name !== 'nhap') { replacing = true; location.replace('#/welcome'); return; }
-  if (!route || (route.culture && !getState().settings.culture)) { replacing = true; location.replace('#/today'); return; }
-  if (needsProfile.has(name) && !(getState().profile.dob && getState().profile.name)) { replacing = true; location.replace('#/profile'); return; }
+  if (getState().onboarded && name === 'welcome') { go('#/today', { replace: true }); return; }
+  if (!getState().onboarded && name !== 'welcome' && name !== 'nhap') { go('#/welcome', { replace: true }); return; }
+  if (!route || (route.culture && !getState().settings.culture)) { go('#/today', { replace: true }); return; }
+  if (needsProfile.has(name) && !(getState().profile.dob && getState().profile.name)) { go('#/profile', { replace: true }); return; }
+  if (route.lazy && !route.render) {
+    // Giữ màn cũ trong tích tắc nạp gói màn mới, rồi vẽ (không nháy trắng)
+    route.loading = route.loading || route.lazy().then((x) => Object.assign(route, x)).catch((e) => { route.loading = null; throw e; });
+    route.loading.then(() => render(true)).catch((e) => (window.__showBootError || console.error)(String(e)));
+    return;
+  }
   const y = window.scrollY;
-  if (name !== current?.name) { if (current?.name === 'add' || current?.name === 'edit') clearGioForm(); if (current?.name === 'contacts') resetContacts(); if (current?.name === 'chiase') resetShare(); if (current?.name === 'nhap') resetImport(); }
+  if (name !== current?.name) {
+    const prev = ROUTES[current?.name]?.mod;
+    if (current?.name === 'add' || current?.name === 'edit') clearGioForm();
+    if (current?.name === 'contacts') prev?.resetContacts?.();
+    if (current?.name === 'chiase') prev?.resetShare?.();
+    if (current?.name === 'nhap') prev?.resetImport?.();
+  }
   // Thay root để gỡ toàn bộ event listener cũ
   const root = document.createElement('div');
+  const t0 = performance.now();
   root.innerHTML = route.render(params);
+  const t1 = performance.now();
+  // Thanh tab do router gắn: có trên mọi màn trừ màn nhiệm vụ; tab sáng là tab đang mở
+  const screen = root.querySelector('.screen');
+  root.querySelectorAll('.nav').forEach((n) => n.remove());
+  const task = TASK.has(name) || !!(screen && (screen.hasAttribute('data-task') || screen.querySelector('.bottom-bar')));
+  if (screen) {
+    screen.classList.toggle('no-nav', task);
+    screen.classList.toggle('tab-root', isTabRoot());
+    if (!task) screen.insertAdjacentHTML('beforeend', navBar(activeTab()));
+    // Màn gốc của tab không có nút Quay lại
+    if (isTabRoot()) screen.querySelector('header.top.back [data-back]')?.remove();
+  }
   app.replaceChildren(root);
+  const t2 = performance.now();
   const rerender = () => render(false);
   route.mount?.(root, rerender, params);
+  if (window.__perf) window.__perf.push({ name, html: t1 - t0, dom: t2 - t1, mount: performance.now() - t2 });
   const changed = current?.name !== name || current?.id !== params.id;
   const first = !current;
   current = { name, id: params.id };
-  window.scrollTo(0, changed || scrollTop ? 0 : y);
+  const ry = takeRestoreY();
+  window.scrollTo(0, ry !== null ? ry : changed || scrollTop ? 0 : y);
   if (changed) {
     document.title = (root.querySelector('h1')?.textContent || 'Lịch Âm') + ' · Lịch Âm & Nhắc Giỗ';
+    document.documentElement.dataset.nav = navDirection();
     root.querySelector('.screen')?.classList.add('enter');
     // Đưa tiêu điểm tới tiêu đề để trình đọc màn hình đọc tên trang mới
-    if (!first) root.querySelector('h1')?.focus({ preventScroll: true });
+    // Đưa tiêu điểm sau khi màn đã vẽ xong (focus ép trình duyệt tính lại bố cục ngay lập tức)
+    if (!first) { const h1 = root.querySelector('h1'); requestAnimationFrame(() => setTimeout(() => { if (h1?.isConnected) h1.focus({ preventScroll: true }); }, 0)); }
   }
 }
 
@@ -128,37 +164,60 @@ function applyLook() {
   const dark = s.theme === 'dark' || (s.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.documentElement.dataset.size = String(s.size);
+  setMascot(s.mascot);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0E0B09' : '#F3ECE0');
 }
 
-// Ngăn xếp trang đã đi trong app — để nút "Quay lại" luôn hoạt động (kể cả khi mở thẳng một trang)
-const stack = [location.hash || '#/today'];
-let replacing = false;
-window.addEventListener('hashchange', () => {
-  const h = location.hash;
-  if (replacing) { stack[stack.length - 1] = h; replacing = false; }
-  else if (stack.length > 1 && stack[stack.length - 2] === h) stack.pop();
-  else stack.push(h);
-  render(true);
-});
+// Điều hướng: ngăn xếp theo từng tab (xem nav.js)
+initNav();
+onNavigate(() => render(true));
+window.addEventListener('hashchange', () => { handleHashChange(); render(true); });
 document.addEventListener('click', (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const b = e.target.closest('[data-back]');
-  if (!b) return;
-  if (stack.length > 1) history.back();
-  else { replacing = true; location.replace(b.dataset.back); }
+  if (b) { e.preventDefault(); if (!back()) go(b.dataset.back || '#/today', { replace: true }); return; }
+  const a = e.target.closest('a[href^="#/"]');
+  if (!a || a.target) return;
+  e.preventDefault();
+  const h = a.getAttribute('href');
+  const tab = a.closest('.nav') && TABS.find((t) => TAB_ROOT[t] === h);
+  if (tab) switchTab(tab); else go(h);
 });
+
+// Nút Quay lại của Android: đóng hộp thoại → lùi một bước → về tab Hôm nay → bấm lần nữa để thoát
+let exitArmed = 0;
+if (Capacitor.isNativePlatform()) {
+  CapApp.addListener('backButton', () => {
+    const scrim = document.querySelector('.scrim');
+    if (scrim) { scrim.click(); return; }
+    const openDetails = document.activeElement?.closest?.('details[open]');
+    if (openDetails && openDetails.matches('.voice-card')) { openDetails.open = false; return; }
+    if (canGoBack()) { back(); return; }
+    if (!isTabRoot()) { back(); return; }
+    if (activeTab() !== 'today') { switchTab('today'); return; }
+    if (Date.now() - exitArmed < 2000) { CapApp.exitApp(); return; }
+    exitArmed = Date.now();
+    toast('Bấm Quay lại lần nữa để thoát');
+  }).catch(() => {});
+}
 
 // Nút "Thêm" thu gọn thành tròn khi cuộn xuống, để không che nội dung
 let lastY = 0;
+let scrollQueued = false;
 window.addEventListener('scroll', () => {
-  const y = window.scrollY;
-  const fab = document.querySelector('.fab');
-  if (fab) {
-    fab.classList.toggle('mini', y > 60);
-    // Cuộn xuống: ẩn hẳn để đọc trọn nội dung; cuộn lên: hiện lại
-    if (Math.abs(y - lastY) > 4) fab.classList.toggle('hide', y > 120 && y > lastY);
-  }
-  lastY = y;
+  if (scrollQueued) return;
+  scrollQueued = true;
+  requestAnimationFrame(() => {
+    scrollQueued = false;
+    const y = window.scrollY;
+    const fab = document.querySelector('.fab');
+    if (fab) {
+      fab.classList.toggle('mini', y > 60);
+      // Cuộn xuống: ẩn hẳn để đọc trọn nội dung; cuộn lên: hiện lại
+      if (Math.abs(y - lastY) > 4) fab.classList.toggle('hide', y > 120 && y > lastY);
+    }
+    lastY = y;
+  });
 }, { passive: true });
 
 // Rung nhẹ khi bấm (chỉ trên điện thoại)
@@ -189,7 +248,7 @@ if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator && location.pr
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
-listenNotificationActions((h) => { if (location.hash !== h) location.hash = h; });
+listenNotificationActions((h) => { if (location.hash !== h) openExternal(h); });
 
 // Link từ widget: lichamnhacgio://open/vankhan/ram?jd=… → mở đúng màn
 export function routeFromUrl(url) {
@@ -197,7 +256,7 @@ export function routeFromUrl(url) {
   return m ? '#/' + (m[1] || 'today') : null;
 }
 if (Capacitor.isNativePlatform()) {
-  CapApp.addListener('appUrlOpen', ({ url }) => { const h = routeFromUrl(url); if (h && location.hash !== h) location.hash = h; }).catch(() => {});
+  CapApp.addListener('appUrlOpen', ({ url }) => { const h = routeFromUrl(url); if (h && location.hash !== h) openExternal(h); }).catch(() => {});
 }
 
 // Không để lời gọi plugin của máy chặn việc hiện giao diện: chờ tối đa vài giây rồi đi tiếp
@@ -207,7 +266,7 @@ async function start() {
   if (Capacitor.isNativePlatform()) {
     const l = await withTimeout(CapApp.getLaunchUrl(), 1200);
     const h = routeFromUrl(l?.url);
-    if (h) { replacing = true; location.replace(h); }
+    if (h) { location.replace(h); initNav(); }
   }
   applyLook();
   render(true);
@@ -220,5 +279,8 @@ async function start() {
   });
   if (getState().calSync?.enabled) autoSyncCalendar();
   setTimeout(() => checkUpdate(), 3000);
+  // Nạp sẵn các màn tách gói khi máy rảnh, để lần đầu mở màn đó vẫn tức thì
+  const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1500));
+  idle(() => Object.values(ROUTES).forEach((r) => { if (r.lazy && !r.loading) r.loading = r.lazy().then((x) => Object.assign(r, x)).catch(() => { r.loading = null; }); }), { timeout: 3000 });
 }
 start();
