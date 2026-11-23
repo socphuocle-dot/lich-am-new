@@ -342,6 +342,7 @@ export const occasion = (id) => OCCASIONS.find((o) => o.id === id);
 /** Văn khấn phù hợp với một sự kiện trong lịch (null nếu không có) */
 export function vanKhanFor(ev) {
   if (!ev) return null;
+  if (ev.vk) return ev.vk;
   const l = ev.lunar || {};
   if (ev.kind === 'gio') {
     if (ev.gio && ev.gio.type && ev.gio.type !== 'gio') return null;

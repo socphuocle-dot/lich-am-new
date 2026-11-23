@@ -1,3 +1,4 @@
+import { coffeePill } from './coffee.js';
 import { done as navDone } from '../nav.js';
 import { getState, setState, updateSettings, saveGio, deleteGio, uid } from '../store.js';
 import { jdFromDate, LUNAR_MONTH_NAME, canChiYear } from '../lib/lunar.js';
@@ -40,7 +41,7 @@ export function renderReminders() {
 
   return `<div class="screen has-fab" data-screen="reminders">
   <header class="top" style="flex-direction:column;align-items:stretch;gap:12px">
-    <div class="row"><h1 tabindex="-1" class="grow">Nhắc việc</h1><span class="small muted row" style="gap:6px">${ICON.shield()} Lưu trên máy</span></div>
+    <div class="row"><div class="col grow"><h1 tabindex="-1">Nhắc việc</h1><span class="sub row" style="gap:4px">${ICON.shield(14)} Lưu trên máy</span></div>${coffeePill()}</div>
     <div class="chips scroll" role="group" aria-label="Lọc theo loại">${F.map(([id, l]) => `<button type="button" class="chip" data-filter="${id}" aria-pressed="${ui.filter === id}">${l}</button>`).join('')}</div>
   </header>
   <main class="body">

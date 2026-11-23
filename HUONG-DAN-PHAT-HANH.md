@@ -89,12 +89,60 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.10.1)
+## Cập nhật lên phiên bản mới (ví dụ 1.15.0)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.10.1` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.10.1` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.10.1` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.15.0` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.15.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.15.0` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.15.0 — kiểm tra tự động, Google Play, widget chọn riêng, đọc văn khấn đúng giờ
+- **Kiểm tra tự động mỗi lần đẩy mã** (`.github/workflows/build.yml`): ngoài kiểm thử mã, nay chạy cả 40 kịch bản bấm thử giao diện và kiểm tra trợ năng trên GitHub; build Android + iOS; chạy **Android Lint** (bắt lỗi widget, quyền…) và ghi số lỗi ra trang tóm tắt của lần chạy, báo cáo trong artifact `lint-report`. Pull Request cũng được kiểm tra (build bản thử không cần khóa ký). Chạy tại máy: `npm run check`.
+- **Google Play**: hướng dẫn từng bước trong `HUONG-DAN-GOOGLE-PLAY.md` (tài khoản, chạy thử kín 12 người × 14 ngày, phát hành). Tùy chọn: cài Secret `PLAY_SERVICE_ACCOUNT_JSON` để mỗi lần gắn tag GitHub tự đẩy AAB lên Play dạng bản nháp; ghi chú "Có gì mới" trong `store/whatsnew/whatsnew-vi-VN`.
+- **Mỗi widget chọn nội dung riêng (Android)**: thêm widget Đếm ngược / Đồng hồ là mở màn chọn (mốc Tết, Ông Táo, từng ngày giỗ; kiểu Giấy / Sơn mài). Android 12+: nhấn giữ widget → Cấu hình lại. Lựa chọn lưu theo từng widget, xóa widget thì xóa theo. (iPhone vẫn theo cài đặt trong app.)
+- **Đọc văn khấn đúng giờ cúng**: thông báo ngày giỗ, lễ có nút "Đọc văn khấn"; bấm vào thông báo đúng ngày cúng cũng tự đọc (tắt được trong Cài đặt → Thông báo). Ưu tiên giọng người nhà đã ghi âm.
+
+## Có gì mới ở 1.14.0 — widget tự vừa kích thước, widget đồng hồ
+- **Widget đổi bố cục theo cỡ thật** (Android 12+ hệ thống tự chọn; Android 8–11 app tính lại mỗi lần kéo):
+  - Tờ lịch: 2×1 nằm ngang · 2×2 · 2×3+ thêm việc sắp tới gần nhất và giờ hoàng đạo.
+  - Lịch & sắp tới: 4×1 một việc · 4×2 ba việc · 4×3+ sáu việc; các dòng xếp sát, viên "còn mấy ngày" bên phải, "Hôm nay" nền đỏ.
+  - Đếm ngược: 1×1 · 2×2 · 4×1 nằm ngang · 4×2+ linh vật lớn.
+  - Lịch tháng: 4×3 gọn (chỉ ghi âm mùng 1, rằm, hôm nay) · 4×4+ đủ.
+  - Góc bo theo đúng launcher (Android 12+), giới hạn kéo nhỏ được nới ra.
+- **Widget mới "Đồng hồ & lịch âm"** (Android 4×1 · 4×2 · 4×3; iPhone cỡ vừa, lớn):
+  - Kiểu **Giấy** (ô ngày đỏ + đồng hồ) hoặc **Sơn mài** (dải đỏ ngang) — chọn ở Cài đặt → Widget màn hình chính.
+  - Android dùng đồng hồ hệ thống (TextClock): tự chạy, đúng giờ, không tốn pin; bấm vào giờ mở báo thức. Giờ hoàng đạo tự đổi đầu mỗi giờ âm (báo thức nhẹ, không đánh thức máy).
+  - iPhone: mỗi phút một mục trong 3 giờ tới (cách các app đồng hồ trên App Store vẫn làm) — có thể trễ vài giây khi máy tiết kiệm pin.
+- iPhone thêm cỡ lớn cho "Lịch & sắp tới" (7 việc) và cỡ vừa cho "Đếm ngược".
+- Mã: `BaseWidget.java` (lớp chung), `WidgetUpdater.variants()` (bảng cỡ → bố cục), layout mới `widget_*_wide/_tall/_line/_mini/_big`, `widget_clock_b*` (Giấy), `widget_clock_c*` (Sơn mài).
+
+## Có gì mới ở 1.13.1
+- Lề hai bên trên điện thoại hẹp lại từ 20px còn 12px (biến `--gutter` trong styles.css; máy tính bảng ≥600px giữ 20px). Thanh tiêu đề, thanh nút Lưu, nút + nổi cũng theo lề mới.
+
+## Có gì mới ở 1.13.0 — an toàn dữ liệu, chế độ đơn giản, nhật ký lỗi
+- **Sao lưu đầy đủ**: "Sao lưu ra file" và "Sao lưu lên Google Drive / iCloud" nay đóng gói cả ảnh tưởng nhớ, ảnh mộ, giọng đọc văn khấn, lời kể của ông bà (file định dạng 2). "Khôi phục từ file" ghi lại các tệp vào máy rồi mới nạp dữ liệu; vẫn đọc được file sao lưu cũ. Đường dẫn tệp trong file sao lưu được kiểm tra chặt (chỉ thư mục ảnh, giọng đọc của app).
+- **Ảnh lưu riêng**: ảnh không còn nằm trong dữ liệu chữ (giới hạn ~5 MB). Lần đầu mở bản mới, app tự chuyển ảnh cũ ra bộ nhớ riêng (chạy nền) và dọn ảnh không còn dùng.
+- **Báo khi đầy bộ nhớ**: lưu thất bại thì hiện thông báo kèm nút "Xem cách xử lý" (không còn âm thầm mất thay đổi). Cài đặt → Dữ liệu có thanh dung lượng, số ảnh, số bản ghi.
+- **Chế độ đơn giản**: màn chào lần đầu thêm bước "Bạn hay dùng app để làm gì?" (5 nhóm việc). App ghim sẵn tiện ích phù hợp; bật chế độ đơn giản thì chữ to, tab Tiện ích chỉ hiện nhóm đã chọn (có nút "Xem tất cả tiện ích"), Hôm nay bớt mục ít dùng. Đổi lại ở Cài đặt → Hiển thị.
+- **Nhật ký lỗi**: app ghi lại lỗi trên máy (tối đa 80 dòng, không có dữ liệu cá nhân). Góp ý & báo lỗi → "Kèm nhật ký lỗi", xem, gửi riêng, xóa. Cá nhân hiện số lỗi nếu có.
+- **KIEM-THU-TREN-MAY.md**: danh sách tự thử trên điện thoại thật trước khi phát hành.
+
+## Có gì mới ở 1.12.0 — 6 tiện ích mới
+- **In gia phả** (nút máy in trên màn Gia phả, hoặc Tiện ích → In gia phả): vẽ cả cây thành ảnh lớn nền giấy, viền vàng, tiêu đề "Gia phả họ …" (sửa được); "Gửi ảnh" (PNG) hoặc "File PDF" khổ A4/A3, tự xoay ngang/dọc.
+- **Tảo mộ** (Tiện ích → Dòng họ): danh sách mộ phần, nút Chỉ đường mở Google Maps; ngày Thanh Minh (có văn khấn); bật nhắc tảo mộ 20 tháng Chạp; danh sách đồ mang theo.
+  - Trong trang tưởng nhớ: "Lấy vị trí đang đứng" (GPS) hoặc dán link Google Maps / tọa độ; thêm ảnh mộ. Vị trí mộ gửi kèm khi chia sẻ cả họ (ảnh thì không).
+  - Tiết Thanh Minh nay có trong lịch và được nhắc như ngày lễ.
+  - App xin thêm quyền **Vị trí** (chỉ khi bấm nút) — đã khai trong AndroidManifest, Info.plist, chính sách riêng tư và hồ sơ Google Play.
+- **Sổ quỹ họ**: số dư, sổ thu chi theo việc (giỗ tổ, khuyến học, nhà thờ họ…), đợt đóng góp theo hộ (thêm nhanh từ gia phả, đánh dấu đã đóng), gửi bản tổng kết qua Zalo.
+- **Lời kể, lời dặn**: trong màn sửa một người ở gia phả, ghi âm theo chủ đề (tối đa 30 phút/bản), nghe lại, gửi file, xóa. Trang tưởng nhớ của người đó có phần nghe lại.
+- **Người ở nước ngoài**: máy khác múi giờ Việt Nam thì trang Hôm nay hiện "Ở quê: giờ, ngày, ngày âm". Cài đặt → "Nhắc theo giờ Việt Nam" để thông báo kêu đúng lúc ở quê đang 7:00.
+- **Đọc to lịch hôm nay**: nút "Đọc to" trên tờ lịch.
+
+## Có gì mới ở 1.11.0 — gia phả sơ đồ cây, ghim tiện ích, ủng hộ tác giả
+- Gia phả có 3 cách xem: **Sơ đồ** (cây từ trên xuống, mỗi ô là một cặp vợ chồng, đường nối rẽ nhánh xuống các con; nút − / Vừa màn hình / +), **Danh sách** (thụt lề như cũ) và **Theo đời** (Đời 1, Đời 2… kèm "con của ai", mấy con). App nhớ cách xem đã chọn.
+- Màn sửa một người có thêm nút "Thêm con", "Thêm vợ/chồng" (dùng khi xem dạng sơ đồ).
+- Trang Hôm nay có mục "Tiện ích nhanh" do người dùng tự chọn: bấm "Tùy chỉnh" (hoặc thẻ "Ghim tiện ích ra trang chính" ở tab Tiện ích) để ghim tối đa 8 trong 29 tiện ích, sắp lên/xuống, về mặc định.
+- Lời mời "Miễn phí, không quảng cáo · Mời tác giả ly cà phê" thành thẻ nổi bật (ly cà phê bốc khói, nút vàng) ở cuối mọi màn, cùng nút "Mời cà phê" trên đầu các tab Nhắc việc, Tiện ích, Cá nhân. Bản phát hành qua cửa hàng tự đổi thành lời mời đánh giá 5 sao.
 
 ## Có gì mới ở 1.10.1 — tối ưu tốc độ và độ mượt
 - Mở app nhanh hơn: gói chính nhẹ đi 1/3 (383 KB → 257 KB); các màn ít dùng (Dòng họ, Tết, Sao hạn, Chia sẻ, Văn hóa…) tách gói riêng, tự nạp sẵn lúc máy rảnh.

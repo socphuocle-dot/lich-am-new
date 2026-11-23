@@ -4,8 +4,10 @@ import { getState } from '../store.js';
 import { APP_VERSION, CHANNEL, REPO, CONTACT_PHONE, ZALO_URL } from '../config.js';
 import { esc, ICON, backHeader, toast } from './common.js';
 import { mascot } from './art.js';
+import { getLog, errorCount, clearLog, logReport } from '../errlog.js';
+import { storageInfo } from '../store.js';
 
-const fb = { kind: 'loi', text: '', info: true };
+const fb = { kind: 'loi', text: '', info: true, log: true, showLog: false };
 const KINDS = [['loi', 'Báo lỗi'], ['gopy', 'Góp ý'], ['khac', 'Khác']];
 
 export function deviceInfo() {
@@ -26,7 +28,8 @@ export function deviceInfo() {
 
 function message() {
   const k = KINDS.find((x) => x[0] === fb.kind)[1];
-  return `[${k}] ${fb.text.trim()}${fb.info ? '\n\n— Thông tin máy —\n' + deviceInfo() : ''}`;
+  const withLog = fb.log && getLog().length;
+  return `[${k}] ${fb.text.trim()}${fb.info ? '\n\n— Thông tin máy —\n' + deviceInfo() : ''}${withLog ? '\n\n' + logReport({ 'Bộ nhớ dữ liệu': Math.round(storageInfo().ratio * 100) + '%' }).split('\n\n').slice(1).join('\n\n') : ''}`;
 }
 
 export function renderFeedback() {
@@ -44,11 +47,24 @@ export function renderFeedback() {
     <div class="row"><div class="col grow"><span class="lb">Kèm thông tin máy</span><span class="small muted">Phiên bản app, đời máy, cài đặt chính — không có tên hay ngày giỗ của bạn</span></div>
       <button type="button" class="switch" role="switch" aria-checked="${fb.info}" aria-label="Kèm thông tin máy" data-act="info"></button></div>
     ${fb.info ? `<pre class="fb-info" aria-label="Thông tin sẽ gửi kèm">${esc(deviceInfo())}</pre>` : ''}
+    ${logBlock()}
     <button type="button" class="btn" data-act="share">${ICON.share(18)} Gửi qua Zalo, Messenger, email…</button>
     <button type="button" class="btn ghost" data-act="github">Gửi lên trang GitHub của app</button>
     <button type="button" class="btn text" data-act="copy">${ICON.copy(16)} Sao chép nội dung</button>
   </main>
 </div>`;
+}
+
+function logBlock() {
+  const n = getLog().length; const ne = errorCount();
+  return `<section class="card pad col" style="gap:10px" aria-label="Nhật ký lỗi" id="fb-log">
+    <div class="row"><div class="col grow"><span class="lb">Kèm nhật ký lỗi</span><span class="small muted" data-test="log-count">${n ? `${ne} lỗi · ${n} dòng ghi trên máy này` : 'Chưa ghi nhận lỗi nào'}</span></div>
+      ${n ? `<button type="button" class="switch" role="switch" aria-checked="${fb.log}" aria-label="Kèm nhật ký lỗi" data-act="log"></button>` : ''}</div>
+    ${n ? `<div class="row" style="gap:8px;flex-wrap:wrap"><button type="button" class="chip" data-act="log-show" aria-expanded="${fb.showLog}">${fb.showLog ? 'Ẩn nhật ký' : 'Xem nhật ký'}</button>
+      <button type="button" class="chip" data-act="log-send">${ICON.share(16)} Chỉ gửi nhật ký</button><button type="button" class="chip" data-act="log-clear">Xóa nhật ký</button></div>` : ''}
+    ${n && fb.showLog ? `<pre class="fb-info" aria-label="Nội dung nhật ký">${esc(logReport())}</pre>` : ''}
+    <span class="small muted">Nhật ký chỉ có tên lỗi, màn đang mở, phiên bản — không có tên người, ngày giỗ hay ảnh của bạn.</span>
+  </section>`;
 }
 
 export function mountFeedback(root, rerender) {
@@ -59,6 +75,18 @@ export function mountFeedback(root, rerender) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     if (act === 'info') { fb.info = !fb.info; rerender(); return; }
+    if (act === 'log') { fb.log = !fb.log; rerender(); return; }
+    if (act === 'log-show') { fb.showLog = !fb.showLog; rerender(); return; }
+    if (act === 'log-clear') { clearLog(); fb.showLog = false; toast('Đã xóa nhật ký'); rerender(); return; }
+    if (act === 'log-send') {
+      const text = logReport();
+      try {
+        if (Capacitor.isNativePlatform()) { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Nhật ký lỗi Lịch Âm', text, dialogTitle: 'Gửi nhật ký cho tác giả qua…' }); return; }
+        if (navigator.share) { await navigator.share({ title: 'Nhật ký lỗi Lịch Âm', text }); return; }
+      } catch { return; }
+      try { await navigator.clipboard.writeText(text); toast('Đã sao chép nhật ký — dán vào Zalo gửi tác giả'); } catch { /* */ }
+      return;
+    }
     if (!fb.text.trim()) { toast('Bạn hãy viết vài dòng trước khi gửi'); root.querySelector('#fb-text')?.focus(); return; }
     const text = message();
     if (act === 'share') {

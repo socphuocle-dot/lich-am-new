@@ -12,9 +12,16 @@ import '@fontsource/noto-serif/vietnamese-700.css';
 import '@fontsource/noto-serif/latin-700.css';
 import './styles.css';
 
-import { getState, subscribe } from './store.js';
+import { getState, setState, subscribe } from './store.js';
 import { toast, nav as navBar } from './ui/common.js';
 import { initNav, go, back, done as navDone, switchTab, openExternal, handleHashChange, activeTab, navDirection, takeRestoreY, canGoBack, onNavigate, TABS, TAB_ROOT, isTabRoot } from './nav.js';
+import { renderPins, mountPins } from './ui/pins.js';
+import { renderNeeds, mountNeeds, resetNeeds } from './ui/needs.js';
+import { onMediaReady, migratePhotos, gcMedia } from './media.js';
+import { logEvent, installErrorLog } from './errlog.js';
+installErrorLog();
+import { coffeeCard } from './ui/coffee.js';
+const NO_COFFEE = new Set(['donate', 'welcome', 'gopy']);
 import { renderCanhan } from './ui/canhan.js';
 import { setMascot } from './ui/art.js';
 import { reschedule } from './notify.js';
@@ -22,7 +29,7 @@ import { pushWidgetData } from './widgets.js';
 import { renderWelcome, mountWelcome } from './ui/welcome.js';
 import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { renderToday, mountToday } from './ui/today.js';
+import { renderToday, mountToday, stopTodaySpeech } from './ui/today.js';
 import { renderCalendar, mountCalendar, resetCalendar } from './ui/calendar.js';
 import { renderReminders, mountReminders, renderGioForm, mountGioForm, clearGioForm } from './ui/reminders.js';
 import { renderDonate, mountDonate, renderSettings, mountSettings } from './ui/more.js';
@@ -41,7 +48,8 @@ const needsProfile = new Set(['tuvi', 'numerology']);
 // Màn ít dùng: tách thành gói riêng, nạp khi cần (và nạp sẵn lúc rảnh sau khi mở app)
 const L = {
   culture: () => import('./ui/culture.js'), contacts: () => import('./ui/contacts.js'), feedback: () => import('./ui/feedback.js'),
-  family: () => import('./ui/family.js'), giadinh: () => import('./ui/giadinh.js'), saohan: () => import('./ui/saohan.js'), tet: () => import('./ui/tet.js')
+  family: () => import('./ui/family.js'), giadinh: () => import('./ui/giadinh.js'), saohan: () => import('./ui/saohan.js'), tet: () => import('./ui/tet.js'),
+  giaphain: () => import('./ui/giaphain.js'), dongho: () => import('./ui/dongho.js')
 };
 const lazy = (mod, r, m, extra = {}) => ({ ...extra, lazy: () => L[mod]().then((x) => ({ render: x[r], mount: m ? x[m] : undefined, mod: x })) });
 
@@ -72,6 +80,9 @@ const ROUTES = {
   chuanbi: lazy('giadinh', 'renderPrep', 'mountPrep'),
   tuongnho: lazy('giadinh', 'renderMemorial', 'mountMemorial'),
   giapha: lazy('giadinh', 'renderGiapha', 'mountGiapha'),
+  ingiapha: lazy('giaphain', 'renderGiaphaIn', 'mountGiaphaIn'),
+  taomo: lazy('dongho', 'renderTaomo', 'mountTaomo'),
+  quyho: lazy('dongho', 'renderQuyho', 'mountQuyho'),
   xemtuoi: lazy('giadinh', 'renderXemtuoi', 'mountXemtuoi'),
   saohan: lazy('saohan', 'renderSaohan', 'mountSaohan'),
   chuanbitet: lazy('tet', 'renderTetPrep', 'mountTetPrep'),
@@ -80,6 +91,8 @@ const ROUTES = {
   anchay: lazy('tet', 'renderAnchay', 'mountAnchay'),
   menh: lazy('tet', 'renderMenh', 'mountMenh'),
   moi: { render: renderWhatsNew },
+  ghim: { render: renderPins, mount: mountPins },
+  nhucau: { render: renderNeeds, mount: mountNeeds },
   canhan: { render: renderCanhan }
 };
 // Màn "nhiệm vụ" (biểu mẫu, màn chào): ẩn thanh tab để người dùng tập trung, có nút Lưu ở dưới
@@ -98,6 +111,7 @@ let current = null;
 function render(scrollTop = false) {
   try { renderInner(scrollTop); } catch (e) {
     console.error(e);
+    logEvent('error', 'Vẽ màn lỗi: ' + (e && e.message), e && e.stack);
     (window.__showBootError || ((m) => { app.textContent = m; }))(`${e && e.message}\n${(e && e.stack) || ''}\nTrang: ${location.hash}\n\n${navigator.userAgent}`);
   }
 }
@@ -112,7 +126,7 @@ function renderInner(scrollTop = false) {
   if (route.lazy && !route.render) {
     // Giữ màn cũ trong tích tắc nạp gói màn mới, rồi vẽ (không nháy trắng)
     route.loading = route.loading || route.lazy().then((x) => Object.assign(route, x)).catch((e) => { route.loading = null; throw e; });
-    route.loading.then(() => render(true)).catch((e) => (window.__showBootError || console.error)(String(e)));
+    route.loading.then(() => render(true)).catch((e) => { logEvent('error', 'Không nạp được màn ' + name, String(e)); (window.__showBootError || console.error)(String(e)); });
     return;
   }
   const y = window.scrollY;
@@ -120,6 +134,9 @@ function renderInner(scrollTop = false) {
     const prev = ROUTES[current?.name]?.mod;
     if (current?.name === 'add' || current?.name === 'edit') clearGioForm();
     if (current?.name === 'contacts') prev?.resetContacts?.();
+    prev?.stopStories?.(); // dừng ghi âm / nghe lời kể khi rời màn
+    if (current?.name === 'today') stopTodaySpeech();
+    if (current?.name === 'nhucau') resetNeeds();
     if (current?.name === 'chiase') prev?.resetShare?.();
     if (current?.name === 'nhap') prev?.resetImport?.();
   }
@@ -136,6 +153,8 @@ function renderInner(scrollTop = false) {
     screen.classList.toggle('no-nav', task);
     screen.classList.toggle('tab-root', isTabRoot());
     if (!task) screen.insertAdjacentHTML('beforeend', navBar(activeTab()));
+    // Lời mời ủng hộ ở cuối mọi màn thường (trừ chính màn ủng hộ)
+    if (!task && !NO_COFFEE.has(name)) { const m = screen.querySelector(':scope > main'); if (m) m.insertAdjacentHTML('beforeend', coffeeCard()); }
     // Màn gốc của tab không có nút Quay lại
     if (isTabRoot()) screen.querySelector('header.top.back [data-back]')?.remove();
   }
@@ -262,6 +281,18 @@ if (Capacitor.isNativePlatform()) {
 // Không để lời gọi plugin của máy chặn việc hiện giao diện: chờ tối đa vài giây rồi đi tiếp
 const withTimeout = (p, ms) => Promise.race([Promise.resolve(p).catch(() => null), new Promise((r) => setTimeout(() => r(null), ms))]);
 
+// Ảnh lưu thành tệp riêng: nạp xong thì vẽ lại màn (gộp nhiều ảnh vào một lần vẽ)
+let mediaTick = 0;
+onMediaReady(() => { cancelAnimationFrame(mediaTick); mediaTick = requestAnimationFrame(() => render(false)); });
+// Lưu thất bại vì đầy bộ nhớ: báo rõ, không để người dùng tưởng đã lưu
+let fullWarned = 0;
+window.addEventListener('lamng:save-failed', () => {
+  logEvent('warn', 'Lưu dữ liệu thất bại: bộ nhớ đầy');
+  if (Date.now() - fullWarned < 8000) return;
+  fullWarned = Date.now();
+  toast('Bộ nhớ của app đã đầy — thay đổi vừa rồi CHƯA được lưu.', { label: 'Xem cách xử lý', run: () => go('#/settings?muc=dulieu') });
+});
+
 async function start() {
   if (Capacitor.isNativePlatform()) {
     const l = await withTimeout(CapApp.getLaunchUrl(), 1200);
@@ -281,6 +312,8 @@ async function start() {
   setTimeout(() => checkUpdate(), 3000);
   // Nạp sẵn các màn tách gói khi máy rảnh, để lần đầu mở màn đó vẫn tức thì
   const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1500));
+  // Chuyển ảnh cũ (nằm trong dữ liệu chữ) ra tệp riêng, dọn tệp ảnh không còn dùng
+  idle(() => migratePhotos(getState, setState).then((n) => { if (n) logEvent('info', `Đã chuyển ${n} ảnh ra bộ nhớ riêng`); return gcMedia(getState()); }).catch(() => {}), { timeout: 5000 });
   idle(() => Object.values(ROUTES).forEach((r) => { if (r.lazy && !r.loading) r.loading = r.lazy().then((x) => Object.assign(r, x)).catch(() => { r.loading = null; }); }), { timeout: 3000 });
 }
 start();

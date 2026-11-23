@@ -40,8 +40,17 @@ VĂN KHẤN & MÂM CÚNG
 • Ghi âm giọng ông bà, cha mẹ đọc văn khấn để con cháu nghe lại
 • Mâm cúng theo dịp và theo vùng miền Bắc, Trung, Nam
 
+WIDGET MÀN HÌNH CHÍNH
+• 7 loại widget: ngày hôm nay, tờ lịch, sắp tới, đồng hồ & lịch âm, lịch tháng, đếm ngược, lời nhắc
+• Kéo to nhỏ thoải mái — widget tự đổi bố cục cho vừa
+• Đồng hồ tự chạy kèm ngày âm, giờ hoàng đạo; kiểu Giấy hoặc Sơn mài
+
 DÒNG HỌ
-• Gia phả nhiều đời, trang tưởng nhớ người đã khuất (ảnh, tiểu sử, nơi an táng)
+• Gia phả nhiều đời: xem dạng sơ đồ cây, danh sách hoặc theo đời; in ra ảnh lớn, PDF khổ A4/A3
+• Ghi âm lời kể, lời dặn của ông bà gắn vào từng người trong gia phả
+• Trang tưởng nhớ người đã khuất (ảnh, tiểu sử, nơi an táng)
+• Tảo mộ: lưu vị trí mộ phần, chỉ đường bằng bản đồ, nhắc Thanh Minh và tảo mộ cuối năm
+• Sổ quỹ họ: thu chi, đợt đóng góp, ai đã đóng, gửi tổng kết cả họ
 • Sổ hiếu hỉ: ghi mừng cưới, phúng viếng để đáp lễ chu đáo
 • Chuẩn bị đám giỗ: việc cần làm, phân công, khách mời
 • Gửi danh sách ngày giỗ và gia phả cho cả họ qua Zalo hoặc mã QR
@@ -80,7 +89,8 @@ Liên hệ tác giả: 0903 545 334 (gọi hoặc Zalo).
   - *Thông báo, báo thức chính xác:* nhắc giỗ, rằm đúng giờ.
   - *Danh bạ (không bắt buộc):* chỉ đọc ngày sinh trong danh bạ khi người dùng bấm "Sinh nhật từ danh bạ"; không gửi đi đâu.
   - *Lịch (không bắt buộc):* chỉ ghi ngày giỗ vào Lịch Google trên máy khi người dùng bật đồng bộ.
-  - *Micro (không bắt buộc):* chỉ khi người dùng bấm "Ghi âm giọng người nhà đọc bài này"; bản ghi lưu trong app, không gửi đi đâu.
+  - *Micro (không bắt buộc):* chỉ khi người dùng bấm ghi âm (giọng đọc văn khấn, lời kể của ông bà); bản ghi lưu trong app, không gửi đi đâu.
+  - *Vị trí chính xác (không bắt buộc, chỉ khi đang dùng app):* chỉ khi người dùng đứng tại mộ và bấm "Lấy vị trí đang đứng" để lưu vị trí mộ phần. Tọa độ lưu trong app, không gửi lên máy chủ; người dùng tự quyết có gửi kèm khi chia sẻ cho người thân. Trong mục Data safety: khai **Vị trí chính xác — thu thập: Không** (dữ liệu chỉ xử lý trên máy, không rời khỏi thiết bị).
   - *Ảnh:* người dùng tự chọn một ảnh cho trang tưởng nhớ; ảnh được thu nhỏ và lưu trong app.
 
 ## 5. Lưu ý chính sách

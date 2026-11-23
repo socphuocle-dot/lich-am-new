@@ -14,6 +14,7 @@ import { saveVoice, voiceUrl, deleteVoice, startRecording, stopRecording, cancel
 import { confirmSheet } from './dialog.js';
 import { mascot, mascotName, ILL, cloud, sparkle, lanternString } from './art.js';
 import { giap, giapName } from './zodiac.js';
+import { pinned, pinTile } from './pins.js';
 
 /** "Ông" + "Nguyễn Văn A" → "Ông Nguyễn Văn A"; không lặp nếu tên đã có quan hệ ("Bà Cố") */
 export const withRel = (g) => (g.rel && g.rel !== 'Khác' && !g.name.toLowerCase().startsWith(g.rel.toLowerCase() + ' ') ? `${g.rel} ${g.name}` : g.name);
@@ -263,10 +264,13 @@ export function mountVankhan(root, rerender, params) {
     el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); el?.focus({ preventScroll: true });
   };
   root.addEventListener('keydown', (e) => { const f = e.target.closest?.('[data-field]'); if (f && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); editField(f.dataset.field); } });
-  // Tự đọc khi mở bài (người lớn tuổi): chỉ một lần mỗi lần mở
-  if (getState().settings.autoRead && vk.tab === 'van' && vk.autoFrom !== location.hash) {
+  // Tự đọc khi mở bài (người lớn tuổi) hoặc khi bấm "Đọc văn khấn" trên thông báo giờ cúng (doc=1):
+  // ưu tiên giọng người nhà đã ghi âm, không có thì máy đọc. Chỉ một lần mỗi lần mở.
+  const wantRead = params.doc === '1' || getState().settings.autoRead;
+  if (wantRead && vk.autoFrom !== location.hash) {
+    if (vk.tab !== 'van') { vk.tab = 'van'; rerender(); return; }
     vk.autoFrom = location.hash;
-    setTimeout(() => root.querySelector('[data-act="tts-play"], [data-act="v-play"]')?.click(), 900);
+    setTimeout(() => (root.querySelector('[data-act="v-play"]') || root.querySelector('[data-act="tts-play"]'))?.click(), 900);
   }
   root.addEventListener('click', async (e) => {
     const fd = e.target.closest('[data-field]');
@@ -621,11 +625,11 @@ export function mountInvite(root, rerender, params) {
 
 /* ============ Lối tắt tiện ích trên màn Hôm nay ============ */
 export function toolsRow() {
-  return `<section class="tools" aria-label="Tiện ích">
-    <a class="tool" href="#/vankhan"><span class="pastel rose">${ILL.book()}</span>Văn khấn</a>
-    <a class="tool" href="#/ngaytot"><span class="pastel butter">${ILL.star()}</span>Ngày tốt</a>
-    <button type="button" class="tool" data-act="conv" aria-expanded="${cv.open}"><span class="pastel mint">${ILL.swap()}</span>Đổi ngày</button>
-    <a class="tool" href="#/vankhan?tab=mam"><span class="pastel peach">${ILL.tray()}</span>Mâm cúng</a>
+  const ids = pinned();
+  return `<section class="col" style="gap:8px" aria-label="Tiện ích nhanh">
+    <div class="h2row"><h2 class="h">Tiện ích nhanh</h2><a class="link" href="#/ghim">Tùy chỉnh</a></div>
+    ${ids.length ? `<div class="tools">${ids.map((id) => pinTile(id, cv.open)).join('')}</div>`
+      : `<a class="card pad row" href="#/ghim" style="text-decoration:none;color:var(--ink);gap:12px"><span class="pastel sm butter">${ILL.star()}</span><span class="grow col"><b>Chọn tiện ích hay dùng</b><span class="small muted">Ghim văn khấn, ngày tốt, gia phả… ra trang này</span></span>${ICON.next(18)}</a>`}
   </section>`;
 }
 

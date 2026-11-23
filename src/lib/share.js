@@ -25,7 +25,7 @@ export function encodeFamily(gios, { people = [], memo = false } = {}) {
   const rows = gios.map((g) => {
     const r = [T[g.type || 'gio'] || 'g', String(g.name).slice(0, 60), g.rel || '', g.cal === 'duong' ? 1 : 0, g.day, g.month, g.year ? Number(g.year) : 0, g.leap ? 1 : 0, SIDE[g.side] || ''];
     const m = g.memo;
-    if (memo && m) r.push([Number(m.born) || 0, Number(m.died) || 0, clip(m.home, 80), clip(m.grave, 120), clip(m.bio, 1500), clip(m.words, 600)]);
+    if (memo && m) r.push([Number(m.born) || 0, Number(m.died) || 0, clip(m.home, 80), clip(m.grave, 120), clip(m.bio, 1500), clip(m.words, 600), ...(m.gLat ? [Number(m.gLat), Number(m.gLng)] : [])]);
     return r;
   });
   const pi = new Map(people.map((p, i) => [p.id, i]));
@@ -79,7 +79,11 @@ function decodeRows(rows) {
     if (!g.name || !(g.day >= 1 && g.day <= (g.cal === 'am' ? 30 : 31)) || !(g.month >= 1 && g.month <= 12)) throw new Error('Mã có ngày không hợp lệ');
     if (g.year && (g.year < 1800 || g.year > 2200)) g.year = '';
     const m = r[9];
-    if (Array.isArray(m)) g.memo = { photo: '', born: yr(m[0]), died: yr(m[1]), home: clip(m[2], 80), grave: clip(m[3], 120), bio: clip(m[4], 1500), words: clip(m[5], 600) };
+    if (Array.isArray(m)) {
+      g.memo = { photo: '', born: yr(m[0]), died: yr(m[1]), home: clip(m[2], 80), grave: clip(m[3], 120), bio: clip(m[4], 1500), words: clip(m[5], 600) };
+      const la = Number(m[6]); const lo = Number(m[7]); // vị trí mộ (từ bản 1.12)
+      if (Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180 && (la || lo)) Object.assign(g.memo, { gLat: Math.round(la * 1e6) / 1e6, gLng: Math.round(lo * 1e6) / 1e6 });
+    }
     return g;
   });
 }

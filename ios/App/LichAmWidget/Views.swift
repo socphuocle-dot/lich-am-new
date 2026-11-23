@@ -186,11 +186,12 @@ struct SheetView: View {
 
 struct AgendaView: View {
     let entry: DayEntry
+    @Environment(\.widgetFamily) var family
 
     var body: some View {
         let today = EpochDay.of(date: entry.date)
         let day = CalStore.shared.day(today)
-        let items = UserStore().upcoming(from: today, days: 120, max: 3)
+        let items = UserStore().upcoming(from: today, days: 120, max: family == .systemLarge ? 7 : 3)
         HStack(spacing: 12) {
             VStack(spacing: 2) {
                 Text("TH \(day.m) · \(String(day.y))")
@@ -350,11 +351,44 @@ struct MonthCell: View {
 
 struct CountdownView: View {
     let entry: DayEntry
+    @Environment(\.widgetFamily) var family
 
     var body: some View {
+        if family == .systemMedium { wide } else { small }
+    }
+
+    /// Cỡ vừa: chữ bên trái, linh vật lớn bên phải
+    var wide: some View {
         let today = EpochDay.of(date: entry.date)
         let target = UserStore().countdownTarget(from: today)
-        VStack(spacing: 2) {
+        return HStack(spacing: 6) {
+            if let t = target {
+                let diff = t.epoch - today
+                let d = CalStore.shared.day(t.epoch)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(t.title).font(.bvp(15, .bold)).foregroundColor(.onLacquerGold).lineLimit(2)
+                    Spacer(minLength: 0)
+                    HStack(alignment: .lastTextBaseline, spacing: 8) {
+                        Text(diff <= 0 ? "Hôm nay" : "\(diff)").font(.digits(72)).foregroundColor(.white).minimumScaleFactor(0.4).lineLimit(1).emboss(true)
+                        if diff > 0 { Text("ngày nữa").font(.bvp(15, .bold)).foregroundColor(.onLacquerSoft) }
+                    }
+                    Text("\(LunarText.thu[d.wd]), \(d.d)/\(d.m)" + (d.hasLunar ? " · \(d.lunarShort) Âm" : ""))
+                        .font(.bvp(12)).foregroundColor(.onLacquerSoft).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                ArtImage(name: Art.mascot(for: t.title, kind: 0), size: 118)
+            } else {
+                Text("Mở app để chọn mốc đếm ngược").font(.bvp(13)).foregroundColor(.white)
+            }
+        }
+        .widgetBackground { Paint.lacquer }
+        .widgetURL(DeepLink.url(for: entry.date))
+    }
+
+    var small: some View {
+        let today = EpochDay.of(date: entry.date)
+        let target = UserStore().countdownTarget(from: today)
+        return VStack(spacing: 2) {
             if let t = target {
                 let diff = t.epoch - today
                 let d = CalStore.shared.day(t.epoch)
@@ -524,5 +558,122 @@ struct TipView: View {
             }
         }
         return ("Mở app để xem lịch âm hôm nay", Art.pose("wave"))
+    }
+}
+
+// MARK: - 8. Đồng hồ & lịch âm (vừa, lớn) — kiểu Giấy hoặc Sơn mài
+
+struct ClockView: View {
+    let entry: DayEntry
+    @Environment(\.widgetFamily) var family
+
+    var body: some View {
+        let today = EpochDay.of(date: entry.date)
+        let day = CalStore.shared.day(today)
+        let store = UserStore()
+        let large = family == .systemLarge
+        let items = store.upcoming(from: today, days: 120, max: large ? 5 : 2)
+        let hc = HoangDao.hourChi(entry.date)
+        let good = day.hasLunar && HoangDao.good(day, hc)
+        let lac = store.clockStyle == "sonmai"
+        VStack(alignment: .leading, spacing: 0) {
+            if lac { lacquerHead(day, large: large, hc: hc, good: good) } else { paperHead(day, large: large, hc: hc, good: good) }
+            VStack(alignment: .leading, spacing: 6) {
+                if items.isEmpty {
+                    Text("Không có sự kiện trong 4 tháng tới").font(.bvp(12)).foregroundColor(.muted)
+                }
+                ForEach(Array(items.enumerated()), id: \.element.id) { i, it in
+                    if i > 0 { Rectangle().fill(Color.goldLine.opacity(0.35)).frame(height: 1) }
+                    row(it, today: today)
+                }
+            }
+            .padding(.horizontal, 12).padding(.top, 9)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Paint.paper)
+        .widgetBackground(pad: false) { Paint.paper }
+        .widgetURL(DeepLink.url(for: entry.date))
+    }
+
+    /// Giờ:phút — mỗi phút một mục trong dòng thời gian
+    func clockText(_ size: CGFloat, _ color: Color) -> some View {
+        Text(entry.date, style: .time)
+            .font(.bvp(size, .semibold))
+            .foregroundColor(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+    }
+
+    func paperHead(_ d: DayInfo, large: Bool, hc: Int, good: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(spacing: 0) {
+                Text(LunarText.thu[d.wd].uppercased()).font(.bvp(9.5, .bold)).foregroundColor(.onLacquerGold)
+                Text("\(d.d)").font(.digits(large ? 46 : 38)).foregroundColor(.white).emboss(true)
+                if d.hasLunar { Text("\(d.lunarShort) Âm").font(.bvp(10, .bold)).foregroundColor(.onLacquerGold) }
+            }
+            .frame(width: large ? 84 : 70, height: large ? 96 : 78)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Paint.lacquer))
+            .shadow(color: Color.hex(0x5C0A07).opacity(0.3), radius: 5, x: 0, y: 2)
+            VStack(alignment: .leading, spacing: 4) {
+                clockText(large ? 56 : 48, .ink)
+                if large, d.hasLunar {
+                    Text(HoangDao.next(d, after: hc).map { "Tiếp: \($0)" } ?? CalStore.shared.yearName(d.ly))
+                        .font(.bvp(11, .bold)).foregroundColor(.goldInk)
+                        .padding(.horizontal, 9).padding(.vertical, 2)
+                        .background(Capsule().fill(Color.goldSoft)).overlay(Capsule().stroke(Color.goldLine, lineWidth: 1))
+                }
+            }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 4) {
+                ArtImage(name: Art.moon(d), size: 26)
+                if d.hasLunar {
+                    Text(good ? "Giờ \(Art.chi[hc]) · tốt" : "Giờ \(Art.chi[hc])")
+                        .font(.bvp(11, .bold)).foregroundColor(good ? .white : .goldInk)
+                        .padding(.horizontal, 9).padding(.vertical, 2)
+                        .background(Capsule().fill(good ? Color.accent : Color.goldSoft))
+                }
+            }
+        }
+        .padding(.leading, 8).padding(.trailing, 12).padding(.top, 8)
+    }
+
+    func lacquerHead(_ d: DayInfo, large: Bool, hc: Int, good: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text("\(d.d)").font(.digits(large ? 60 : 50)).foregroundColor(.white).emboss(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(LunarText.thu[d.wd]).font(.bvp(13, .bold)).foregroundColor(.onLacquerSoft)
+                if d.hasLunar { Text("\(d.lunarShort) Âm").font(.bvp(12, .bold)).foregroundColor(.onLacquerGold) }
+                if large, d.hasLunar { Text("Năm \(CalStore.shared.yearName(d.ly))").font(.bvp(11)).foregroundColor(.onLacquerGold) }
+            }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 0) {
+                clockText(large ? 46 : 40, .white)
+                if d.hasLunar {
+                    Text("Giờ \(Art.chi[hc])" + (good ? " · hoàng đạo" : "")).font(.bvp(11, .bold)).foregroundColor(.onLacquerSoft)
+                }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, large ? 12 : 8)
+        .frame(maxWidth: .infinity)
+        .background(Paint.lacquer.overlay(Rectangle().fill(Color.hex(0xD9B566)).frame(height: 2), alignment: .bottom))
+    }
+
+    func row(_ it: UpcomingItem, today: Int) -> some View {
+        let c = EpochDay.civil(it.epoch)
+        let diff = it.epoch - today
+        return HStack(spacing: 8) {
+            ArtImage(name: Art.icon(it), size: 24)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(it.title).font(.bvp(13, .semibold)).foregroundColor(.ink).lineLimit(1)
+                Text("\(LunarText.thuShort[EpochDay.weekday(it.epoch)]) \(c.2)/\(c.1)")
+                    .font(.bvp(12, .semibold)).foregroundColor(it.kind == 3 ? .muted : it.kind == 1 ? .goldInk : .accent)
+            }
+            Spacer(minLength: 4)
+            Text(LunarText.countText(diff)).font(.bvp(11, .bold))
+                .foregroundColor(diff <= 0 ? .white : .accent)
+                .padding(.horizontal, 8).padding(.vertical, 2)
+                .background(Capsule().fill(diff <= 0 ? Color.accent : Color.accent.opacity(0.12)))
+        }
     }
 }

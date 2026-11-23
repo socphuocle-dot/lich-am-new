@@ -12,18 +12,18 @@ export const TAB_ROOT = { today: '#/today', calendar: '#/calendar', reminders: '
 
 /** Tab "nhà" của từng màn — dùng khi mở thẳng (thông báo, widget, link) */
 const TAB_OF = {
-  today: 'today', ngaytot: 'today', moi: 'today',
+  today: 'today', ngaytot: 'today', moi: 'today', ghim: 'today',
   calendar: 'calendar', doingay: 'calendar',
   reminders: 'reminders', add: 'reminders', edit: 'reminders', chiase: 'reminders', nhap: 'reminders', contacts: 'reminders',
-  canhan: 'canhan', settings: 'canhan', donate: 'canhan', gopy: 'canhan', profile: 'canhan'
+  canhan: 'canhan', nhucau: 'canhan', settings: 'canhan', donate: 'canhan', gopy: 'canhan', profile: 'canhan'
 };
 export const tabOf = (name) => TAB_OF[name] || 'tienich';
 
 /** Màn cha theo logic — chỉ dùng khi ngăn xếp rỗng (mở thẳng) */
 const PARENT = {
   add: '#/reminders', edit: '#/reminders', chiase: '#/reminders', nhap: '#/reminders', contacts: '#/reminders',
-  settings: '#/canhan', donate: '#/canhan', gopy: '#/canhan', moi: '#/canhan', profile: '#/canhan',
-  ngaytot: '#/today', doingay: '#/calendar',
+  settings: '#/canhan', nhucau: '#/settings', donate: '#/canhan', gopy: '#/canhan', moi: '#/canhan', profile: '#/canhan',
+  ngaytot: '#/today', ghim: '#/today', ingiapha: '#/giapha', doingay: '#/calendar',
   tuvi: '#/culture', numerology: '#/culture', iching: '#/culture', culture: '#/tienich'
 };
 const routeName = (h) => String(h || '').replace(/^#\/?/, '').split(/[/?]/)[0] || 'today';

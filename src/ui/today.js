@@ -13,11 +13,41 @@ import { mascot, moonPhase, cloud, sparkle, lanternString, ILL, seasonOf, season
 import { giap, giapName } from './zodiac.js';
 import { isChay, CHAY, tetYear, lunarJd } from '../lib/tet.js';
 import { whatsNewCard, hideWhatsNew } from '../whatsnew.js';
+import { isAbroad, vnParts } from '../lib/tz.js';
+import { solarToLunar } from '../lib/lunar.js';
+import { speakParagraphs, stopSpeaking, ttsStatus, openVoiceInstall } from '../tts.js';
+
+const THU_FULL = ['Chủ nhật', 'thứ Hai', 'thứ Ba', 'thứ Tư', 'thứ Năm', 'thứ Sáu', 'thứ Bảy'];
+const say = { on: false };
+export function stopTodaySpeech() { if (say.on) { say.on = false; stopSpeaking(); } }
+const SPEAK = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>';
+const STOP = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>';
+
+/** Lời đọc to tờ lịch hôm nay */
+export function todaySpeech(now, info, ev, todayJd, chayToday) {
+  const l = info.lunar;
+  const P = [`Hôm nay ${THU_FULL[now.getDay()]}, ngày ${now.getDate()} tháng ${now.getMonth() + 1} năm ${now.getFullYear()}.`,
+    `Âm lịch: ngày ${l.day} tháng ${l.month}${l.leap ? ' nhuận' : ''}, năm ${canChiYear(l.year)}. Ngày ${info.canChi.day}, tháng ${info.canChi.month}.`,
+    `Ngày ${info.spirit.good ? 'hoàng đạo, tốt' : 'hắc đạo'}. Tiết ${info.solarTerm}.`];
+  if (chayToday) P.push('Hôm nay là ngày ăn chay.');
+  const near = ev.filter((e) => e.jd - todayJd <= 7).slice(0, 3);
+  if (near.length) P.push(near.map((e) => { const d = e.jd - todayJd; return `${d === 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : `${d} ngày nữa`}: ${e.title.replace(' · ', ', ')}.`; }).join(' '));
+  else if (l.day < 15) P.push(`Còn ${15 - l.day} ngày nữa đến ngày rằm.`);
+  P.push(`Giờ hoàng đạo: ${info.hours.map((h) => h.chi).join(', ')}.`);
+  return P;
+}
+
+function vnStrip() {
+  if (!isAbroad()) return '';
+  const v = vnParts(); const lu = solarToLunar(v.day, v.month, v.year);
+  return `<a class="vn-strip" href="#/settings" aria-label="Giờ Việt Nam ${v.hour} giờ ${v.minute}, ${THU_FULL[v.weekday]} ${v.day}/${v.month}, âm lịch ${lu.day}/${lu.month}. Mở cài đặt người ở nước ngoài">
+    <span class="vn-flag" aria-hidden="true">VN</span><span class="grow">Ở quê: <b>${String(v.hour).padStart(2, '0')}:${String(v.minute).padStart(2, '0')}</b> · ${THU_FULL[v.weekday]} ${v.day}/${v.month} · <b>${lu.day}/${lu.month} âm</b></span>${ICON.next(16)}</a>`;
+}
 
 export function upcomingEvents(now, days = 120) {
   const st = getState();
   const todayJd = jdFromDate(now.getDate(), now.getMonth() + 1, now.getFullYear());
-  const ev = listEvents(todayJd, days, st.gios.filter((g) => g.enabled !== false));
+  const ev = listEvents(todayJd, days, st.gios.filter((g) => g.enabled !== false), { taoMo: !!st.settings.taoMo });
   return { todayJd, ev };
 }
 
@@ -62,7 +92,8 @@ export function renderToday() {
       <div class="sheet-moon">${moonPhase(l.day, 58)}<span>Trăng ${l.day}</span></div>
       <span class="sheet-spark s1">${sparkle(12)}</span><span class="sheet-spark s2">${sparkle(9, '#E9A23B')}</span>
       <div class="sheet-day">${now.getDate()}</div>
-      <div class="center"><span class="pill ${info.spirit.good ? '' : 'neutral'}">Ngày ${info.spirit.good ? 'Hoàng đạo' : 'Hắc đạo'} · ${info.spirit.name}</span></div>
+      <div class="center row" style="gap:8px;justify-content:center;flex-wrap:wrap"><span class="pill ${info.spirit.good ? '' : 'neutral'}">Ngày ${info.spirit.good ? 'Hoàng đạo' : 'Hắc đạo'} · ${info.spirit.name}</span>
+        <button type="button" class="speak-btn${say.on ? ' on' : ''}" data-act="speak" aria-pressed="${say.on}">${say.on ? STOP + ' Dừng đọc' : SPEAK + ' Đọc to'}</button></div>
       <div class="sheet-foot">
         <div class="col"><span class="muted small">Âm lịch</span>
           <span class="big-lunar" data-test="lunar">${l.day}<span class="muted" style="font-size:1.1rem">/${l.month}${l.leap ? ' nhuận' : ''}</span></span>
@@ -70,6 +101,7 @@ export function renderToday() {
         <div class="r"><span class="cc">${giap(info.canChi.day, 22)}<span><span class="nw">Ngày <b>${info.canChi.day}</b></span><br><span class="nw">Tháng <b>${info.canChi.month}</b></span></span></span><span class="term">Tiết <b>${info.solarTerm}</b></span></div>
       </div>
     </section>
+    ${vnStrip()}
     ${occasionNote(todayJd)}
     ${chayNote(info.lunar)}
     ${tetNote(todayJd)}
@@ -82,10 +114,10 @@ export function renderToday() {
     ${toolsRow()}
     ${converterCard()}
 
-    <section aria-label="Giờ hoàng đạo" class="col" style="gap:8px">
+    ${st.settings.simple && Array.isArray(st.settings.needs) && !st.settings.needs.includes('xem') ? '' : `<section aria-label="Giờ hoàng đạo" class="col" style="gap:8px">
       <div class="h2row"><h2 class="h">Giờ hoàng đạo</h2><span class="muted small xung">Tuổi xung ngày: ${giap(info.xung, 20)}<b>${info.xung}</b> (${giapName(info.xung)})</span></div>
       <div class="hours">${info.hours.map((h) => `<div class="hour ${inHour(h) ? 'now' : ''}">${giap(h.chi, 30)}<b>${h.chi}</b><span>${h.label}</span></div>`).join('')}</div>
-    </section>
+    </section>`}
 
 
     ${st.gios.length ? '' : `<a class="card pad row" href="#/add" style="text-decoration:none;color:var(--ink)">
@@ -100,7 +132,6 @@ export function renderToday() {
     </section>` : ''}
     ${backupNudge(st)}
 
-    <a href="#/donate" class="center small muted" style="text-decoration:none;padding:4px 0">Miễn phí, không quảng cáo · <b style="color:var(--accent)">Mời tác giả ly cà phê</b></a>
   </main>
   <a class="fab" href="#/add" aria-label="Thêm ngày giỗ, sinh nhật">${ICON.plus()}<span class="fab-t">Thêm</span></a>
 </div>`;
@@ -171,6 +202,19 @@ export function mountToday(root, rerender) {
     if (e.target.closest('[data-act="upd-later"]')) { setState((x) => ({ ...x, update: { ...x.update, dismissed: x.update.latest } })); return; }
     if (e.target.closest('[data-act="snooze"]')) { updateSettings({ backupSnooze: new Date().toISOString() }); return; }
     if (e.target.closest('[data-act="new-hide"]')) { hideWhatsNew(); return; }
+    if (e.target.closest('[data-act="speak"]')) {
+      if (say.on) { say.on = false; await stopSpeaking(); rerender(); return; }
+      const stt = await ttsStatus();
+      if (stt === 'none') { toast('Máy này chưa hỗ trợ đọc to'); return; }
+      if (stt === 'missing') { toast('Máy chưa có giọng tiếng Việt — đang mở phần cài giọng đọc'); openVoiceInstall(); return; }
+      const now = new Date();
+      const info = dayInfo(now.getDate(), now.getMonth() + 1, now.getFullYear());
+      const { todayJd, ev } = upcomingEvents(now);
+      const k = getState().settings.chay;
+      say.on = true; rerender();
+      await speakParagraphs(todaySpeech(now, info, ev.filter((x) => !getState().disabled[x.key]), todayJd, k && k !== 'off' && isChay(k, info.lunar)), getState().settings.ttsRate || 1, (i) => { if (i < 0 && say.on) { say.on = false; rerender(); } });
+      return;
+    }
     if (e.target.closest('[data-act="hide-tip"]')) updateSettings({ webTipHidden: true });
   });
 }

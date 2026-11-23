@@ -23,6 +23,40 @@ struct DayProvider: TimelineProvider {
     }
 }
 
+/// Đồng hồ: mỗi phút một mục trong 3 giờ tới (iOS không cho widget chạy đồng hồ thật như hệ thống);
+/// nửa đêm và đầu giờ âm nằm sẵn trong dòng thời gian nên ngày âm, giờ hoàng đạo cũng tự đổi.
+struct ClockProvider: TimelineProvider {
+    func placeholder(in context: Context) -> DayEntry { DayEntry(date: Date()) }
+    func getSnapshot(in context: Context, completion: @escaping (DayEntry) -> Void) { completion(DayEntry(date: Date())) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<DayEntry>) -> Void) {
+        let now = Date()
+        let cal = Calendar.current
+        let start = cal.date(bySetting: .second, value: 0, of: now) ?? now
+        var entries = [DayEntry(date: now)]
+        for i in 1...180 {
+            if let d = cal.date(byAdding: .minute, value: i, to: start) { entries.append(DayEntry(date: d)) }
+        }
+        completion(Timeline(entries: entries, policy: .atEnd))
+    }
+}
+
+struct ClockWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "ClockWidget", provider: ClockProvider()) { e in ClockView(entry: e) }
+            .configurationDisplayName("Đồng hồ & lịch âm")
+            .description("Đồng hồ, ngày âm, giờ hoàng đạo và việc sắp tới. Đổi kiểu Giấy / Sơn mài trong app.")
+            .supportedFamilies([.systemMedium, .systemLarge])
+            .noContentMargins()
+    }
+}
+
+extension WidgetConfiguration {
+    /// iOS 17+: tự lo lề để dải sơn mài tràn sát mép
+    func noContentMargins() -> some WidgetConfiguration {
+        if #available(iOSApplicationExtension 17.0, *) { return self.contentMarginsDisabled() } else { return self }
+    }
+}
+
 struct SheetWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "SheetWidget", provider: DayProvider()) { e in SheetView(entry: e) }
@@ -36,8 +70,8 @@ struct AgendaWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "AgendaWidget", provider: DayProvider()) { e in AgendaView(entry: e) }
             .configurationDisplayName("Lịch & sắp tới")
-            .description("Tờ lịch kèm ngày giỗ, rằm, lễ sắp tới.")
-            .supportedFamilies([.systemMedium])
+            .description("Tờ lịch kèm ngày giỗ, rằm, lễ sắp tới. Cỡ lớn hiện nhiều việc hơn.")
+            .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
 
@@ -55,7 +89,7 @@ struct CountdownWidget: Widget {
         StaticConfiguration(kind: "CountdownWidget", provider: DayProvider()) { e in CountdownView(entry: e) }
             .configurationDisplayName("Đếm ngược")
             .description("Đếm ngày tới Tết hoặc ngày giỗ bạn chọn trong app.")
-            .supportedFamilies([.systemSmall])
+            .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
@@ -93,6 +127,7 @@ struct LichAmWidgetBundle: WidgetBundle {
         SheetWidget()
         TipWidget()
         AgendaWidget()
+        ClockWidget()
         MonthWidget()
         CountdownWidget()
         LockWidget()

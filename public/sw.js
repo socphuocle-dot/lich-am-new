@@ -1,5 +1,5 @@
 // Bản web: lưu app vào bộ nhớ đệm để mở được khi không có mạng (sau lần mở đầu tiên).
-const CACHE = 'lich-am-v1.10.1';
+const CACHE = 'lich-am-v1.15.0';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'])).then(() => self.skipWaiting()));
 });

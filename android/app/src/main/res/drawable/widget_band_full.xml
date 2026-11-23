@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dải sơn mài ngang đầu widget đồng hồ (kiểu Sơn mài) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape android:shape="rectangle">
+        <gradient android:angle="315" android:startColor="@color/widget_lacquer_hi" android:centerColor="@color/widget_lacquer" android:endColor="@color/widget_lacquer_deep"/></shape></item>
+    <item android:gravity="bottom" android:height="2dp"><shape android:shape="rectangle"><solid android:color="#D9B566"/></shape></item>
+</layer-list>

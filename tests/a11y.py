@@ -18,7 +18,7 @@ SEED = {
   'gios': [{'id': 'g1', 'name': 'Ông nội', 'rel': 'Ông', 'cal': 'am', 'day': 18, 'month': 10, 'year': '', 'leap': False, 'remind': [0, 3], 'time': '07:00', 'repeat': 'yearly', 'note': '', 'enabled': True}],
   'disabled': {}, 'settings': {}
 }
-SCREENS = ['today', 'calendar', 'reminders', 'add', 'edit/g1', 'culture', 'profile', 'tuvi', 'numerology', 'iching', 'donate', 'settings', 'contacts', 'add?type=sinhnhat', 'vankhan', 'vankhan/gio?gid=g1', 'vankhan/ram?tab=mam', 'ngaytot', 'thiep/g1', 'chiase', 'nhap', 'gopy', 'vankhan/daythang', 'vankhan/giohet', 'tienich', 'doingay', 'thiep', 'hieuhi', 'hieuhi/new', 'chuanbi', 'chuanbi/g1', 'tuongnho', 'tuongnho/g1', 'giapha', 'giapha/new', 'xemtuoi', 'vankhan/tet?tab=mam', 'saohan', 'moi', 'canhan', 'chuanbitet', 'xongdat', 'xuathanh', 'anchay', 'menh', 'vankhan?g=chua', 'vankhan/thanhmau', 'vankhan/giaihan?sao=kedo&han=thienla&tuoi=Canh%20Ng%E1%BB%8D']
+SCREENS = ['today', 'calendar', 'reminders', 'add', 'edit/g1', 'culture', 'profile', 'tuvi', 'numerology', 'iching', 'donate', 'settings', 'contacts', 'add?type=sinhnhat', 'vankhan', 'vankhan/gio?gid=g1', 'vankhan/ram?tab=mam', 'ngaytot', 'thiep/g1', 'chiase', 'nhap', 'gopy', 'vankhan/daythang', 'vankhan/giohet', 'tienich', 'doingay', 'thiep', 'hieuhi', 'hieuhi/new', 'chuanbi', 'chuanbi/g1', 'tuongnho', 'tuongnho/g1', 'giapha', 'giapha/new', 'xemtuoi', 'vankhan/tet?tab=mam', 'saohan', 'moi', 'canhan', 'chuanbitet', 'xongdat', 'xuathanh', 'anchay', 'menh', 'vankhan?g=chua', 'vankhan/thanhmau', 'nhucau', 'ghim', 'ingiapha', 'taomo', 'quyho', 'quyho/new', 'quyho/dot', 'vankhan/giaihan?sao=kedo&han=thienla&tuoi=Canh%20Ng%E1%BB%8D']
 MIN_PX = 12
 
 def run():

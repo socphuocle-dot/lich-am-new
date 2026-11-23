@@ -173,7 +173,8 @@ export async function restoreFromSystemIfEmpty() {
 /** Xuất file sao lưu và mở bảng chia sẻ → chọn Google Drive / Lưu vào Tệp (iCloud Drive) */
 export async function backupToCloud() {
   const name = `LichAm-saoluu-${new Date().toISOString().slice(0, 10)}.json`;
-  const text = exportData();
+  const { exportFull } = await import('./backup.js');
+  const { text, files } = await exportFull();
   if (native()) {
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
     const { Share } = await import('@capacitor/share');
@@ -186,6 +187,7 @@ export async function backupToCloud() {
     document.body.appendChild(a); a.click(); a.remove();
   }
   setState((s) => ({ ...s, lastBackup: new Date().toISOString() }));
+  return { files };
 }
 
 export const daysSinceBackup = (st) => (st.lastBackup ? Math.floor((Date.now() - Date.parse(st.lastBackup)) / 864e5) : null);

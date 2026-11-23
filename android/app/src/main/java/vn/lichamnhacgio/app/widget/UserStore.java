@@ -53,6 +53,11 @@ public final class UserStore {
     }
 
     /** Linh vật người dùng chọn trong app: tho | meo | lan | nghe | cun */
+    /** Kiểu widget đồng hồ chọn trong app: "giay" (mặc định) hoặc "sonmai" */
+    public static String clockStyle(Context ctx) {
+        return data(ctx).optString("cs", "giay");
+    }
+
     public static String mascot(Context ctx) {
         return data(ctx).optString("m", "tho");
     }
@@ -91,6 +96,71 @@ public final class UserStore {
     }
 
     /** Mốc đếm ngược: do app chọn, nếu chưa có thì lấy Tết sắp tới từ bảng tĩnh. */
+    /* ---------- Lựa chọn riêng của từng widget (đặt khi thêm widget, hoặc giữ widget → Cấu hình lại) ---------- */
+    public static final String CHOICE_PREFS = "lich_am_widget_choice";
+
+    public static String choice(Context ctx, String key, int widgetId) {
+        return ctx.getSharedPreferences(CHOICE_PREFS, Context.MODE_PRIVATE).getString(key + "_" + widgetId, "app");
+    }
+
+    public static void setChoice(Context ctx, String key, int widgetId, String value) {
+        ctx.getSharedPreferences(CHOICE_PREFS, Context.MODE_PRIVATE).edit().putString(key + "_" + widgetId, value).apply();
+    }
+
+    public static void forget(Context ctx, int widgetId) {
+        ctx.getSharedPreferences(CHOICE_PREFS, Context.MODE_PRIVATE).edit().remove("cd_" + widgetId).remove("cs_" + widgetId).apply();
+    }
+
+    /** Kiểu đồng hồ của một widget: chọn riêng, hoặc theo cài đặt trong app */
+    public static String clockStyleFor(Context ctx, int widgetId) {
+        String c = choice(ctx, "cs", widgetId);
+        return "app".equals(c) ? clockStyle(ctx) : c;
+    }
+
+    /** Các ngày giỗ / sinh nhật / kỷ niệm có trong dữ liệu (mỗi người một dòng) để chọn đếm ngược */
+    public static List<String[]> gioChoices(Context ctx, long today) {
+        List<String[]> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        JSONArray a = data(ctx).optJSONArray("gios");
+        if (a == null) return out;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject g = a.optJSONObject(i);
+            if (g == null) continue;
+            String id = g.optString("i", "");
+            long e = CalendarStore.epochFromYmd(g.optString("d"));
+            if (id.isEmpty() || e < today || !seen.add(id)) continue;
+            int[] c = CalendarStore.civil(e);
+            out.add(new String[]{id, g.optString("t"), c[2] + "/" + c[1] + "/" + c[0]});
+        }
+        return out;
+    }
+
+    private static Item scanLunar(Context ctx, long today, int lm, int ld, String title) {
+        for (long e = today; e < today + 400; e++) {
+            CalendarStore.Day d = CalendarStore.day(ctx, e);
+            if (d.ld == ld && d.lm == lm && !d.leap) return new Item(e, title, 2);
+        }
+        return null;
+    }
+
+    /** Mốc đếm ngược của một widget */
+    public static Item countdownFor(Context ctx, long today, int widgetId) {
+        String c = choice(ctx, "cd", widgetId);
+        if ("tet".equals(c)) { Item it = scanLunar(ctx, today, 1, 1, "Tết Nguyên Đán"); if (it != null) return it; }
+        if ("ongtao".equals(c)) { Item it = scanLunar(ctx, today, 12, 23, "Ông Công Ông Táo"); if (it != null) return it; }
+        if (c.startsWith("g:")) {
+            String id = c.substring(2);
+            JSONArray a = data(ctx).optJSONArray("gios");
+            for (int i = 0; a != null && i < a.length(); i++) {
+                JSONObject g = a.optJSONObject(i);
+                if (g == null || !id.equals(g.optString("i", ""))) continue;
+                long e = CalendarStore.epochFromYmd(g.optString("d"));
+                if (e >= today) return new Item(e, g.optString("t"), 3);
+            }
+        }
+        return countdown(ctx, today);
+    }
+
     public static Item countdown(Context ctx, long today) {
         JSONObject cd = data(ctx).optJSONObject("cd");
         if (cd != null) {

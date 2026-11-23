@@ -1,6 +1,8 @@
+import json
 """Kiểm thử giao diện từ đầu đến cuối, chặn toàn bộ mạng ngoài (giả lập offline).
 Chạy: python3 tests/e2e.py <thư mục dist> <thư mục ảnh chụp>
 """
+import re
 import sys, os, re, json, threading, http.server, functools, socketserver
 from playwright.sync_api import sync_playwright, expect
 
@@ -25,7 +27,7 @@ def check(name, fn):
 with sync_playwright() as p:
     browser = p.chromium.launch(args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'])
     for vp_name, vp in [('390x844', {'width': 390, 'height': 844}), ('360x740', {'width': 360, 'height': 740})]:
-        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block', permissions=['clipboard-read', 'clipboard-write', 'microphone'])
+        ctx = browser.new_context(viewport=vp, device_scale_factor=2, locale='vi-VN', timezone_id='Asia/Ho_Chi_Minh', service_workers='block', permissions=['clipboard-read', 'clipboard-write', 'microphone', 'geolocation'], geolocation={'latitude': 21.028511, 'longitude': 105.804817, 'accuracy': 8}, accept_downloads=True)
         external = []
         def route(r):
             if r.request.url.startswith(f'http://127.0.0.1:{PORT}'):
@@ -36,7 +38,7 @@ with sync_playwright() as p:
         page.clock.install(time='2026-11-21T20:00:00+07:00')
         errors = []
         page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
-        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.on('pageerror', lambda e: errors.append(str(e)) if 'loi-thu-nghiem' not in str(e) else None)
         shot = lambda n: page.screenshot(path=f'{SHOTS}/{vp_name}-{n}.png', full_page=False) if vp_name == '390x844' or n in ('today', 'tuvi', 'calendar') else None
         def no_hscroll():
             sw = page.evaluate('document.documentElement.scrollWidth'); iw = page.evaluate('innerWidth')
@@ -46,6 +48,11 @@ with sync_playwright() as p:
             page.wait_for_selector('[data-screen="welcome"]')
             shot('welcome')
             page.click('[data-act="next"]'); page.click('[data-act="next"]')
+            # Bước chọn việc hay dùng: mặc định "giỗ" + "cúng"; chọn thêm Dòng họ
+            expect(page.locator('[data-need="gio"]')).to_have_attribute('aria-checked', 'true')
+            page.click('[data-need="dongho"]'); expect(page.locator('[data-need="dongho"]')).to_have_attribute('aria-checked', 'true')
+            shot('welcome-needs')
+            page.click('[data-act="needs"]')
             expect(page.locator('[data-act="allow"]')).to_be_visible()
             shot('welcome-3')
             page.click('[data-act="later"]')
@@ -219,6 +226,9 @@ with sync_playwright() as p:
             page.goto(BASE + '#/settings'); page.wait_for_selector('[data-screen="settings"]')
             expect(page.locator('[data-test="pending"]')).to_contain_text('60 thông báo')
             page.select_option('#s-cd', 'tet')
+            page.click('[data-seg="clockStyle"][data-v="sonmai"]')
+            assert json.loads(page.evaluate("localStorage.getItem('lamng.v1')"))['settings']['clockStyle'] == 'sonmai'
+            expect(page.locator('[data-seg="clockStyle"][data-v="sonmai"]')).to_have_attribute('aria-pressed', 'true')
             assert json.loads(page.evaluate("localStorage.getItem('lamng.v1')"))['settings']['widgetCountdown'] == 'tet'
             page.click('[data-seg="theme"][data-v="dark"]')
             assert page.evaluate('document.documentElement.dataset.theme') == 'dark'
@@ -240,6 +250,29 @@ with sync_playwright() as p:
                 page.click('[data-act="export"]')
             data = json.loads(open(dl.value.path()).read())
             assert len(data['data']['gios']) == 1
+            assert data['format'] == 2 and isinstance(data['media'], dict)  # bản sao lưu đầy đủ (kèm tệp)
+            expect(page.locator('[data-test="store-pct"]')).to_have_text(re.compile(r'^\d+%$'))
+            # Chế độ đơn giản: chọn việc hay dùng → Tiện ích chỉ hiện nhóm đã chọn
+            page.click('a[href="#/nhucau"]'); page.wait_for_selector('[data-screen="nhucau"]')
+            for n in ['gio', 'cung', 'xem', 'dongho', 'tet']:
+                if page.locator(f'[data-need="{n}"]').get_attribute('aria-checked') == 'true': page.click(f'[data-need="{n}"]')
+            page.click('[data-need="xem"]'); page.click('[data-simple]'); page.click('[data-act="needs-save"]')
+            page.wait_for_selector('[data-screen="settings"]')
+            st = json.loads(page.evaluate("localStorage.getItem('lamng.v1')"))['settings']
+            assert st['simple'] is True and st['needs'] == ['xem'] and st['pins'][0] == 'ngaytot' and st['size'] >= 1
+            page.goto(BASE + '#/tienich'); page.wait_for_selector('[data-screen="hub"]')
+            expect(page.locator('.svc-group')).to_have_count(1); expect(page.locator('.svc-group')).to_have_attribute('data-group', 'xem')
+            page.click('[data-act="hub-all"]'); assert page.locator('.svc-group').count() >= 5
+            page.fill('#hub-q', 'quy ho'); expect(page.locator('#hub-res')).to_contain_text('Sổ quỹ họ')  # tìm vẫn ra mọi mục
+            page.goto(BASE + '#/settings'); page.wait_for_selector('[data-screen="settings"]'); page.click('[data-tg="simple"]')
+            assert json.loads(page.evaluate("localStorage.getItem('lamng.v1')"))['settings']['simple'] is False
+            # Nhật ký lỗi: lỗi chưa xử lý được ghi lại, xem được trong Góp ý
+            page.goto(BASE + '#/ghim'); page.wait_for_selector('[data-screen="ghim"]'); page.click('[data-reset-pins]')
+            page.evaluate("window.dispatchEvent(new ErrorEvent('error', { message: 'loi-thu-nghiem', error: new Error('loi-thu-nghiem') }))")
+            page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
+            expect(page.locator('[data-test="log-count"]')).to_contain_text('1 lỗi')
+            page.click('[data-act="log-show"]'); expect(page.locator('#fb-log pre')).to_contain_text('loi-thu-nghiem')
+            page.click('[data-act="log-clear"]'); expect(page.locator('[data-test="log-count"]')).to_contain_text('Chưa ghi nhận')
         check(f'[{vp_name}] Cài đặt: tối, chữ lớn, ẩn Văn hóa, sao lưu', t_settings)
 
         def t_import_reset():
@@ -425,7 +458,7 @@ with sync_playwright() as p:
             expect(page.locator('[data-test="detail"]')).to_contain_text('Hỷ thần')
             page.goto(BASE + '#/gopy'); page.wait_for_selector('[data-screen="feedback"]')
             page.click('[data-act="copy"]'); expect(page.locator('.toast')).to_contain_text('viết vài dòng')
-            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.10.1')
+            page.fill('#fb-text', 'Thử góp ý'); expect(page.locator('.fb-info')).to_contain_text('Phiên bản app: 1.15.0')
             page.click('[data-act="copy"]')
             assert 'Thử góp ý' in page.evaluate('navigator.clipboard.readText()')
         check(f'[{vp_name}] Người mới mất: mốc 7/49/100 ngày, giỗ đầu, giỗ hết; văn khấn tang lễ; sao, hướng; góp ý', t_tang)
@@ -446,13 +479,56 @@ with sync_playwright() as p:
             # Gia phả: thêm ông, thêm con, thêm vợ
             page.goto(BASE + '#/giapha'); page.wait_for_selector('[data-screen="giapha"]')
             page.click('.fab'); page.fill('#gp-name', 'Nguyễn Văn Tổ'); page.fill('#gp-born', '1930'); page.click('[data-act="gp-save"]')
-            page.wait_for_selector('.gp-person'); page.click('.gp-add >> text=+ Con')
+            page.wait_for_selector('.gpc-p.focus')  # mặc định: sơ đồ cây, người vừa thêm được làm nổi
+            page.click('[data-gpview="ds"]'); page.wait_for_selector('.gp-person'); page.click('.gp-add >> text=+ Con')
             page.fill('#gp-name', 'Nguyễn Văn Con'); page.click('[data-act="gp-save"]')
             page.wait_for_selector('.gp-tree ul ul .gp-person'); page.click('.gp-add >> text=+ Vợ/chồng >> nth=0')
             expect(page.locator('[data-gender="nu"]')).to_have_attribute('aria-pressed', 'true')
             page.fill('#gp-name', 'Trần Thị Bà'); page.click('[data-act="gp-save"]')
             page.wait_for_selector('[data-screen="giapha"]'); expect(page.locator('.gp-person')).to_have_count(3)
             expect(page.locator('.top .sub')).to_contain_text('3 người · 2 đời')
+            # Sơ đồ cây: một ô cặp vợ chồng, nhánh con bên dưới; phóng to/thu nhỏ
+            page.click('[data-gpview="sodo"]'); expect(page.locator('.gpc-node.cp .gpc-p')).to_have_count(2)
+            expect(page.locator('.gpc ul ul .gpc-p')).to_have_text(re.compile('Nguyễn Văn Con'))
+            z0 = page.evaluate("Number(document.querySelector('.gpc').style.zoom)"); page.click('[data-gpz="1"]')
+            assert page.evaluate("Number(document.querySelector('.gpc').style.zoom)") > z0
+            page.click('[data-gpview="doi"]'); expect(page.locator('.gp-gen')).to_have_count(2)
+            expect(page.locator('.gp-gen').first).to_contain_text('Nguyễn Văn Tổ & Trần Thị Bà')
+            page.click('.gp-gi >> nth=1'); page.wait_for_selector('[data-screen="person"]')
+            expect(page.locator('a.chip >> text=Thêm con')).to_be_visible(); page.click('[data-back]')
+            # Lời kể: ghi âm giọng ông, nghe lại, lưu
+            page.click('[data-gpview="ds"]'); page.click('.gp-person >> text=Nguyễn Văn Tổ'); page.wait_for_selector('[data-screen="person"]')
+            page.fill('#ky-title', 'Chuyện làng'); page.click('[data-kyact="start"]'); page.wait_for_selector('#ky-time'); page.wait_for_timeout(1300)
+            page.click('[data-kyact="stop"]'); page.wait_for_selector('[data-kyact="save"]'); page.click('[data-kyact="save"]')
+            expect(page.locator('.ky-list .item')).to_have_count(1); expect(page.locator('.ky-list')).to_contain_text('Chuyện làng')
+            page.fill('#gp-name', 'Nguyễn Văn Tổ'); page.click('[data-act="gp-save"]'); page.wait_for_selector('[data-screen="giapha"]')
+            page.click('.gp-person >> text=Nguyễn Văn Tổ'); expect(page.locator('.ky-list .item')).to_have_count(1)  # lưu người không mất bản ghi
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="giapha"]')
+            # In gia phả: ảnh xem trước + tải PDF
+            page.click('a[href="#/ingiapha"]'); page.wait_for_selector('[data-test="pr-img"]', timeout=20000)
+            expect(page.locator('#pr-title')).to_have_value('Gia phả họ Nguyễn')
+            with page.expect_download() as dl: page.click('[data-act="pr-pdf"]')
+            assert dl.value.suggested_filename.endswith('-A4.pdf')
+            with open(dl.value.path(), 'rb') as fh: assert fh.read(5) == b'%PDF-'
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="giapha"]')
+            # Quỹ họ: ghi khoản thu, tạo đợt góp, đánh dấu đã đóng
+            page.goto(BASE + '#/quyho'); page.wait_for_selector('[data-screen="quyho"]')
+            page.click('.fab'); page.fill('#q-who', 'Chú Ba'); page.click('[data-qamt="500000"]'); page.click('[data-act="q-save"]')
+            page.wait_for_selector('[data-screen="quyho"]'); expect(page.locator('[data-test="quy-con"]')).to_have_text('500.000đ')
+            page.click('[data-qtab="dot"]'); page.click('a[href="#/quyho/dot"]'); page.click('[data-act="qd-save"]'); page.wait_for_selector('[data-screen="quy-dot"]')
+            page.fill('#qd-add', 'Nhà ông An'); page.keyboard.press('Enter'); page.click('[data-paid]')
+            expect(page.locator('[data-test="dot-collected"]')).to_have_text('200.000đ')
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="quyho"]'); expect(page.locator('[data-test="quy-con"]')).to_have_text('700.000đ')
+            # Ghim tiện ích ra trang chính
+            page.goto(BASE + '#/ghim'); page.wait_for_selector('[data-screen="ghim"]'); page.click('[data-reset-pins]')
+            page.goto(BASE + '#/today'); page.wait_for_selector('[data-screen="today"]'); expect(page.locator('.tools .tool')).to_have_count(4)
+            expect(page.locator('.coffee')).to_be_visible()
+            page.click('a[href="#/ghim"]'); page.wait_for_selector('[data-screen="ghim"]')
+            page.click('[data-toggle="giapha"]'); page.click('[data-unpin="mam"]'); page.click('[data-up="giapha"]')
+            page.click('[data-back]'); page.wait_for_selector('[data-screen="today"]')
+            expect(page.locator('.tools .tool')).to_have_text(['Văn khấn', 'Ngày tốt', 'Gia phả', 'Đổi ngày'])
+            page.click('.tools a[href="#/giapha"]'); page.wait_for_selector('[data-screen="giapha"]')
+            expect(page.locator('.coffee')).to_have_attribute('href', '#/donate')
             # Chuẩn bị giỗ + tưởng nhớ: mở từ danh sách, tích việc, thêm khách
             page.goto(BASE + '#/chuanbi'); page.wait_for_selector('[data-screen="pick-gio"]')
             page.locator('[data-screen="pick-gio"] a.item').first.click(); page.wait_for_selector('[data-screen="prep"]')
@@ -467,6 +543,25 @@ with sync_playwright() as p:
             page.fill('#tn-born', '1940'); page.fill('#tn-bio', 'Cả đời làm ruộng.'); page.click('[data-act="tn-save"]')
             page.wait_for_selector('[data-screen="memorial"]'); expect(page.locator('.memorial')).to_contain_text('1940')
             expect(page.locator('.mem-bio')).to_contain_text('làm ruộng')
+            # Vị trí mộ: lấy GPS, rồi dán link; chỉ đường; màn Tảo mộ
+            page.click('[data-act="tn-edit"]'); page.click('[data-act="tn-gps"]'); expect(page.locator('[data-test="tn-coords"]')).to_have_text('21.02851, 105.80482')
+            page.fill('#tn-gloc', 'https://www.google.com/maps/@10.77701,106.70112,17z'); page.locator('#tn-gloc').dispatch_event('change')
+            expect(page.locator('[data-test="tn-coords"]')).to_have_text('10.77701, 106.70112')
+            page.click('[data-act="tn-save"]'); page.wait_for_selector('[data-screen="memorial"]')
+            expect(page.locator('a.grave-go')).to_have_attribute('href', 'https://www.google.com/maps/dir/?api=1&destination=10.77701,106.70112')
+            page.goto(BASE + '#/taomo'); page.wait_for_selector('[data-screen="taomo"]'); expect(page.locator('.grave-row a.chip.on')).to_have_count(1)
+            page.click('[data-set="taoMo"]'); expect(page.locator('[data-set="taoMo"]')).to_have_attribute('aria-checked', 'true')
+            page.click('[data-tm="0"]'); expect(page.locator('[data-tm="0"]')).to_have_attribute('aria-checked', 'true')
+            page.goto(BASE + '#/today'); page.wait_for_selector('[data-act="speak"]'); expect(page.locator('.vn-strip')).to_have_count(0)
+            # Người ở nước ngoài (Los Angeles): Hôm nay hiện giờ ở quê, cài đặt cho nhắc theo giờ Việt Nam
+            saved = page.evaluate("localStorage.getItem('lamng.v1')")
+            c3 = browser.new_context(viewport=vp, locale='vi-VN', timezone_id='America/Los_Angeles', service_workers='block')
+            c3.add_init_script("localStorage.setItem('lamng.v1', %s)" % json.dumps(saved))
+            p3 = c3.new_page(); p3.goto(BASE + '#/today'); p3.wait_for_selector('.vn-strip')
+            expect(p3.locator('.vn-strip')).to_contain_text('Ở quê:')
+            p3.goto(BASE + '#/settings'); p3.wait_for_selector('[data-test="tz"]'); expect(p3.locator('[data-test="tz"]')).to_contain_text('America/Los_Angeles')
+            p3.click('[data-tg="vnTime"]'); expect(p3.locator('[data-test="tz"]')).to_contain_text('giờ của bạn')
+            c3.close()
             # Sửa ngày giỗ vẫn giữ trang tưởng nhớ
             page.goto(BASE + '#/edit/' + gid); page.wait_for_selector('[data-act="save"]'); page.click('[data-act="save"]')
             page.wait_for_selector('[data-screen="reminders"]')

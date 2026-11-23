@@ -1,86 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@drawable/widget_bg" android:orientation="horizontal" android:padding="8dp">
-    <FrameLayout android:layout_width="122dp" android:layout_height="match_parent">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
-        android:background="@drawable/widget_lacquer_panel" android:gravity="center_horizontal" android:paddingTop="8dp" android:paddingBottom="10dp">
-        <TextView android:id="@+id/band" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro"
-            android:text="TH 11 · 2026" android:textColor="@color/widget_on_lacquer_gold" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08" />
-        <TextView android:id="@+id/day" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fontFamily="@font/noto_serif_digits"
-            android:gravity="center" android:text="21" android:textColor="@color/widget_on_accent" android:includeFontPadding="false" android:maxLines="1"
-            android:textSize="46sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="24sp" android:autoSizeMaxTextSize="64sp" android:shadowColor="#40000000" android:shadowDy="2" android:shadowRadius="4" />
-        <TextView android:id="@+id/weekday" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro"
-            android:text="Thứ Bảy" android:textColor="@color/widget_on_lacquer_soft" android:textSize="12sp" android:textStyle="bold" />
-        <TextView android:id="@+id/lunar" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro"
-            android:maxLines="1" android:ellipsize="end" android:paddingLeft="4dp" android:paddingRight="4dp"
-            android:text="13/10 Âm · Kỷ Hợi" android:textColor="@color/widget_on_lacquer_gold" android:textSize="11sp" android:textStyle="bold" />
+<!-- Lịch & sắp tới 4×2: các dòng xếp sát từ trên xuống, không giãn hở -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg" android:orientation="horizontal" android:padding="8dp" android:clipToOutline="true">
+    <FrameLayout android:layout_width="108dp" android:layout_height="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/widget_lacquer_panel" android:gravity="center_horizontal" android:paddingTop="8dp" android:paddingBottom="10dp">
+        <TextView android:id="@+id/band" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:text="TH 11 · 2026" android:textColor="@color/widget_on_lacquer_gold" android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.06" />
+        <TextView android:id="@+id/day" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fontFamily="@font/noto_serif_digits" android:gravity="center" android:text="23" android:textColor="@color/widget_on_accent" android:includeFontPadding="false" android:maxLines="1"
+            android:textSize="48sp" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="24sp" android:autoSizeMaxTextSize="60sp" android:shadowColor="#40000000" android:shadowDy="2" android:shadowRadius="4" />
+        <TextView android:id="@+id/weekday" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro" android:text="Thứ Hai" android:textColor="@color/widget_on_lacquer_soft" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/lunar" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:ellipsize="end" android:paddingLeft="4dp" android:paddingRight="4dp" android:text="15/10 Âm" android:textColor="@color/widget_on_lacquer_gold" android:textSize="11sp" android:textStyle="bold" />
     </LinearLayout>
-    <ImageView android:id="@+id/moon" android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="top|end" android:layout_marginTop="28dp" android:layout_marginRight="6dp"
-        android:src="@drawable/widget_moon_13" android:contentDescription="Trăng hôm nay" />
+    <ImageView android:id="@+id/moon" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="top|end" android:layout_marginTop="26dp" android:layout_marginRight="5dp" android:src="@drawable/widget_moon_15" android:contentDescription="Trăng hôm nay" />
     </FrameLayout>
-    <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-        android:orientation="vertical" android:paddingLeft="12dp" android:paddingRight="6dp" android:paddingTop="2dp">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Sắp tới" android:fontFamily="@font/be_vietnam_pro"
-            android:textColor="@color/widget_ink" android:textSize="14sp" android:textStyle="bold" android:paddingBottom="2dp" />
-        <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:fontFamily="@font/be_vietnam_pro"
-            android:text="Không có sự kiện trong 4 tháng tới" android:textColor="@color/widget_muted" android:textSize="12sp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
-            <LinearLayout android:id="@+id/row0" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:orientation="horizontal" android:gravity="center_vertical">
-                <ImageView android:id="@+id/dot0" android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp">
-                    <TextView android:id="@+id/title0" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                        android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười · Tết Hạ Nguyên" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                        <TextView android:id="@+id/date0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:id="@+id/count0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="· 2 ngày" android:textColor="@color/widget_muted" android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="10dp" android:paddingRight="2dp" android:paddingTop="2dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Sắp tới" android:fontFamily="@font/be_vietnam_pro" android:textColor="@color/widget_ink" android:textSize="14sp" android:textStyle="bold" android:paddingBottom="5dp" />
+        <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:fontFamily="@font/be_vietnam_pro" android:text="Không có sự kiện trong 4 tháng tới" android:textColor="@color/widget_muted" android:textSize="12sp" />
+        <LinearLayout android:id="@+id/row0" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:id="@+id/dot0" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp" android:paddingRight="6dp">
+                <TextView android:id="@+id/title0" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
+                <TextView android:id="@+id/date0" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
             </LinearLayout>
-            <LinearLayout android:id="@+id/row1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:orientation="horizontal" android:gravity="center_vertical">
-                <ImageView android:id="@+id/dot1" android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp">
-                    <TextView android:id="@+id/title1" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                        android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười · Tết Hạ Nguyên" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                        <TextView android:id="@+id/date1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:id="@+id/count1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="· 2 ngày" android:textColor="@color/widget_muted" android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
+            <TextView android:id="@+id/count0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:background="@drawable/widget_pill" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:text="4 ngày" android:textColor="@color/widget_accent" android:textSize="11sp" android:textStyle="bold" />
+        </LinearLayout>
+        <FrameLayout android:id="@+id/sep1" android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_line" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" />
+        <LinearLayout android:id="@+id/row1" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:id="@+id/dot1" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp" android:paddingRight="6dp">
+                <TextView android:id="@+id/title1" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
+                <TextView android:id="@+id/date1" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
             </LinearLayout>
-            <LinearLayout android:id="@+id/row2" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:orientation="horizontal" android:gravity="center_vertical">
-                <ImageView android:id="@+id/dot2" android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp">
-                    <TextView android:id="@+id/title2" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                        android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười · Tết Hạ Nguyên" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                        <TextView android:id="@+id/date2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:id="@+id/count2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="· 2 ngày" android:textColor="@color/widget_muted" android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
+            <TextView android:id="@+id/count1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:background="@drawable/widget_pill" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:text="4 ngày" android:textColor="@color/widget_accent" android:textSize="11sp" android:textStyle="bold" />
+        </LinearLayout>
+        <FrameLayout android:id="@+id/sep2" android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_line" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" />
+        <LinearLayout android:id="@+id/row2" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:id="@+id/dot2" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp" android:paddingRight="6dp">
+                <TextView android:id="@+id/title2" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
+                <TextView android:id="@+id/date2" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:maxLines="1" android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
             </LinearLayout>
-            <LinearLayout android:id="@+id/row3" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
-                <ImageView android:id="@+id/dot3" android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/widget_ic_moon" android:contentDescription="Loại ngày" />
-                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingLeft="7dp">
-                    <TextView android:id="@+id/title3" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                        android:maxLines="1" android:ellipsize="end" android:text="Rằm tháng Mười · Tết Hạ Nguyên" android:textColor="@color/widget_ink" android:textSize="13sp" android:textStyle="bold" />
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-                        <TextView android:id="@+id/date3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="T2 23/11" android:textColor="@color/widget_accent" android:textSize="12sp" android:textStyle="bold" />
-                        <TextView android:id="@+id/count3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingLeft="5dp" android:fontFamily="@font/be_vietnam_pro"
-                            android:text="· 2 ngày" android:textColor="@color/widget_muted" android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
+            <TextView android:id="@+id/count2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/be_vietnam_pro" android:background="@drawable/widget_pill" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="2dp" android:paddingBottom="2dp" android:text="4 ngày" android:textColor="@color/widget_accent" android:textSize="11sp" android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

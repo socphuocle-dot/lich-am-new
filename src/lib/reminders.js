@@ -1,8 +1,9 @@
 // Lập lịch thông báo cục bộ từ danh sách sự kiện. Không cần server.
 import { nextChayDays } from './tet.js';
 import { listEvents, jdOfDate } from './events.js';
-import { jdToDate } from './lunar.js';
+import { jdToDate, jdFromDate } from './lunar.js';
 import { vanKhanFor } from './vankhan.js';
+import { vnMoment, vnParts } from './tz.js';
 
 export const MAX_PENDING = 60; // iOS giới hạn 64 thông báo chờ
 
@@ -15,10 +16,11 @@ function hashId(str) {
   return (h >>> 1) % 2000000000 + 1;
 }
 
-function at(jd, hhmm) {
+/** Thời điểm nhắc: theo giờ máy, hoặc (người ở nước ngoài bật "nhắc theo giờ Việt Nam") đúng lúc hh:mm ở Việt Nam */
+function at(jd, hhmm, vn = false) {
   const s = jdToDate(jd);
   const [h, m] = String(hhmm || '07:00').split(':').map(Number);
-  return new Date(s.year, s.month - 1, s.day, h || 0, m || 0, 0, 0);
+  return vn ? vnMoment(s.year, s.month, s.day, h || 0, m || 0) : new Date(s.year, s.month - 1, s.day, h || 0, m || 0, 0, 0);
 }
 
 const offsetText = (n) => (n === 0 ? 'Hôm nay' : n === 1 ? 'Ngày mai' : `Còn ${n} ngày nữa`);
@@ -27,15 +29,18 @@ const offsetText = (n) => (n === 0 ? 'Hôm nay' : n === 1 ? 'Ngày mai' : `Còn 
 export function buildSchedule(now, state) {
   const s = state.settings;
   const disabled = state.disabled || {};
-  const fromJd = jdOfDate(now);
+  const vn = !!s.vnTime;
+  const vp = vnParts(now);
+  const fromJd = vn ? jdFromDate(vp.day, vp.month, vp.year) - 1 : jdOfDate(now);
   const events = listEvents(fromJd, 400, (state.gios || []).filter((g) => g.enabled !== false), {
-    moon: true, lunarHolidays: true, solarHolidays: true
+    moon: true, lunarHolidays: true, solarHolidays: true, taoMo: !!s.taoMo
   });
   const out = [];
   let cur = null;
   const push = (key, jd, time, title, body, vk = vanKhanFor(cur)) => {
-    const when = at(jd, time);
+    const when = at(jd, time, vn);
     if (when.getTime() <= now.getTime()) return;
+    if (vn) body += ` (${time || '07:00'} giờ Việt Nam)`;
     out.push({ id: hashId(key + '|' + jd + '|' + time), title, body, at: when, key, kind: cur.kind, evJd: cur.jd, gid: cur.gio?.id || '', vk: vk || '' });
   };
   for (const ev of events) {

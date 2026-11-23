@@ -13,7 +13,7 @@ export const DEFAULT_STATE = {
   settings: {
     autoMoon: true, moonEveOn: true, moonEve: '19:00', moonMornOn: true, moonMorning: '06:00',
     holidayOn: true, gioTime: '07:00', size: 1, theme: 'light', culture: CULTURE_DEFAULT, monday: true, widgetCountdown: 'auto',
-    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: '', region: 'chung', chay: 'off', chayRemind: true, chayTime: '19:00', ttsStyle: 'tung', preferVoice: true, mascot: 'tho'
+    hostName: '', address: '', vkSize: 1, autoUpdateCheck: true, ttsRate: 1, babyName: '', region: 'chung', chay: 'off', chayRemind: true, chayTime: '19:00', ttsStyle: 'tung', preferVoice: true, mascot: 'tho', clockStyle: 'giay'
   },
   calSync: { enabled: false, moon: false, holidays: true, calendarId: '', ids: [] },
   lastBackup: '',
@@ -22,6 +22,7 @@ export const DEFAULT_STATE = {
   hieuhi: [],   // sổ hiếu hỉ: { id, dir: 'nhan'|'di', kind, person, note, date, amount, gift }
   prep: {},     // chuẩn bị đám giỗ theo id ngày giỗ: { tasks: [...], guests: [...] }
   voices: {},   // giọng người thật đọc văn khấn: { [id bài]: { by, sec, mime, at } } — âm thanh lưu riêng trong bộ nhớ app
+  quy: { entries: [], dots: [] }, // quỹ họ: entries { id, dir: 'thu'|'chi', cat, who, amount, date, note }; dots { id, name, per, members: [{ id, name, paid, at }] }
   people: [],   // gia phả: { id, name, gender, born, died, parentId, spouseOf, gioId, note }
   onboarded: false
 };
@@ -46,6 +47,7 @@ function load() {
       hieuhi: Array.isArray(s.hieuhi) ? s.hieuhi : [],
       prep: s.prep && typeof s.prep === 'object' ? s.prep : {},
       people: Array.isArray(s.people) ? s.people : [],
+      quy: { entries: Array.isArray(s.quy?.entries) ? s.quy.entries : [], dots: Array.isArray(s.quy?.dots) ? s.quy.dots : [] },
       voices: s.voices && typeof s.voices === 'object' ? s.voices : {}
     };
   } catch {
@@ -54,10 +56,23 @@ function load() {
 }
 
 export const getState = () => state;
+let saveFailed = false; let lastSize = 0;
+/** Dung lượng dữ liệu chữ (ký tự) so với giới hạn ~5 triệu ký tự của bộ nhớ WebView */
+export const STORAGE_LIMIT = 5 * 1024 * 1024;
+export function storageInfo() {
+  const used = lastSize || (localStorage.getItem(KEY) || '').length;
+  return { used, limit: STORAGE_LIMIT, ratio: used / STORAGE_LIMIT, failed: saveFailed };
+}
 
 export function setState(patch) {
   state = typeof patch === 'function' ? patch(state) : { ...state, ...patch };
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* bộ nhớ đầy */ }
+  const json = JSON.stringify(state);
+  lastSize = json.length;
+  try { localStorage.setItem(KEY, json); saveFailed = false; } catch {
+    // Bộ nhớ đầy: dữ liệu vừa sửa CHƯA được ghi xuống máy → báo ngay cho người dùng
+    saveFailed = true;
+    try { window.dispatchEvent(new CustomEvent('lamng:save-failed', { detail: { size: json.length } })); } catch { /* */ }
+  }
   listeners.forEach((fn) => fn(state));
 }
 

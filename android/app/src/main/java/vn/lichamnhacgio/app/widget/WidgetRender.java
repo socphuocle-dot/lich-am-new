@@ -144,53 +144,154 @@ public final class WidgetRender {
         return v;
     }
 
-    /* 1. Tờ lịch (2×2) */
-    public static RemoteViews sheet(Context ctx) {
-        CalendarStore.Day d = CalendarStore.day(ctx, CalendarStore.todayEpoch());
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_sheet);
+    /* 1. Tờ lịch: 2×1 nằm ngang · 2×2 · 2×3+ thêm việc sắp tới và giờ hoàng đạo */
+    public static RemoteViews sheet(Context ctx) { return sheet(ctx, "normal"); }
+
+    public static RemoteViews sheet(Context ctx, String key) {
+        long today = CalendarStore.todayEpoch();
+        CalendarStore.Day d = CalendarStore.day(ctx, today);
+        if ("wide".equals(key)) {
+            RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_sheet_wide);
+            v.setTextViewText(R.id.day, String.valueOf(d.d));
+            v.setTextViewText(R.id.weekday, CalendarStore.THU[d.wd]);
+            v.setTextViewText(R.id.lunar, CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) + " Âm" : "Tháng " + d.m);
+            String note = todayNote(ctx, d);
+            v.setTextViewText(R.id.note, note.startsWith("Ngày ") ? note.substring(5) : note);
+            setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
+            v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+            return v;
+        }
+        boolean tall = "tall".equals(key);
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), tall ? R.layout.widget_sheet_tall : R.layout.widget_sheet);
         fillSheet(ctx, v, d, true);
         v.setTextViewText(R.id.note, todayNote(ctx, d));
         setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
         setImage(v, R.id.giap, giapRes(ctx, d.canChi));
+        if (tall) {
+            // việc sắp tới gần nhất (không tính hôm nay vì đã ghi ở dòng trên)
+            List<UserStore.Item> items = UserStore.upcoming(ctx, today + 1, 120, 1);
+            if (items.isEmpty()) {
+                v.setViewVisibility(R.id.row0, View.GONE);
+                v.setViewVisibility(R.id.empty, View.VISIBLE);
+            } else {
+                UserStore.Item it = items.get(0);
+                int[] c = CalendarStore.civil(it.epoch);
+                v.setViewVisibility(R.id.empty, View.GONE);
+                v.setTextViewText(R.id.title0, it.title);
+                v.setTextViewText(R.id.date0, CalendarStore.THU_SHORT[(int) Math.floorMod(it.epoch + 4, 7L)] + " " + c[2] + "/" + c[1] + " · " + countText(it.epoch - today));
+                setImage(v, R.id.dot0, eventIcon(ctx, it));
+            }
+            v.setTextViewText(R.id.hours, CalendarStore.hasLunar(d) ? goodHours(d) : "");
+        }
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }
 
-    private static final int[] ROW = {R.id.row0, R.id.row1, R.id.row2, R.id.row3};
-    private static final int[] DATE = {R.id.date0, R.id.date1, R.id.date2, R.id.date3};
-    private static final int[] TITLE = {R.id.title0, R.id.title1, R.id.title2, R.id.title3};
-    private static final int[] COUNT = {R.id.count0, R.id.count1, R.id.count2, R.id.count3};
-    private static final int[] DOT = {R.id.dot0, R.id.dot1, R.id.dot2, R.id.dot3};
+    /* ---------- Giờ hoàng đạo (giống app: bảng theo chi của ngày) ---------- */
+    private static final String[] HD = {"110100101100", "001101001011", "110011010010", "101100110100", "001011001101", "010010110011"};
+    private static final String[] HOUR_RANGE = {"23–1h", "1–3h", "3–5h", "5–7h", "7–9h", "9–11h", "11–13h", "13–15h", "15–17h", "17–19h", "19–21h", "21–23h"};
 
-    /* 2. Lịch & sắp tới (4×2) */
-    public static RemoteViews agenda(Context ctx) {
-        long today = CalendarStore.todayEpoch();
-        CalendarStore.Day d = CalendarStore.day(ctx, today);
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_agenda);
-        fillSheet(ctx, v, d, false);
-        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
-        List<UserStore.Item> items = UserStore.upcoming(ctx, today, 120, 3);
-        for (int i = 0; i < ROW.length; i++) {
-            if (i < items.size()) {
-                UserStore.Item it = items.get(i);
-                int[] c = CalendarStore.civil(it.epoch);
-                v.setViewVisibility(ROW[i], View.VISIBLE);
-                v.setTextViewText(DATE[i], CalendarStore.THU_SHORT[(int) Math.floorMod(it.epoch + 4, 7L)] + " " + c[2] + "/" + c[1]);
-                v.setTextViewText(TITLE[i], it.title);
-                v.setTextViewText(COUNT[i], "· " + countText(it.epoch - today));
-                v.setTextColor(DATE[i], ctx.getColor(it.kind == 3 ? R.color.widget_ink : it.kind == 1 ? R.color.widget_gold_ink : R.color.widget_accent));
-                setImage(v, DOT[i], eventIcon(ctx, it));
-            } else {
-                v.setViewVisibility(ROW[i], View.GONE);
-            }
+    static int dayChi(CalendarStore.Day d) {
+        String cc = d.canChi == null ? "" : d.canChi.trim();
+        int sp = cc.lastIndexOf(' ');
+        String last = sp >= 0 ? cc.substring(sp + 1) : cc;
+        for (int i = 0; i < 12; i++) if (CHI[i].equals(last)) return i;
+        return -1;
+    }
+
+    static boolean goodHour(CalendarStore.Day d, int hourChi) {
+        int dc = dayChi(d);
+        return dc >= 0 && HD[dc % 6].charAt(hourChi) == '1';
+    }
+
+    /** Chi của giờ hiện tại: 23–1h = Tý … */
+    static int hourChiNow() {
+        int h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        return ((h + 1) / 2) % 12;
+    }
+
+    static String goodHours(CalendarStore.Day d) {
+        int dc = dayChi(d);
+        if (dc < 0) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 12; i++) if (HD[dc % 6].charAt(i) == '1') sb.append(sb.length() > 0 ? " · " : "").append(CHI[i]);
+        return sb.toString();
+    }
+
+    /** Giờ hoàng đạo kế tiếp sau giờ hiện tại, vd "Thân 15–17h" */
+    static String nextGoodHour(CalendarStore.Day d, int now) {
+        for (int k = 1; k < 12; k++) {
+            int i = (now + k) % 12;
+            if (goodHour(d, i)) return CHI[i] + " " + HOUR_RANGE[i];
+        }
+        return "";
+    }
+
+    private static final int[] ROW = {R.id.row0, R.id.row1, R.id.row2, R.id.row3, R.id.row4, R.id.row5};
+    private static final int[] DATE = {R.id.date0, R.id.date1, R.id.date2, R.id.date3, R.id.date4, R.id.date5};
+    private static final int[] TITLE = {R.id.title0, R.id.title1, R.id.title2, R.id.title3, R.id.title4, R.id.title5};
+    private static final int[] COUNT = {R.id.count0, R.id.count1, R.id.count2, R.id.count3, R.id.count4, R.id.count5};
+    private static final int[] DOT = {R.id.dot0, R.id.dot1, R.id.dot2, R.id.dot3, R.id.dot4, R.id.dot5};
+    private static final int[] SEP = {0, R.id.sep1, R.id.sep2, R.id.sep3, R.id.sep4, R.id.sep5};
+
+    /** Điền n dòng việc sắp tới (dòng thừa ẩn đi, không để khoảng trống) */
+    static void fillRows(Context ctx, RemoteViews v, long today, int n) {
+        List<UserStore.Item> items = UserStore.upcoming(ctx, today, 120, n);
+        for (int i = 0; i < n; i++) {
+            boolean on = i < items.size();
+            v.setViewVisibility(ROW[i], on ? View.VISIBLE : View.GONE);
+            if (i > 0) v.setViewVisibility(SEP[i], on ? View.VISIBLE : View.GONE);
+            if (!on) continue;
+            UserStore.Item it = items.get(i);
+            int[] c = CalendarStore.civil(it.epoch);
+            long diff = it.epoch - today;
+            v.setTextViewText(DATE[i], CalendarStore.THU_SHORT[(int) Math.floorMod(it.epoch + 4, 7L)] + " " + c[2] + "/" + c[1]);
+            v.setTextViewText(TITLE[i], it.title);
+            v.setTextViewText(COUNT[i], countText(diff));
+            v.setInt(COUNT[i], "setBackgroundResource", diff <= 0 ? R.drawable.widget_pill_now : R.drawable.widget_pill);
+            v.setTextColor(COUNT[i], ctx.getColor(diff <= 0 ? R.color.widget_on_accent : R.color.widget_accent));
+            v.setTextColor(DATE[i], ctx.getColor(it.kind == 3 ? R.color.widget_muted : it.kind == 1 ? R.color.widget_gold_ink : R.color.widget_accent));
+            setImage(v, DOT[i], eventIcon(ctx, it));
         }
         v.setViewVisibility(R.id.empty, items.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    /* 2. Lịch & sắp tới: 4×1 một việc · 4×2 ba việc · 4×3+ sáu việc */
+    public static RemoteViews agenda(Context ctx) { return agenda(ctx, "normal"); }
+
+    public static RemoteViews agenda(Context ctx, String key) {
+        long today = CalendarStore.todayEpoch();
+        CalendarStore.Day d = CalendarStore.day(ctx, today);
+        String lunar = CalendarStore.hasLunar(d) ? CalendarStore.lunarShort(d) + " Âm" : "";
+        if ("line".equals(key)) {
+            RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_agenda_line);
+            v.setTextViewText(R.id.day, String.valueOf(d.d));
+            v.setTextViewText(R.id.lunar, lunar);
+            v.setTextViewText(R.id.weekday, CalendarStore.THU[d.wd].toUpperCase(new java.util.Locale("vi")) + " · SẮP TỚI");
+            fillRows(ctx, v, today, 1);
+            v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+            return v;
+        }
+        boolean tall = "tall".equals(key);
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), tall ? R.layout.widget_agenda_tall : R.layout.widget_agenda);
+        v.setTextViewText(R.id.band, "TH " + d.m + " · " + d.y);
+        v.setTextViewText(R.id.day, String.valueOf(d.d));
+        v.setTextViewText(R.id.weekday, CalendarStore.THU[d.wd]);
+        v.setTextViewText(R.id.lunar, lunar);
+        setImage(v, R.id.moon, CalendarStore.hasLunar(d) ? moonRes(ctx, d) : 0);
+        if (tall) {
+            v.setTextViewText(R.id.note, CalendarStore.hasLunar(d) ? (d.good ? "Hoàng đạo" : "Hắc đạo") : "");
+            v.setTextViewText(R.id.year, CalendarStore.hasLunar(d) ? "Năm " + CalendarStore.yearName(ctx, d.ly) : "");
+        }
+        fillRows(ctx, v, today, tall ? 6 : 3);
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }
 
-    /* 3. Lịch tháng (4×4) */
-    public static RemoteViews month(Context ctx) {
+    /* 3. Lịch tháng: 4×4+ đủ ngày âm · 4×3 gọn (chỉ ghi âm mùng 1, rằm, hôm nay) */
+    public static RemoteViews month(Context ctx) { return month(ctx, false); }
+
+    public static RemoteViews month(Context ctx, boolean compact) {
         long today = CalendarStore.todayEpoch();
         CalendarStore.Day t = CalendarStore.day(ctx, today);
         RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_month);
@@ -242,7 +343,8 @@ public final class WidgetRender {
             int dayColor = isToday ? onAccent : (d.wd == 0 ? accent : ink);
             sb.setSpan(new ForegroundColorSpan(dayColor), 0, num.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             if (CalendarStore.hasLunar(d)) {
-                String lun = "\n" + (d.ld == 1 ? d.ld + "/" + d.lm : String.valueOf(d.ld));
+                boolean showLunar = !compact || moon || isToday;
+                String lun = showLunar ? "\n" + (d.ld == 1 ? d.ld + "/" + d.lm : String.valueOf(d.ld)) : "";
                 int s = sb.length();
                 sb.append(lun);
                 sb.setSpan(new RelativeSizeSpan(0.72f), s, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -265,28 +367,71 @@ public final class WidgetRender {
         return v;
     }
 
-    /* 4. Đếm ngược (2×2) */
-    public static RemoteViews countdown(Context ctx) {
+    /* 4. Đếm ngược: 1×1 · 2×2 · 4×1 nằm ngang · 4×2+ linh vật lớn */
+    public static RemoteViews countdown(Context ctx) { return countdown(ctx, "normal", 0); }
+
+    public static RemoteViews countdown(Context ctx, String key, int widgetId) {
         long today = CalendarStore.todayEpoch();
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_countdown);
-        UserStore.Item it = UserStore.countdown(ctx, today);
+        int layout = "mini".equals(key) ? R.layout.widget_countdown_mini : "wide".equals(key) ? R.layout.widget_countdown_wide
+                : "big".equals(key) ? R.layout.widget_countdown_big : R.layout.widget_countdown;
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), layout);
+        UserStore.Item it = UserStore.countdownFor(ctx, today, widgetId);
+        boolean mini = "mini".equals(key), wide = "wide".equals(key);
         if (it == null) {
-            v.setTextViewText(R.id.title, "Đếm ngược");
+            v.setTextViewText(R.id.title, mini ? "" : "Đếm ngược");
             v.setTextViewText(R.id.number, "–");
-            v.setTextViewText(R.id.unit, "Mở app để chọn mốc");
+            v.setTextViewText(R.id.unit, mini ? "" : "Mở app để chọn mốc");
             v.setTextViewText(R.id.date, "");
         } else {
             long diff = it.epoch - today;
             int[] c = CalendarStore.civil(it.epoch);
             CalendarStore.Day d = CalendarStore.day(ctx, it.epoch);
-            v.setTextViewText(R.id.title, it.title);
-            setImage(v, R.id.mascot, mascotRes(ctx, it.title.startsWith("Sinh nhật") ? "cake" : it.title.startsWith("Tết") ? "lantern" : it.title.startsWith("Giỗ") ? "pray" : "star"));
+            String title = it.title;
+            if (mini) title = title.startsWith("Tết") ? "đến Tết" : title.split(" · ")[0];
+            else if (wide) title = (diff <= 0 ? "" : "đến ") + title;
+            v.setTextViewText(R.id.title, title);
+            if (!mini) setImage(v, R.id.mascot, mascotRes(ctx, it.title.startsWith("Sinh nhật") ? "cake" : it.title.startsWith("Tết") ? "lantern" : it.title.startsWith("Giỗ") ? "pray" : "star"));
             v.setTextViewText(R.id.number, diff <= 0 ? "Hôm nay" : String.valueOf(diff));
-            v.setTextViewText(R.id.unit, diff <= 0 ? "" : "ngày nữa");
+            v.setTextViewText(R.id.unit, diff <= 0 ? "" : mini ? "ngày" : "ngày nữa");
             v.setTextViewText(R.id.date, CalendarStore.THU[d.wd] + ", " + c[2] + "/" + c[1]
                     + (CalendarStore.hasLunar(d) ? " · " + CalendarStore.lunarShort(d) + " Âm" : ""));
         }
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+        return v;
+    }
+
+    /* 6. Đồng hồ & lịch âm: kiểu Giấy (ô ngày đỏ + đồng hồ) hoặc Sơn mài (dải đỏ ngang). 4×1 · 4×2 · 4×3+ */
+    public static RemoteViews clock(Context ctx, String key, int widgetId) {
+        long today = CalendarStore.todayEpoch();
+        CalendarStore.Day d = CalendarStore.day(ctx, today);
+        boolean lac = "sonmai".equals(UserStore.clockStyleFor(ctx, widgetId));
+        boolean line = "line".equals(key), tall = "tall".equals(key);
+        int layout = lac ? (line ? R.layout.widget_clock_c_line : tall ? R.layout.widget_clock_c_tall : R.layout.widget_clock_c)
+                : (line ? R.layout.widget_clock_b_line : tall ? R.layout.widget_clock_b_tall : R.layout.widget_clock_b);
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), layout);
+        boolean lunarOk = CalendarStore.hasLunar(d);
+        v.setTextViewText(R.id.day, String.valueOf(d.d));
+        v.setTextViewText(R.id.weekday, lac ? CalendarStore.THU[d.wd] : CalendarStore.THU[d.wd].toUpperCase(new java.util.Locale("vi")));
+        v.setTextViewText(R.id.lunar, lunarOk ? CalendarStore.lunarShort(d) + " Âm" : "Tháng " + d.m);
+        int hc = hourChiNow();
+        boolean good = lunarOk && goodHour(d, hc);
+        String hourName = "Giờ " + CHI[hc];
+        v.setTextViewText(R.id.hzline, lunarOk ? hourName + (good ? " · hoàng đạo" : "") : "");
+        if (lac) {
+            v.setTextViewText(R.id.year, lunarOk ? "Năm " + CalendarStore.yearName(ctx, d.ly) : "");
+        } else {
+            setImage(v, R.id.moon, lunarOk ? moonRes(ctx, d) : 0);
+            v.setTextViewText(R.id.hz, good ? hourName + " · tốt" : hourName);
+            v.setInt(R.id.hz, "setBackgroundResource", good ? R.drawable.widget_pill_now : R.drawable.widget_chip_gold);
+            v.setTextColor(R.id.hz, ctx.getColor(good ? R.color.widget_on_accent : R.color.widget_gold_ink));
+            String next = lunarOk ? nextGoodHour(d, hc) : "";
+            v.setTextViewText(R.id.hz2tall, next.isEmpty() ? (lunarOk ? CalendarStore.yearName(ctx, d.ly) : "") : "Tiếp: " + next);
+        }
+        if (!line) fillRows(ctx, v, today, tall ? 4 : 2);
+        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
+        // Bấm vào giờ: mở báo thức của máy
+        Intent alarms = new Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        v.setOnClickPendingIntent(R.id.clock, PendingIntent.getActivity(ctx, 7101, alarms, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
         return v;
     }
 

@@ -2,6 +2,8 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { buildSchedule } from './lib/reminders.js';
+import { jdOfDate } from './lib/events.js';
+import { getState } from './store.js';
 
 export const isNative = () => Capacitor.isNativePlatform();
 let lastPreview = [];
@@ -29,7 +31,7 @@ async function ensureActions() {
   try {
     await LocalNotifications.registerActionTypes({
       types: [
-        { id: 'VK', actions: [{ id: 'vankhan', title: 'Xem văn khấn', foreground: true }, { id: 'snooze', title: 'Nhắc lại sau 1 giờ' }] },
+        { id: 'VK', actions: [{ id: 'doc', title: 'Đọc văn khấn', foreground: true }, { id: 'vankhan', title: 'Xem bài', foreground: true }, { id: 'snooze', title: 'Nhắc sau 1 giờ' }] },
         { id: 'BASIC', actions: [{ id: 'snooze', title: 'Nhắc lại sau 1 giờ' }] }
       ]
     });
@@ -50,7 +52,10 @@ export function listenNotificationActions(open) {
       } catch { /* bỏ qua */ }
       return;
     }
-    if (x.vk) open(`#/vankhan/${x.vk}?jd=${x.evJd || ''}${x.gid ? '&gid=' + x.gid : ''}`);
+    // Bấm "Đọc văn khấn", hoặc bấm vào thông báo đúng ngày cúng → mở bài và tự đọc to
+    const today = jdOfDate(new Date());
+    const read = actionId === 'doc' || (actionId === 'tap' && Number(x.evJd) === today && getState().settings.readOnTap !== false);
+    if (x.vk) open(`#/vankhan/${x.vk}?jd=${x.evJd || ''}${x.gid ? '&gid=' + x.gid : ''}${read ? '&doc=1' : ''}`);
     else if (x.gid) open(`#/edit/${x.gid}`);
     else open('#/reminders');
   }).catch(() => {});
@@ -84,6 +89,7 @@ async function doReschedule(state) {
     });
   } catch (e) {
     console.warn('Không lập được thông báo', e);
+    import('./errlog.js').then((m) => m.logEvent('warn', 'Không lập được thông báo: ' + (e?.message || e))).catch(() => {});
   }
   return list;
 }

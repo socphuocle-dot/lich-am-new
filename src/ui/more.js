@@ -1,5 +1,9 @@
+import { isAbroad, deviceZone, diffText, vnMoment } from '../lib/tz.js';
+import { exportFull, restoreFull, sizeText } from '../backup.js';
+import { NEEDS } from './needs.js';
+import { logEvent } from '../errlog.js';
 import { resetTo } from '../nav.js';
-import { getState, updateSettings, exportData, importData, resetAll } from '../store.js';
+import { getState, updateSettings, exportData, importData, resetAll, storageInfo } from '../store.js';
 import { CHANNEL, DONATE_ACCOUNTS, DONATE_NAME, APP_VERSION, WEB_URL, CONTACT_PHONE, ZALO_URL } from '../config.js';
 import { updateSupported, checkUpdate, cmpVersion } from '../update.js';
 import { mascot, mascotName, MASCOTS } from './art.js';
@@ -59,6 +63,30 @@ export function mountDonate(root, rerender) {
 }
 
 /* ---------- Cài đặt ---------- */
+const vnExample = () => { const n = new Date(); const d = vnMoment(n.getFullYear(), n.getMonth() + 1, n.getDate(), 7, 0); return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + (d.getDate() !== n.getDate() ? (d < n ? ' hôm trước' : ' hôm sau') : ''); };
+
+const needsText = (s) => (Array.isArray(s.needs) && s.needs.length ? NEEDS.filter((n) => s.needs.includes(n[0])).map((n) => n[1]).join(' · ') : 'Chọn để app ghim sẵn tiện ích phù hợp');
+
+function mediaCount() {
+  const st = getState();
+  const photos = st.gios.reduce((a, g) => a + (g.memo?.photo ? 1 : 0) + (g.memo?.gPhoto ? 1 : 0), 0);
+  const voices = Object.keys(st.voices || {}).length + st.people.reduce((a, p) => a + (p.recs || []).length, 0);
+  return { photos, voices, total: photos + voices };
+}
+
+function storageCard() {
+  const i = storageInfo();
+  const pct = Math.min(100, Math.round(i.ratio * 100));
+  const warn = i.failed || pct >= 80;
+  return `<section class="card pad col store-card${warn ? ' warn' : ''}" style="gap:8px" aria-label="Dung lượng dữ liệu">
+    <div class="row"><span class="grow lb">Bộ nhớ dữ liệu chữ</span><b data-test="store-pct">${pct}%</b></div>
+    <span class="store-bar" aria-hidden="true"><i style="width:${Math.max(2, pct)}%"></i></span>
+    <span class="small muted">${sizeText(i.used)} / khoảng 5 MB. Ảnh và bản ghi âm lưu riêng, không tính vào đây.</span>
+    ${i.failed ? '<p class="err" role="alert">Lần lưu gần nhất thất bại vì bộ nhớ đầy. Hãy sao lưu ra file ngay, rồi xóa bớt ghi chú dài, văn khấn tự soạn hoặc các ngày cũ không dùng.</p>'
+      : pct >= 80 ? '<p class="err" role="alert">Bộ nhớ sắp đầy. Nên sao lưu ra file và dọn bớt dữ liệu cũ.</p>' : ''}
+  </section>`;
+}
+
 export function renderSettings() {
   const s = getState().settings;
   const by = Number(String(getState().profile.dob || '').slice(0, 4));
@@ -75,32 +103,45 @@ export function renderSettings() {
       <div class="field"><span class="lb">Giao diện</span>${seg('theme', [['light', 'Sáng'], ['dark', 'Tối'], ['auto', 'Theo máy']])}</div>
       <div class="field"><span class="lb">Linh vật · 12 con giáp</span><div class="mascot-pick" role="radiogroup" aria-label="Chọn linh vật">${Object.entries(MASCOTS).map(([k, m]) => `${k === 'tho' ? '</div><span class="lb" style="margin-top:6px">Linh vật khác</span><div class="mascot-pick" role="radiogroup" aria-label="Linh vật khác">' : ''}<button type="button" role="radio" class="mp ${(s.mascot || 'tho') === k ? 'on' : ''}" aria-checked="${(s.mascot || 'tho') === k}" data-mascot="${k}">${m.chi && m.chi === myChi ? '<i class="mp-me">tuổi bạn</i>' : ''}${mascot('wave', 64, m.name, k)}<span>${m.chi ? m.chi + ' · ' : ''}${m.pick}</span></button>`).join('')}</div>
         <span class="small muted">Đổi linh vật trên mọi màn hình và widget.</span></div>
+      <div class="row"><div class="col grow"><span class="lb">Chế độ đơn giản</span><span class="small muted">Chữ to, màn Tiện ích chỉ hiện các việc bạn hay làm</span></div>${sw(!!s.simple, 'Chế độ đơn giản', 'data-tg="simple"')}</div>
+      <a class="row link-row" href="#/nhucau" style="text-decoration:none;color:var(--ink)"><div class="col grow"><span class="lb">Việc bạn hay làm</span><span class="small muted">${needsText(s)}</span></div>${ICON.next(18)}</a>
       <div class="row"><div class="col grow"><span class="lb">Hiện tab Văn hóa</span><span class="small muted">Tử Vi, Thần số, Kinh Dịch</span></div>${sw(s.culture, 'Hiện tab Văn hóa', 'data-tg="culture"')}</div>
       <div class="row"><div class="col grow"><span class="lb">Tuần bắt đầu từ Thứ Hai</span><span class="small muted">Tắt để bắt đầu từ Chủ Nhật</span></div>${sw(s.monday, 'Tuần bắt đầu từ Thứ Hai', 'data-tg="monday"')}</div>
     </section>
     <h2 class="sec-title">Thông báo</h2>
     <section class="card list">
       <a class="item" href="#/reminders"><span class="grow t">Nhắc Mùng 1 &amp; Rằm</span><span class="small muted">${s.autoMoon ? 'Đang bật' : 'Đang tắt'}</span>${ICON.next(18)}</a>
+      <div class="item"><span class="grow col"><span class="t">Đến giờ cúng tự đọc văn khấn</span><span class="s">Bấm thông báo đúng ngày cúng là mở bài và đọc to — giọng người nhà nếu đã ghi âm</span></span>${sw(s.readOnTap !== false, 'Đến giờ cúng tự đọc văn khấn', 'data-tg2="readOnTap"')}</div>
       <div class="item"><label class="grow t" for="s-gt">Giờ nhắc giỗ mặc định</label>${timeSelect(s.gioTime, 'id="s-gt"', 'width:104px;height:42px')}</div>
       <div class="item"><span class="grow col"><span class="t">Thông báo đã lập</span><span class="s" data-test="pending">${pending.length} thông báo${next ? ` · gần nhất ${next.at.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}` : ''}</span></span>
         ${isNative() ? '<button type="button" class="chip" data-act="perm">Kiểm tra quyền</button>' : ''}</div>
     </section>
+    <h2 class="sec-title">Người ở nước ngoài</h2>
+    <section class="card pad col" style="gap:10px" id="s-abroad">
+      <div class="row"><div class="col grow"><span class="lb">Nhắc theo giờ Việt Nam</span><span class="small muted">Giờ nhắc giỗ, rằm, mùng một tính theo giờ ở quê — để thắp hương, gọi về nhà cùng lúc với cả nhà.</span></div>${sw(!!s.vnTime, 'Nhắc theo giờ Việt Nam', 'data-tg="vnTime"')}</div>
+      <span class="small ${isAbroad() ? '' : 'muted'}" data-test="tz">Máy đang ở múi giờ <b>${esc(deviceZone())}</b> — ${diffText()}.${isAbroad() && s.vnTime ? ` Ví dụ: nhắc 7:00 sáng ở Việt Nam sẽ kêu lúc <b>${vnExample()}</b> giờ của bạn.` : ''}</span>
+    </section>
     <h2 class="sec-title">Widget màn hình chính</h2>
     <section class="card pad col" style="gap:12px">
-      <div class="field"><label class="lb" for="s-cd">Widget đếm ngược tới</label>
+      <div class="field"><label class="lb" for="s-cd">Widget đếm ngược tới <span class="small muted">(mặc định)</span></label>
         <select id="s-cd" class="input">${[['auto', 'Tự động (giỗ gần nhất hoặc Tết)'], ['tet', 'Tết Nguyên Đán'], ['ongtao', 'Ông Công Ông Táo'], ...getState().gios.map((g) => ['gio:' + g.id, titleOf(g)])]
           .map(([v, l]) => `<option value="${esc(v)}" ${s.widgetCountdown === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+      <div class="field"><span class="lb" id="s-cs-l">Kiểu widget Đồng hồ &amp; lịch âm</span>
+        <div class="seg" role="group" aria-labelledby="s-cs-l">${[['giay', 'Giấy · ô ngày đỏ'], ['sonmai', 'Sơn mài · dải đỏ']].map(([v, l]) => `<button type="button" data-seg="clockStyle" data-v="${v}" aria-pressed="${(s.clockStyle || 'giay') === v}">${l}</button>`).join('')}</div>
+        <span class="small muted">Áp dụng cho widget có đồng hồ tự chạy (Android và iPhone).</span></div>
+      <p class="small muted" style="margin:0">Android: mỗi widget Đếm ngược và Đồng hồ còn chọn được nội dung riêng — khi thêm widget, hoặc nhấn giữ widget → <b>Cấu hình lại</b> (biểu tượng bút chì).</p>
       <details><summary class="lb" style="cursor:pointer">Cách thêm widget</summary>
         <ol class="small muted" style="margin:8px 0 0;padding-left:18px;line-height:1.6">
-          <li><b>Android:</b> nhấn giữ chỗ trống trên màn hình chính → <b>Widget</b> → tìm <b>Lịch Âm</b> → kéo ra. Có 4 loại: Tờ lịch, Lịch &amp; sắp tới, Lịch tháng, Đếm ngược.</li>
+          <li><b>Android:</b> nhấn giữ chỗ trống trên màn hình chính → <b>Widget</b> → tìm <b>Lịch Âm</b> → kéo ra. Có 7 loại: Ngày hôm nay, Tờ lịch, Lịch &amp; sắp tới, Đồng hồ &amp; lịch âm, Lịch tháng, Đếm ngược, Lời nhắc hôm nay. Kéo to nhỏ thoải mái — widget tự đổi bố cục cho vừa (ví dụ Sắp tới: 4×1 một việc, 4×2 ba việc, 4×3 sáu việc).</li>
           <li><b>iPhone:</b> nhấn giữ màn hình chính → nút <b>+</b> (hoặc Sửa → Thêm tiện ích) → <b>Lịch Âm</b>. Màn hình khóa: nhấn giữ màn hình khóa → Tùy chỉnh → Màn hình khóa → thêm tiện ích.</li>
-          <li>Widget tự đổi ngày lúc nửa đêm, không cần mạng.</li>
+          <li>Widget tự đổi ngày lúc nửa đêm, không cần mạng. Đồng hồ là đồng hồ của máy nên luôn đúng giờ; bấm vào giờ để mở báo thức.</li>
         </ol></details>
     </section>
     ${syncSection()}
-    <h2 class="sec-title">Dữ liệu · chỉ lưu trên máy</h2>
+    <h2 class="sec-title" id="s-data">Dữ liệu · chỉ lưu trên máy</h2>
+    ${storageCard()}
     <section class="card list">
-      <button type="button" class="item" data-act="export">${ICON.down()}<span class="grow t">Sao lưu ra file</span></button>
+      <button type="button" class="item" data-act="export">${ICON.down()}<span class="grow col"><span class="t">Sao lưu ra file</span><span class="s">Gồm cả ảnh và bản ghi âm${mediaCount().total ? ` (${mediaCount().photos} ảnh, ${mediaCount().voices} bản ghi)` : ''}</span></span></button>
       <label class="item" style="cursor:pointer">${ICON.up()}<span class="grow t">Khôi phục từ file</span><input type="file" accept="application/json,.json" class="sr" data-act="import"></label>
       <button type="button" class="item" data-act="reset" style="color:var(--accent)">${ICON.trash()}<span class="grow t">Xóa toàn bộ dữ liệu</span></button>
     </section>
@@ -172,7 +213,8 @@ async function runSync(msg) {
 
 const setCal = (p) => setState((s) => ({ ...s, calSync: { ...s.calSync, ...p } }));
 
-export function mountSettings(root, rerender) {
+export function mountSettings(root, rerender, params = {}) {
+  if (params.muc === 'dulieu') requestAnimationFrame(() => root.querySelector('#s-data')?.scrollIntoView({ block: 'start' }));
   if (isNative() && getState().calSync?.enabled && !calList) {
     writableCalendars().then((l) => { calList = l; if (l.length > 1) rerender(); }).catch(() => {});
   }
@@ -182,7 +224,18 @@ export function mountSettings(root, rerender) {
     const sg = e.target.closest('[data-seg]');
     if (sg) { const k = sg.dataset.seg; const v = k === 'size' ? Number(sg.dataset.v) : sg.dataset.v; updateSettings({ [k]: v }); return; }
     const tg = e.target.closest('[data-tg]');
-    if (tg) { updateSettings({ [tg.dataset.tg]: !getState().settings[tg.dataset.tg] }); return; }
+    const tg2 = e.target.closest('[data-tg2]');
+    if (tg2) { const k = tg2.dataset.tg2; updateSettings({ [k]: getState().settings[k] === false }); return; }
+    if (tg) {
+      const k = tg.dataset.tg; const on = !getState().settings[k];
+      if (k === 'simple' && on) {
+        const st = getState().settings;
+        updateSettings({ simple: true, size: Math.max(1, Number(st.size) || 0), ...(Array.isArray(st.needs) && st.needs.length ? {} : { needs: ['gio', 'cung'] }) });
+        toast('Đã bật chế độ đơn giản — chữ to, ít mục hơn');
+        return;
+      }
+      updateSettings({ [k]: on }); return;
+    }
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'cal') {
       if (getState().calSync?.enabled) {
@@ -207,7 +260,10 @@ export function mountSettings(root, rerender) {
       return;
     }
     if (act === 'export') {
-      const blob = new Blob([exportData()], { type: 'application/json' });
+      toast('Đang gom dữ liệu, ảnh, bản ghi âm…');
+      const full = await exportFull();
+      if (full.missing) logEvent('warn', `Sao lưu: ${full.missing} tệp không đọc được`);
+      const blob = new Blob([full.text], { type: 'application/json' });
       const name = `lich-am-sao-luu-${new Date().toISOString().slice(0, 10)}.json`;
       if (isNative() && navigator.share && navigator.canShare?.({ files: [new File([blob], name, { type: 'application/json' })] })) {
         try { await navigator.share({ files: [new File([blob], name, { type: 'application/json' })], title: 'Sao lưu Lịch Âm' }); return; } catch { /* người dùng hủy */ }
@@ -227,7 +283,7 @@ export function mountSettings(root, rerender) {
     if (e.target.id === 's-cal') { setCal({ calendarId: e.target.value }); runSync('Đã chuyển lịch'); return; }
     if (e.target.id === 's-cd') { updateSettings({ widgetCountdown: e.target.value }); toast('Đã cập nhật widget'); }
     if (e.target.dataset.act === 'import' && e.target.files[0]) {
-      try { importData(await e.target.files[0].text()); toast('Đã khôi phục dữ liệu'); resetTo('#/reminders'); }
+      try { const r = await restoreFull(await e.target.files[0].text()); toast(r.files ? `Đã khôi phục dữ liệu và ${r.files} ảnh, bản ghi âm` : 'Đã khôi phục dữ liệu'); resetTo('#/reminders'); }
       catch (err) { toast('Không đọc được file: ' + err.message); }
     }
   });

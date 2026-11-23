@@ -1,15 +1,17 @@
 {
   "name": "lich-am-nhac-gio",
   "private": true,
-  "version": "1.10.1",
+  "version": "1.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "node scripts/gen-widget-calendar.mjs && vite build",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
-    "e2e": "node tests/e2e.mjs",
-    "widgets:data": "node scripts/gen-widget-calendar.mjs"
+    "e2e": "python3 tests/e2e.py dist test-shots",
+    "widgets:data": "node scripts/gen-widget-calendar.mjs",
+    "a11y": "python3 tests/a11y.py dist test-shots",
+    "check": "npm test && npm run build && npm run e2e && npm run a11y"
   },
   "dependencies": {
     "@capacitor-community/contacts": "^8.0.0",

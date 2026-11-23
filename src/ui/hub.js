@@ -6,6 +6,9 @@ import { ICON } from './common.js';
 import { CONTACT_PHONE, ZALO_URL, CHANNEL } from '../config.js';
 import { isNative } from '../notify.js';
 import { mascot, mascotName, ILL, cloud, lanternString, sparkle } from './art.js';
+import { pinned } from './pins.js';
+import { groupsForNeeds } from './needs.js';
+import { coffeePill } from './coffee.js';
 
 export const fmtPhone = (p) => p.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
 
@@ -25,14 +28,22 @@ const I = {
 const tile = (href, icon, label, tone) => `<a class="svc ${tone}" href="${href}"><span class="pastel ${PASTEL[tone]}">${icon}</span><span class="lbl">${label}</span></a>`;
 const PASTEL = { red: 'rose', gold: 'butter', jade: 'mint', ink: 'sky', violet: 'lilac', peach: 'peach' };
 
-function group(title, sub, tone, tiles) {
-  return `<section class="svc-group" aria-label="${title}">
+let showAll = false;
+function group(title, sub, tone, tiles, id = '') {
+  if (hideGroup(id)) return '';
+  return `<section class="svc-group" aria-label="${title}" data-group="${id}">
     <div class="svc-head"><span class="svc-dot ${tone}" aria-hidden="true"></span><div class="col"><h2>${title}</h2><span class="svc-sub">${sub}</span></div></div>
     <div class="svc-grid">${tiles.join('')}</div></section>`;
 }
 
+let hideGroup = () => false;
 export function renderHub() {
   const st = getState();
+  const simple = !!st.settings.simple && Array.isArray(st.settings.needs) && st.settings.needs.length;
+  const keep = simple ? groupsForNeeds(st.settings.needs) : null;
+  hideGroup = (id) => simple && !showAll && id && !keep.has(id);
+  const ALL = ['tet', 'giadinh', 'cung', 'dongho', 'xem', 'ketnoi', ...(st.settings.culture ? ['vanhoa'] : [])];
+  const hiddenN = simple && !showAll ? ALL.filter((x) => !keep.has(x)).length : 0;
   const culture = st.settings.culture;
   const firstGio = st.gios.find((g) => (g.type || 'gio') === 'gio');
   const n = new Date();
@@ -44,13 +55,14 @@ export function renderHub() {
     tile('#/xongdat', ILL.house(), 'Xông đất', 'red'),
     tile('#/xuathanh', ILL.compass(), 'Xuất hành', 'red'),
     tile('#/vankhan/tet?tab=mam', ILL.tray(), 'Mâm cỗ Tết', 'red')
-  ]);
+  ], 'tet');
   const count = (t) => st.gios.filter((g) => (g.type || 'gio') === t).length;
   return `<div class="screen" data-screen="hub">
-  <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div></header>
+  <header class="top"><div class="grow"><h1 tabindex="-1">Tiện ích</h1><span class="sub">Mọi dịch vụ của app · chạy ngay trên máy</span></div>${coffeePill()}</header>
   <main class="body" style="gap:16px">
     <label class="search hub-search">${ICON.search(18)}<input id="hub-q" class="input" type="search" placeholder="Tìm: xông đất, ăn chay, văn khấn…" aria-label="Tìm tiện ích" autocomplete="off"></label>
     <section id="hub-res" class="card list" hidden aria-live="polite"></section>
+    <a class="note occ hub-pin" href="#/ghim" style="text-decoration:none;color:var(--ink)"><span class="pastel sm butter">${ILL.star()}</span><span class="grow col"><b>Ghim tiện ích ra trang chính</b><span class="small muted">Đang ghim ${pinned(st).length} mục · chọn mục hay dùng để mở một chạm</span></span>${ICON.next(18)}</a>
     <section class="banner red hub-banner"><span class="bn-lanterns">${lanternString()}</span><span class="bn-cloud a">${cloud(90, '#F6D27A', .45)}</span>
       <div class="col grow" style="gap:4px;position:relative"><b>Tiện ích cho gia đình Việt</b><span>Giỗ chạp, cúng lễ, xem ngày — ${mascotName()} lo hết!</span></div>
       <div class="bn-mascot">${mascot('book', 96)}</div></section>
@@ -60,38 +72,42 @@ export function renderHub() {
       tile('#/add?type=sinhnhat', ILL.cake(), 'Sinh nhật', 'red'),
       tile('#/add?type=kyniem', ILL.rings(), 'Kỷ niệm', 'red'),
       tile('#/add?type=gio&tang=1', ILL.lotus(), 'Tang lễ', 'red')
-    ])}
+    ], 'giadinh')}
     ${group('Cúng lễ', 'Văn khấn, đồ lễ, đi chùa, ăn chay', 'gold', [
       tile('#/vankhan', ILL.book(), 'Văn khấn', 'gold'),
       tile('#/vankhan?tab=mam', ILL.tray(), 'Mâm cúng', 'gold'),
       tile('#/vankhan?g=chua', ILL.pagoda(), 'Đi lễ chùa', 'gold'),
       tile('#/anchay', ILL.bowl(), 'Ăn chay', 'gold')
-    ])}
-    ${group('Dòng họ', 'Gia phả, tưởng nhớ, hiếu hỉ, chuẩn bị giỗ', 'peach', [
+    ], 'cung')}
+    ${group('Dòng họ', 'Gia phả, tưởng nhớ, tảo mộ, quỹ họ, hiếu hỉ', 'peach', [
       tile('#/giapha', ILL.tree(), 'Gia phả', 'peach'),
       tile('#/tuongnho', ILL.frame(), 'Tưởng nhớ', 'peach'),
+      tile('#/taomo', ILL.incense(), 'Tảo mộ', 'peach'),
+      tile('#/quyho', ILL.coin(), 'Quỹ họ', 'peach'),
       tile('#/hieuhi', ILL.hongbao(), 'Hiếu hỉ', 'peach'),
-      tile('#/chuanbi', ILL.checklist(), 'Chuẩn bị giỗ', 'peach')
-    ])}
+      tile('#/chuanbi', ILL.checklist(), 'Chuẩn bị giỗ', 'peach'),
+      tile('#/ingiapha', ILL.scroll(), 'In gia phả', 'peach')
+    ], 'dongho')}
     ${group('Xem ngày', 'Tốt xấu, sao hạn, tuổi, mệnh', 'jade', [
       tile('#/ngaytot', ILL.star(), 'Ngày tốt', 'jade'),
       tile('#/saohan', ILL.starlamp(), 'Sao hạn', 'jade'),
       tile('#/xemtuoi', ILL.scroll(), 'Xem tuổi', 'jade'),
       tile('#/menh', ILL.wuxing(), 'Mệnh, màu', 'jade')
-    ])}
+    ], 'xem')}
     ${tetSoon ? '' : tetGroup}
     ${group('Kết nối gia đình', 'Chia sẻ, đồng bộ, sao lưu', 'ink', [
       tile('#/chiase', ILL.family(), 'Chia sẻ', 'ink'),
       tile('#/nhap', ILL.inbox(), 'Nhập vào', 'ink'),
       tile('#/contacts', ILL.contacts(), 'Danh bạ', 'ink'),
       tile('#/settings', ILL.cloud(), 'Sao lưu', 'ink')
-    ])}
+    ], 'ketnoi')}
     ${culture ? group('Văn hóa', 'Tử Vi, Thần số, Kinh Dịch', 'violet', [
       tile('#/tuvi', ILL.taiji(), 'Tử Vi', 'violet'),
       tile('#/numerology', ILL.num(), 'Thần số', 'violet'),
       tile('#/iching', ILL.hexa(), 'Kinh Dịch', 'violet'),
       tile('#/culture', ILL.face(), 'Hồ sơ', 'violet')
-    ]) : ''}
+    ], 'vanhoa') : ''}
+    ${hiddenN ? `<button type="button" class="btn ghost hub-more" data-act="hub-all">${ICON.grid(18)} Xem tất cả tiện ích (thêm ${hiddenN} nhóm)</button>` : simple && showAll ? '<button type="button" class="btn text hub-more" data-act="hub-less">Thu gọn theo chế độ đơn giản</button>' : ''}
     <section class="card pad col contact" style="gap:12px" aria-label="Liên hệ tác giả">
       <div class="row" style="gap:12px"><span class="contact-m">${mascot('phone', 64)}</span>
         <div class="col grow"><b>Liên hệ tác giả · Lê Hữu Phước</b><span class="small muted">Hỏi cách dùng, báo lỗi, đặt làm app theo yêu cầu</span></div></div>
@@ -120,6 +136,9 @@ export const SEARCH = [
   ['Thiệp mời giỗ', '#/thiep', 'thiệp mời giỗ mời họ hàng', 'card'],
   ['Thần Tài', '#/vankhan/thantai', 'thần tài thổ địa cúng thần tài', 'coin'],
   ['Gia phả', '#/giapha', 'gia phả cây gia đình dòng họ tổ tiên', 'tree'],
+  ['In gia phả, xuất ảnh, PDF', '#/ingiapha', 'in gia phả sơ đồ cây ảnh pdf treo nhà thờ họ a3 a4', 'scroll'],
+  ['Tảo mộ, vị trí mộ phần', '#/taomo', 'tảo mộ thanh minh mộ phần nghĩa trang chỉ đường vị trí gps bản đồ', 'incense'],
+  ['Sổ quỹ họ', '#/quyho', 'quỹ họ thu chi đóng góp giỗ tổ khuyến học nhà thờ họ', 'coin'],
   ['Tưởng nhớ người đã khuất', '#/tuongnho', 'tưởng nhớ ảnh tiểu sử nơi an táng mộ', 'frame'],
   ['Sổ hiếu hỉ', '#/hieuhi', 'hiếu hỉ tiền mừng phúng viếng đám cưới đám ma đáp lễ', 'hongbao'],
   ['Chuẩn bị đám giỗ', '#/chuanbi', 'chuẩn bị giỗ việc cần làm khách mời mâm cỗ phân công', 'checklist'],
@@ -137,10 +156,15 @@ export const SEARCH = [
   ['Sinh nhật từ danh bạ', '#/contacts', 'danh bạ sinh nhật', 'contacts'],
   ['Sao lưu, đồng bộ', '#/settings', 'sao lưu đồng bộ google drive icloud cài đặt', 'cloud'],
   ['Góp ý, báo lỗi', '#/gopy', 'góp ý báo lỗi liên hệ tác giả', 'face'],
+  ['Ghim tiện ích ra trang chính', '#/ghim', 'ghim tùy chỉnh trang chính hôm nay lối tắt', 'star'],
   ['Có gì mới', '#/moi', 'có gì mới cập nhật phiên bản', 'star']
 ].map(([t, href, k, ic]) => ({ t, href, k: fold(t + ' ' + k), ic }));
 
-export function mountHub(root) {
+export function mountHub(root, rerender) {
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act="hub-all"]')) { showAll = true; rerender(); }
+    if (e.target.closest('[data-act="hub-less"]')) { showAll = false; rerender(); window.scrollTo(0, 0); }
+  });
   const q = root.querySelector('#hub-q');
   const res = root.querySelector('#hub-res');
   if (!q) return;
@@ -148,7 +172,7 @@ export function mountHub(root) {
     const k = fold(q.value).trim();
     const words = k.split(/\s+/).filter(Boolean);
     const hits = k ? SEARCH.filter((x) => words.every((w) => x.k.includes(w))) : [];
-    root.querySelectorAll('.svc-group, .hub-banner, .contact').forEach((el) => { el.hidden = !!k; });
+    root.querySelectorAll('.svc-group, .hub-banner, .contact, .hub-pin, .coffee, .hub-more').forEach((el) => { el.hidden = !!k; });
     res.hidden = !k;
     res.innerHTML = hits.length ? hits.map((x) => `<a class="item" href="${x.href}"><span class="pastel sm butter">${ILL[x.ic] ? ILL[x.ic]() : ''}</span><span class="grow t">${x.t}</span>${ICON.next(18)}</a>`).join('')
       : '<div class="empty">Không tìm thấy. Thử gõ: giỗ, tết, chay, văn khấn, sao hạn…</div>';

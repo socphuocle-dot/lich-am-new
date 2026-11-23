@@ -1,11 +1,16 @@
-# Tự động: kiểm thử → build APK/AAB (Android) + IPA (iOS) → đưa bản web lên GitHub Pages
-# → khi gắn tag phiên bản (vd. v1.0.1) thì tạo trang tải về cố định trên GitHub Releases.
+# Tự động mỗi lần đẩy mã lên main (và mỗi Pull Request):
+#   kiểm thử (mã + bấm thử giao diện + trợ năng) → build APK/AAB (Android) + IPA (iOS) → kiểm tra Android Lint
+#   → đưa bản web lên GitHub Pages.
+# Khi gắn tag phiên bản (vd. v1.15.0): tạo trang tải về cố định trên GitHub Releases;
+#   nếu đã cài Secret PLAY_SERVICE_ACCOUNT_JSON thì tự đẩy bản AAB lên Google Play (kênh thử nghiệm nội bộ).
 name: Build & Publish
 
 on:
   push:
     branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +30,24 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      - run: npm test
+      - name: Kiểm thử mã (vitest)
+        run: npm test
+      - name: Build bản web
+        run: npm run build
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Cài trình duyệt kiểm thử
+        run: |
+          pip install playwright==1.*
+          python -m playwright install --with-deps chromium
+      - name: Bấm thử giao diện (40 kịch bản)
+        run: python tests/e2e.py dist test-shots
+      - name: Kiểm tra trợ năng (cỡ chữ, tương phản, nhãn đọc màn hình)
+        run: python tests/a11y.py dist test-shots
+      - name: Lưu ảnh chụp màn hình khi lỗi
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: test-shots, path: test-shots, if-no-files-found: ignore }
 
   android:
     needs: test
@@ -38,19 +60,33 @@ jobs:
         with: { distribution: temurin, java-version: 21, cache: gradle }
       - run: npm ci
       - name: Lấy khóa ký từ GitHub Secrets
+        id: keys
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KS_B64" ]; then
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "Pull Request: không có khóa ký → chỉ build bản thử (debug) để kiểm tra biên dịch"
+              echo "signed=0" >> "$GITHUB_OUTPUT"; exit 0
+            fi
             echo "::error::Chưa có Secret ANDROID_KEYSTORE_BASE64 — xem HUONG-DAN-PHAT-HANH.md bước 3"
             exit 1
           fi
+          echo "signed=1" >> "$GITHUB_OUTPUT"
           echo "$KS_B64" | tr -d ' \r\n\t' | base64 -d > android/app/release.jks
           KS_PASS=$(printf %s "$KS_PASS" | tr -d '\r\n')
           printf "storeFile=release.jks\nstorePassword=%s\nkeyAlias=lichamnhacgio\nkeyPassword=%s\n" "$KS_PASS" "$KS_PASS" > android/keystore.properties
       # APK tải trực tiếp: có mã QR ủng hộ + tự báo bản mới
+      - name: Build thử (Pull Request, không ký)
+        if: steps.keys.outputs.signed == '0'
+        run: |
+          npm run build
+          npx cap sync android
+          cd android && chmod +x gradlew
+          for i in 1 2 3; do ./gradlew --no-daemon assembleDebug && break; [ $i = 3 ] && exit 1; echo "Thử lại sau 60 giây..."; sleep 60; done
       - name: Build APK (bản tải trực tiếp)
+        if: steps.keys.outputs.signed == '1'
         env:
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '1.0.0' }}
@@ -63,6 +99,7 @@ jobs:
           mkdir -p ../out && cp app/build/outputs/apk/release/app-release.apk ../out/LichAm-NhacGio.apk
       # AAB cho Google Play: ẩn mã QR (chính sách cửa hàng), cập nhật qua Play
       - name: Build AAB (Google Play)
+        if: steps.keys.outputs.signed == '1'
         env:
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '1.0.0' }}
@@ -73,12 +110,51 @@ jobs:
           cd android
           for i in 1 2 3; do ./gradlew --no-daemon bundleRelease && break; [ $i = 3 ] && exit 1; echo "Thử lại sau 60 giây..."; sleep 60; done
           cp app/build/outputs/bundle/release/app-release.aab ../out/LichAm-NhacGio-GooglePlay.aab
+      # Android Lint: bắt lỗi widget (view không được phép trong widget…), quyền, giao diện. Không chặn bản build,
+      # nhưng in số lỗi ra trang tóm tắt và lưu báo cáo để xem.
+      - name: Android Lint
+        continue-on-error: true
+        run: |
+          cd android && ./gradlew --no-daemon lintDebug
+      - name: Tóm tắt Lint
+        if: always()
+        run: |
+          R=android/app/build/reports/lint-results-debug.xml
+          if [ -f "$R" ]; then
+            E=$(grep -c 'severity="Error"' "$R" || true); W=$(grep -c 'severity="Warning"' "$R" || true)
+            echo "### Android Lint: $E lỗi, $W cảnh báo" >> "$GITHUB_STEP_SUMMARY"
+            grep -o 'id="[A-Za-z]*"[^>]*severity="Error"[^>]*message="[^"]*"' "$R" | head -20 | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true
+            [ "$E" = "0" ] || echo "::warning::Android Lint có $E lỗi — xem artifact lint-report"
+          fi
       - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: lint-report, path: android/app/build/reports/lint-results-debug.*, if-no-files-found: ignore }
+      - uses: actions/upload-artifact@v4
+        if: steps.keys.outputs.signed == '1'
         with: { name: android, path: out/* }
+      # Tự đẩy lên Google Play khi gắn tag (chỉ khi đã cài Secret PLAY_SERVICE_ACCOUNT_JSON — xem HUONG-DAN-GOOGLE-PLAY.md)
+      - name: Kiểm tra Secret Google Play
+        id: play
+        if: steps.keys.outputs.signed == '1' && startsWith(github.ref, 'refs/tags/v')
+        env: { PLAY_JSON: '${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}' }
+        run: echo "ok=$([ -n "$PLAY_JSON" ] && echo 1 || echo 0)" >> "$GITHUB_OUTPUT"
+      - name: Đẩy AAB lên Google Play
+        if: steps.play.outputs.ok == '1'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: vn.lichamnhacgio.app
+          releaseFiles: out/LichAm-NhacGio-GooglePlay.aab
+          track: ${{ vars.PLAY_TRACK || 'internal' }}
+          status: ${{ vars.PLAY_STATUS || 'draft' }}
+          releaseName: ${{ github.ref_name }}
+          whatsNewDirectory: store/whatsnew
 
   ios:
     needs: test
     runs-on: macos-latest
+    # Bản iOS lỗi không chặn bản Android; lỗi vẫn hiện đỏ để biết mà sửa
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -102,7 +178,7 @@ jobs:
   # Bản web chạy ngay trên trình duyệt: https://<tên-tài-khoản>.github.io/<tên-kho>/
   web:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions: { pages: write, id-token: write }
     environment: { name: github-pages, url: '${{ steps.deploy.outputs.page_url }}' }

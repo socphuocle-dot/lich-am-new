@@ -5,6 +5,35 @@ import { esc, ICON, backHeader } from './ui/common.js';
 import { ILL, mascot } from './ui/art.js';
 
 export const WHATS_NEW = [
+  { v: '1.15.0', items: [
+    ['Đến giờ cúng, app đọc văn khấn', 'Thông báo có nút "Đọc văn khấn"; bấm thông báo đúng ngày cúng là mở bài và đọc to — giọng người nhà nếu đã ghi âm', '#/settings', 'book'],
+    ['Mỗi widget một nội dung', 'Android: widget Đếm ngược chọn riêng mốc (Tết, giỗ ông…), widget Đồng hồ chọn riêng kiểu — khi thêm hoặc nhấn giữ widget → Cấu hình lại', '#/settings', 'cal']
+  ] },
+  { v: '1.14.0', items: [
+    ['Widget Đồng hồ & lịch âm', 'Đồng hồ tự chạy kèm ngày lớn, ngày âm, giờ hoàng đạo và việc sắp tới. Chọn kiểu Giấy hoặc Sơn mài trong Cài đặt', '#/settings', 'sun'],
+    ['Widget tự vừa kích thước', 'Kéo to nhỏ thoải mái: Sắp tới 4×1 một việc, 4×2 ba việc, 4×3 sáu việc; Tờ lịch, Đếm ngược, Lịch tháng cũng đổi bố cục cho vừa', '#/settings', 'cal']
+  ] },
+  { v: '1.13.1', items: [
+    ['Rộng chỗ hơn', 'Lề hai bên màn hình hẹp lại, chữ và thẻ hiện rộng hơn trên điện thoại', '#/today', 'star']
+  ] },
+  { v: '1.13.0', items: [
+    ['Sao lưu đủ ảnh và giọng ghi âm', 'File sao lưu nay gồm cả ảnh tưởng nhớ, ảnh mộ, giọng đọc văn khấn và lời kể — đổi máy không mất', '#/settings?muc=dulieu', 'cloud'],
+    ['Ảnh lưu riêng, báo khi đầy', 'Ảnh chuyển ra bộ nhớ riêng để app nhẹ hơn; nếu bộ nhớ đầy app báo ngay, không âm thầm mất dữ liệu', '#/settings?muc=dulieu', 'cloud'],
+    ['Chế độ đơn giản', 'Chọn việc hay làm, app ghim sẵn tiện ích, chữ to, ẩn bớt mục ít dùng', '#/nhucau', 'star'],
+    ['Nhật ký lỗi', 'App ghi lại lỗi trên máy; gửi kèm khi góp ý để tác giả sửa nhanh', '#/gopy', 'face']
+  ] },
+  { v: '1.12.0', items: [
+    ['In gia phả', 'Vẽ sơ đồ cây thành ảnh lớn hoặc PDF khổ A4, A3 để in treo nhà thờ họ, gửi Zalo', '#/ingiapha', 'scroll'],
+    ['Tảo mộ', 'Lưu vị trí mộ phần, bấm Chỉ đường là tới; nhắc Thanh Minh và tảo mộ cuối năm', '#/taomo', 'incense'],
+    ['Sổ quỹ họ', 'Thu chi, đợt đóng góp, ai đã đóng — gửi bản tổng kết cho cả họ', '#/quyho', 'coin'],
+    ['Lời kể của ông bà', 'Ghi âm chuyện xưa, lời dặn, gắn vào từng người trong gia phả', '#/giapha', 'tree'],
+    ['Người ở nước ngoài', 'Hiện giờ ở quê trên trang Hôm nay; nhắc theo giờ Việt Nam (Cài đặt)', '#/settings', 'compass'],
+    ['Đọc to lịch hôm nay', 'Bấm "Đọc to" trên tờ lịch để nghe ngày âm, ngày tốt xấu, việc sắp tới', '#/today', 'book']
+  ] },
+  { v: '1.11.0', items: [
+    ['Gia phả dạng sơ đồ cây', 'Xem cây từ trên xuống như sơ đồ nhánh, hoặc xem theo từng đời. Phóng to, thu nhỏ được', '#/giapha', 'tree'],
+    ['Tự chọn tiện ích ở trang chính', 'Ghim tối đa 8 tiện ích hay dùng ra màn Hôm nay, sắp thứ tự tùy ý', '#/ghim', 'star']
+  ] },
   { v: '1.10.1', items: [
     ['Nhanh và mượt hơn', 'Mở app nhanh gần gấp đôi, chuyển màn và cuộn nhẹ hơn trên máy cấu hình thấp', '#/today', 'star']
   ] },

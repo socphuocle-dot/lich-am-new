@@ -12,3 +12,4 @@ out/
 android/app/release.jks
 android/keystore.properties
 *.jks
+test-shots/

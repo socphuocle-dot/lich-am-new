@@ -1,4 +1,6 @@
 // Tab "Cá nhân": hồ sơ, cài đặt, sao lưu, linh vật, có gì mới, góp ý, ủng hộ, giới thiệu.
+import { errorCount } from '../errlog.js';
+import { coffeePill } from './coffee.js';
 import { getState } from '../store.js';
 import { APP_VERSION, CHANNEL, WEB_URL, CONTACT_PHONE } from '../config.js';
 import { canChiYear } from '../lib/lunar.js';
@@ -16,7 +18,7 @@ export function renderCanhan() {
   const by = Number(String(p.dob || '').slice(0, 4));
   const n = st.gios.length;
   return `<div class="screen" data-screen="canhan">
-  <header class="top"><h1 tabindex="-1">Cá nhân</h1></header>
+  <header class="top"><h1 tabindex="-1" class="grow">Cá nhân</h1>${coffeePill()}</header>
   <main class="body">
     <a class="card pad row me-card" href="#/profile">
       <span class="me-av">${mascot('wave', 64)}</span>
@@ -33,7 +35,7 @@ export function renderCanhan() {
 
     <section class="col" style="gap:6px"><h2 class="sec-title" style="margin:0">Ứng dụng</h2><div class="card list">
       ${row('#/moi', 'star', 'Có gì mới', 'Phiên bản ' + APP_VERSION)}
-      ${row('#/gopy', 'face', 'Góp ý, báo lỗi', 'Gọi hoặc nhắn Zalo ' + CONTACT_PHONE.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3'))}
+      ${row('#/gopy', 'face', 'Góp ý, báo lỗi', errorCount() ? `Máy ghi nhận ${errorCount()} lỗi — gửi kèm khi góp ý giúp tác giả sửa nhanh` : 'Gọi hoặc nhắn Zalo ' + CONTACT_PHONE.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3'))}
       ${row('#/donate', 'cake', CHANNEL === 'direct' ? 'Ủng hộ tác giả' : 'Đánh giá app', CHANNEL === 'direct' ? 'Mời tác giả ly cà phê' : 'Cảm ơn bạn đã dùng app')}
       ${row(WEB_URL + 'privacy.html', 'book', 'Quyền riêng tư', 'Dữ liệu chỉ nằm trên máy của bạn', true)}
     </div></section>

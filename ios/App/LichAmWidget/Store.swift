@@ -126,6 +126,8 @@ final class UserStore {
     let countdown: (epoch: Int, title: String)?
     /// Linh vật người dùng chọn trong app: tho | meo | lan | nghe | cun
     var mascot = "tho"
+    /// Kiểu widget đồng hồ chọn trong app: giay | sonmai
+    var clockStyle = "giay"
 
     init() {
         var g: [Gio] = []
@@ -139,6 +141,7 @@ final class UserStore {
                 }
             }
             if let m = obj["m"] as? String { mascot = m }
+            if let c = obj["cs"] as? String { clockStyle = c }
             if let c = obj["cd"] as? [String: Any], let d = c["d"] as? String, let e = EpochDay.fromYmd(d) {
                 cd = (e, c["t"] as? String ?? "")
             }
@@ -203,5 +206,25 @@ enum DeepLink {
         let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
         let e = EpochDay.of(c.year ?? 2026, c.month ?? 1, c.day ?? 1)
         return URL(string: "lichamnhacgio://open/" + route(epoch: e))
+    }
+}
+
+/// Giờ hoàng đạo theo chi của ngày (cùng bảng với app)
+enum HoangDao {
+    static let table = ["110100101100", "001101001011", "110011010010", "101100110100", "001011001101", "010010110011"]
+    static let range = ["23–1h", "1–3h", "3–5h", "5–7h", "7–9h", "9–11h", "11–13h", "13–15h", "15–17h", "17–19h", "19–21h", "21–23h"]
+    static func dayChi(_ d: DayInfo) -> Int? {
+        guard let last = d.canChi.split(separator: " ").last else { return nil }
+        return Art.chi.firstIndex(of: String(last))
+    }
+    /// Chi của giờ: 23–1h = Tý …
+    static func hourChi(_ date: Date) -> Int { (Calendar.current.component(.hour, from: date) + 1) / 2 % 12 }
+    static func good(_ d: DayInfo, _ hc: Int) -> Bool {
+        guard let dc = dayChi(d) else { return false }
+        return Array(table[dc % 6])[hc] == "1"
+    }
+    static func next(_ d: DayInfo, after hc: Int) -> String? {
+        for k in 1..<12 { let i = (hc + k) % 12; if good(d, i) { return "\(Art.chi[i]) \(range[i])" } }
+        return nil
     }
 }

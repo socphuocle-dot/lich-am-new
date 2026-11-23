@@ -25,6 +25,15 @@ export async function voiceUrl(id, mime = 'audio/webm') {
   } catch { return ''; }
 }
 
+/** Nội dung base64 của bản ghi (để gửi qua Zalo…) hoặc '' */
+export async function voiceBase64(id) {
+  try {
+    const r = await Filesystem.readFile({ path: path(id), directory: Directory.Data });
+    if (typeof r.data === 'string') return r.data;
+    return await toBase64(r.data);
+  } catch { return ''; }
+}
+
 export async function deleteVoice(id) {
   try { await Filesystem.deleteFile({ path: path(id), directory: Directory.Data }); } catch { /* chưa có */ }
 }

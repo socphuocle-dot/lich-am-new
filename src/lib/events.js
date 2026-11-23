@@ -1,5 +1,11 @@
 // Sự kiện: Mùng 1, Rằm, lễ Tết (âm + dương) và ngày giỗ người dùng nhập.
-import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, THU, LUNAR_MONTH_NAME } from './lunar.js';
+import { jdFromDate, jdToDate, solarToLunar, lunarToSolar, THU, LUNAR_MONTH_NAME, sunTermIndex } from './lunar.js';
+
+/** Ngày bắt đầu tiết Thanh Minh (thường 4–5/4 dương lịch) */
+export const isThanhMinh = (jd) => sunTermIndex(jd) === 1 && sunTermIndex(jd - 1) !== 1;
+/** Ngày tìm Thanh Minh kế tiếp (từ fromJd) */
+export function nextThanhMinh(fromJd) { for (let j = fromJd; j < fromJd + 370; j++) if (isThanhMinh(j)) return j; return null; }
+export const TAOMO_CUOINAM = { m: 12, d: 20 };
 
 export const LUNAR_HOLIDAYS = [
   { m: 1, d: 1, title: 'Tết Nguyên Đán', big: true },
@@ -91,7 +97,7 @@ function gioMatches(g, jd, s, l, cache) {
  * Trả về mảng sắp xếp theo ngày: { key, jd, solar, lunar, kind: 'moon'|'le'|'gio', title, gio? }
  */
 export function listEvents(fromJd, days, gios = [], opts = {}) {
-  const { moon = true, lunarHolidays = true, solarHolidays = true } = opts;
+  const { moon = true, lunarHolidays = true, solarHolidays = true, taoMo = false } = opts;
   const out = [];
   const cache = new Map();
   const deaths = new Map(gios.filter((g) => g.tang).map((g) => [g.id, deathJd(g)]));
@@ -114,6 +120,8 @@ export function listEvents(fromJd, days, gios = [], opts = {}) {
       const title = (l.day === 1 ? 'Mùng 1 ' : 'Rằm ') + 'tháng ' + LUNAR_MONTH_NAME[l.month] + (l.leap ? ' nhuận' : '');
       out.push({ key: `moon-${jd}`, jd, solar: s, lunar: l, kind: 'moon', title, isMoon: true });
     }
+    if (lunarHolidays && s.month === 4 && s.day >= 3 && s.day <= 6 && isThanhMinh(jd)) out.push({ key: `thanhminh-${jd}`, jd, solar: s, lunar: l, kind: 'le', title: 'Tiết Thanh Minh · tảo mộ', vk: 'thanhminh' });
+    if (taoMo && !l.leap && l.month === TAOMO_CUOINAM.m && l.day === TAOMO_CUOINAM.d) out.push({ key: `taomo-${jd}`, jd, solar: s, lunar: l, kind: 'le', title: 'Tảo mộ cuối năm', vk: 'thanhminh' });
     if (solarHolidays) {
       const h = SOLAR_HOLIDAYS.find((x) => x.m === s.month && x.d === s.day);
       if (h) out.push({ key: `duong-${jd}`, jd, solar: s, lunar: l, kind: 'le', title: h.title });

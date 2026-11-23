@@ -59,7 +59,7 @@ export function buildUserWidgetData(now, state) {
   const gios = (state.gios || []).filter((g) => g.enabled !== false);
   const evs = listEvents(fromJd, 400, gios, { moon: false, lunarHolidays: false, solarHolidays: false });
   const list = evs.map((e) => ({
-    d: ymd(e.solar), t: e.title, l: `${e.lunar.day}/${e.lunar.month}`,
+    d: ymd(e.solar), t: e.title, l: `${e.lunar.day}/${e.lunar.month}`, i: e.gio.id, // i: để mỗi widget đếm ngược chọn riêng một ngày giỗ
     // Bấm widget → mở thẳng văn khấn ngày giỗ (hoặc màn sửa với sinh nhật, kỷ niệm)
     r: vanKhanFor(e) ? `vankhan/${vanKhanFor(e)}?gid=${e.gio.id}&jd=${e.jd}` : `edit/${e.gio.id}`
   }));
@@ -79,5 +79,5 @@ export function buildUserWidgetData(now, state) {
     for (const c of nextChayDays(k, fromJd, 40).slice(0, 2)) list.push({ d: ymd(c.solar), t: 'Ngày chay', l: `${c.lunar.day}/${c.lunar.month}`, r: 'anchay' });
     list.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
   }
-  return { v: 1, updated: now.toISOString(), gios: list, cd, m: state.settings.mascot || 'tho' };
+  return { v: 1, updated: now.toISOString(), gios: list, cd, m: state.settings.mascot || 'tho', cs: state.settings.clockStyle === 'sonmai' ? 'sonmai' : 'giay' };
 }

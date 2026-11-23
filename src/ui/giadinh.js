@@ -1,7 +1,7 @@
 import { done as navDone } from '../nav.js';
 // Gia đình & dòng họ: Sổ hiếu hỉ, Chuẩn bị đám giỗ, Trang tưởng nhớ, Gia phả, Xem tuổi.
 // Mọi dữ liệu nằm trên máy (cùng bản sao lưu với ngày giỗ).
-import { getState, setState, uid, saveGio } from '../store.js';
+import { getState, setState, uid, saveGio, updateSettings } from '../store.js';
 import { jdFromDate, jdToDate, solarToLunar, canChiYear } from '../lib/lunar.js';
 import { nextGioDate, describeDate, titleOf } from '../lib/events.js';
 import { xemNam, tamTaiYears, chiOfYear } from '../lib/xemtuoi.js';
@@ -10,9 +10,15 @@ import { confirmSheet } from './dialog.js';
 import { mascot, ILL } from './art.js';
 import { giap, giapName } from './zodiac.js';
 import { Capacitor } from '@capacitor/core';
+import { mediaSrc, commitPhoto } from '../media.js';
+import { storiesSection, mountStories, deleteStories } from './kyuc.js';
+export { stopStories } from './kyuc.js';
+import { parseLatLng, isShortMapLink, dirUrl, viewUrl, fmtLatLng, currentPosition } from '../lib/geo.js';
+export const PIN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+const t0 = (e) => e.target.closest('button') || {};
 
 /** Chia sẻ chữ qua Zalo, Messenger… (web: Web Share hoặc sao chép) */
-async function shareText(text, title) {
+export async function shareText(text, title) {
   try {
     if (Capacitor.isNativePlatform()) { const { Share } = await import('@capacitor/share'); await Share.share({ title, text, dialogTitle: 'Gửi qua…' }); return; }
     if (navigator.share) { await navigator.share({ title, text }); return; }
@@ -201,7 +207,7 @@ function pickGio(title, sub, base) {
   ${backHeader(title, '#/tienich', sub)}
   <main class="body">
     ${list.length ? `<section class="card list">${list.map(({ g, nx }) => { const d = nx ? describeDate(nx, tj) : null; return `<a class="item" href="#/${base}/${g.id}">
-      <span class="giap-avatar pastel sm ${g.memo?.photo ? '' : 'butter'}" style="overflow:hidden">${g.memo?.photo ? `<img src="${g.memo.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">` : ILL.frame()}</span>
+      <span class="giap-avatar pastel sm ${g.memo?.photo ? '' : 'butter'}" style="overflow:hidden">${g.memo?.photo ? `<img src="${mediaSrc(g.memo.photo)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">` : ILL.frame()}</span>
       <span class="col grow"><span class="t">${esc((g.rel ? g.rel + ' ' : '') + g.name)}</span><span class="s">${d ? `<span class="when${d.diff <= 7 ? ' soon' : ''}">${d.count}</span>` : ''}Giỗ ${g.day}/${g.month}${g.cal === 'duong' ? '' : ' âm'}</span></span>${ICON.next(18)}</a>`; }).join('')}</section>`
       : `<section class="card empty-art">${mascot('pray', 90)}<b>Chưa có ngày giỗ nào</b><span>Thêm ngày giỗ của ông bà, cha mẹ trước.</span><a class="btn" style="margin-top:8px" href="#/add?type=gio">${ICON.plus()} Thêm ngày giỗ</a></section>`}
   </main></div>`;
@@ -237,7 +243,7 @@ export function renderPrep(params) {
       <div class="row"><span class="pastel">${ILL.checklist()}</span><span class="col grow"><b>${nx ? `${d.weekday}, ${d.solarText}` : 'Chưa tính được ngày'}</b><span class="small muted">${nx ? `${d.lunarText} · ${d.count}` : ''}</span></span></div>
       <div class="bar" role="progressbar" aria-label="Tiến độ chuẩn bị" aria-valuemin="0" aria-valuemax="${p.tasks.length}" aria-valuenow="${done}"><i style="width:${p.tasks.length ? Math.round((done / p.tasks.length) * 100) : 0}%"></i></div>
       <span class="small muted">Đã xong ${done}/${p.tasks.length} việc · ${people} khách · khoảng ${Math.max(1, Math.ceil(people / 6))} mâm (6 người/mâm)</span>
-      <div class="quick-acts"><a class="chip" href="#/vankhan/gio?gid=${g.id}&jd=${nx?.jd || ''}">${ICON.book(16)} Văn khấn</a>
+    <div class="quick-acts"><a class="chip" href="#/vankhan/gio?gid=${g.id}&jd=${nx?.jd || ''}">${ICON.book(16)} Văn khấn</a>
         <a class="chip" href="#/vankhan/gio?tab=mam&gid=${g.id}&jd=${nx?.jd || ''}">${ICON.tray(16)} Mâm cúng</a>
         <a class="chip" href="#/thiep/${g.id}">${ICON.card(16)} Thiệp mời</a></div>
     </section>
@@ -305,6 +311,8 @@ export function mountPrep(root, rerender, params) {
 
 /* ============================== 3. TRANG TƯỞNG NHỚ ============================== */
 const tn = { edit: false, form: null, key: '' };
+/** Mở thẳng trang tưởng nhớ ở chế độ sửa (từ màn Tảo mộ) */
+export function editMemorial(id) { tn.key = id; tn.edit = true; tn.form = null; }
 
 /** Thu nhỏ ảnh còn cạnh dài 480px (JPEG) để lưu gọn trên máy */
 function shrinkImage(file) {
@@ -332,7 +340,7 @@ export function renderMemorial(params) {
   const g = st.gios.find((x) => x.id === params.id);
   if (!g) return missing('Không tìm thấy người đã khuất', '#/reminders');
   const m = g.memo || {};
-  if (tn.key !== g.id) { tn.key = g.id; tn.edit = !g.memo; tn.form = null; }
+  if (tn.key !== g.id) { tn.key = g.id; tn.edit = !g.memo || params.sua === '1'; tn.form = null; }
   const died = Number(m.died || g.year) || 0;
   const born = Number(m.born) || 0;
   const age = born && died ? died - born + 1 : 0;
@@ -341,12 +349,12 @@ export function renderMemorial(params) {
   const d = nx ? describeDate(nx, tj) : null;
   const person = st.people.find((p) => p.gioId === g.id);
   if (tn.edit) {
-    const f = tn.form || (tn.form = { photo: m.photo || '', born: m.born || '', died: m.died || g.year || '', home: m.home || '', grave: m.grave || '', bio: m.bio || '', words: m.words || '' });
+    const f = tn.form || (tn.form = { photo: m.photo || '', born: m.born || '', died: m.died || g.year || '', home: m.home || '', grave: m.grave || '', bio: m.bio || '', words: m.words || '', gLat: m.gLat || '', gLng: m.gLng || '', gPhoto: m.gPhoto || '', locErr: '' });
     return `<div class="screen no-nav" data-screen="memorial-edit">
     ${backHeader('Trang tưởng nhớ', g.memo ? `#/tuongnho/${g.id}` : `#/edit/${g.id}`, (g.rel ? g.rel + ' ' : '') + g.name)}
     <main class="body">
       <section class="card pad col center" style="gap:10px;align-items:center">
-        <div class="portrait ${f.photo ? '' : 'empty'}">${f.photo ? `<img src="${f.photo}" alt="Ảnh ${esc(g.name)}">` : mascot('pray', 92)}</div>
+        <div class="portrait ${f.photo ? '' : 'empty'}">${f.photo ? `<img src="${mediaSrc(f.photo)}" alt="Ảnh ${esc(g.name)}">` : mascot('pray', 92)}</div>
         <div class="row" style="gap:8px;justify-content:center"><label class="chip" style="display:inline-flex;align-items:center;gap:6px">${ICON.up(16)} ${f.photo ? 'Đổi ảnh' : 'Chọn ảnh'}<input type="file" accept="image/*" id="tn-photo" hidden></label>
           ${f.photo ? '<button type="button" class="chip" data-act="tn-nophoto">Bỏ ảnh</button>' : ''}</div>
         <span class="small muted">Ảnh được thu nhỏ và chỉ lưu trên máy này (không gửi kèm khi chia sẻ cả họ)</span>
@@ -355,6 +363,17 @@ export function renderMemorial(params) {
         <div class="field"><label class="lb" for="tn-died">Năm mất</label><input id="tn-died" class="input" type="number" inputmode="numeric" min="1800" max="2100" placeholder="Ví dụ: 2015" value="${esc(f.died)}" data-tn="died"></div></div>
       <div class="field"><label class="lb" for="tn-home">Quê quán</label><input id="tn-home" class="input" maxlength="80" placeholder="Ví dụ: Làng Phù Lưu, Từ Sơn, Bắc Ninh" value="${esc(f.home)}" data-tn="home"></div>
       <div class="field"><label class="lb" for="tn-grave">Nơi an táng</label><input id="tn-grave" class="input" maxlength="120" placeholder="Ví dụ: Nghĩa trang quê, khu B, hàng 3" value="${esc(f.grave)}" data-tn="grave"></div>
+      <section class="card pad col grave-loc" style="gap:10px" aria-label="Vị trí mộ">
+        <b>Vị trí mộ trên bản đồ</b>
+        ${f.gLat ? `<div class="row" style="gap:10px"><span class="pastel sm mint">${PIN}</span><span class="col grow"><span class="t" data-test="tn-coords">${fmtLatLng(f.gLat, f.gLng)}</span><a class="link small" href="${viewUrl(f.gLat, f.gLng)}" target="_blank" rel="noopener">Xem trên bản đồ</a></span><button type="button" class="chip" data-act="tn-noloc">Xóa</button></div>` : ''}
+        <button type="button" class="btn ghost" data-act="tn-gps" style="height:48px">${PIN} ${f.gLat ? 'Lấy lại vị trí đang đứng' : 'Lấy vị trí đang đứng (khi ở tại mộ)'}</button>
+        <div class="field"><label class="lb small" for="tn-gloc">Hoặc dán link Google Maps, tọa độ</label><input id="tn-gloc" class="input" placeholder="Ví dụ: 21.02851, 105.85420" autocomplete="off" data-tn-loc></div>
+        ${f.locErr ? `<p class="err" role="alert">${esc(f.locErr)}</p>` : ''}
+        <div class="row" style="gap:12px;align-items:center">${f.gPhoto ? `<img class="grave-ph" src="${mediaSrc(f.gPhoto)}" alt="Ảnh mộ">` : ''}
+          <label class="chip" style="display:inline-flex;align-items:center;gap:6px">${ICON.up(16)} ${f.gPhoto ? 'Đổi ảnh mộ' : 'Thêm ảnh mộ'}<input type="file" accept="image/*" id="tn-gphoto" hidden></label>
+          ${f.gPhoto ? '<button type="button" class="chip" data-act="tn-nogphoto">Bỏ ảnh</button>' : ''}</div>
+        <span class="small muted">Lưu vị trí khi đứng ngay tại mộ để con cháu sau này tìm được, kể cả khi nghĩa trang đổi khác.</span>
+      </section>
       <div class="field"><label class="lb" for="tn-bio">Đôi dòng về cuộc đời</label><textarea id="tn-bio" class="input" rows="5" maxlength="1500" placeholder="Nghề nghiệp, tính tình, những điều con cháu nên biết…" data-tn="bio">${esc(f.bio)}</textarea></div>
       <div class="field"><label class="lb" for="tn-words">Lời dặn, kỷ niệm đáng nhớ</label><textarea id="tn-words" class="input" rows="3" maxlength="600" placeholder="Ví dụ: Ông luôn dặn: anh em phải biết nhường nhịn nhau." data-tn="words">${esc(f.words)}</textarea></div>
     </main>
@@ -365,7 +384,7 @@ export function renderMemorial(params) {
   ${backHeader('Tưởng nhớ', `#/edit/${g.id}`, '', `<button type="button" class="chip" data-act="tn-edit" style="height:38px">Sửa</button>`)}
   <main class="body">
     <section class="memorial card">
-      <div class="portrait ${m.photo ? '' : 'empty'}">${m.photo ? `<img src="${m.photo}" alt="Ảnh ${esc(g.name)}">` : mascot('pray', 100)}</div>
+      <div class="portrait ${m.photo ? '' : 'empty'}">${m.photo ? `<img src="${mediaSrc(m.photo)}" alt="Ảnh ${esc(g.name)}">` : mascot('pray', 100)}</div>
       <span class="small muted">${esc(g.rel || '')}</span>
       <h2 class="serif mem-name">${esc(g.name)}</h2>
       ${born || died ? `<span class="mem-years">${born || '?'} – ${died || '?'}${age > 0 ? ` · ${ageWord(age)} ${age} tuổi` : ''}</span>` : ''}
@@ -373,8 +392,11 @@ export function renderMemorial(params) {
       ${m.words ? `<blockquote class="mem-words serif">“${esc(m.words)}”</blockquote>` : ''}
     </section>
     ${m.bio ? `<section class="card pad col" style="gap:6px"><h2 class="h">Cuộc đời</h2><p class="mem-bio">${esc(m.bio).replace(/\n/g, '<br>')}</p></section>` : ''}
-    ${m.home || m.grave ? `<section class="card list">${m.home ? `<div class="item"><span class="pastel sm butter">${ILL.house()}</span><span class="col grow"><span class="s">Quê quán</span><span class="t">${esc(m.home)}</span></span></div>` : ''}
-      ${m.grave ? `<div class="item"><span class="pastel sm mint">${ILL.lotus()}</span><span class="col grow"><span class="s">Nơi an táng</span><span class="t">${esc(m.grave)}</span></span></div>` : ''}</section>` : ''}
+    ${m.home || m.grave || m.gLat || m.gPhoto ? `<section class="card list">${m.home ? `<div class="item"><span class="pastel sm butter">${ILL.house()}</span><span class="col grow"><span class="s">Quê quán</span><span class="t">${esc(m.home)}</span></span></div>` : ''}
+      ${m.grave || m.gLat || m.gPhoto ? `<div class="item" style="flex-wrap:wrap"><span class="pastel sm mint">${ILL.lotus()}</span><span class="col grow"><span class="s">Nơi an táng</span><span class="t">${esc(m.grave || 'Đã lưu vị trí mộ')}</span>${m.gLat ? `<span class="s">${fmtLatLng(m.gLat, m.gLng)}</span>` : ''}</span>
+        ${m.gPhoto ? `<img class="grave-ph" src="${mediaSrc(m.gPhoto)}" alt="Ảnh mộ ${esc(g.name)}">` : ''}
+        ${m.gLat ? `<a class="btn grave-go" href="${dirUrl(m.gLat, m.gLng)}" target="_blank" rel="noopener">${PIN} Chỉ đường đến mộ</a>` : `<button type="button" class="chip" data-act="tn-edit">${PIN} Thêm vị trí mộ</button>`}</div>` : ''}</section>` : ''}
+    ${person ? storiesSection(person, false) : ''}
     <div class="quick-acts"><a class="chip" href="#/vankhan/gio?gid=${g.id}&jd=${nx?.jd || ''}">${ICON.book(16)} Văn khấn giỗ</a>
       <a class="chip" href="#/chuanbi/${g.id}">${ICON.check(16)} Chuẩn bị giỗ</a>
       <a class="chip" href="#/giapha${person ? '?focus=' + person.id : ''}">${ICON.users(16)} ${person ? 'Xem trong gia phả' : 'Gia phả'}</a>
@@ -384,21 +406,45 @@ export function renderMemorial(params) {
 }
 
 export function mountMemorial(root, rerender, params) {
+  const linked = getState().people.find((p) => p.gioId === params.id);
+  if (linked && !tn.edit) mountStories(root, rerender, linked.id);
   root.addEventListener('input', (e) => { const k = e.target.dataset?.tn; if (k && tn.form) tn.form[k] = e.target.value; });
   root.querySelector('#tn-photo')?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try { tn.form.photo = await shrinkImage(file); rerender(); } catch { toast('Không đọc được ảnh này'); }
   });
+  root.querySelector('#tn-gphoto')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try { tn.form.gPhoto = await shrinkImage(file); rerender(); } catch { toast('Không đọc được ảnh này'); }
+  });
+  root.querySelector('[data-tn-loc]')?.addEventListener('change', (e) => {
+    const v = e.target.value; const p = parseLatLng(v);
+    if (p) Object.assign(tn.form, { gLat: p.lat, gLng: p.lng, locErr: '' });
+    else tn.form.locErr = isShortMapLink(v) ? 'Link rút gọn không đọc được khi không có mạng. Mở link, bấm giữ vào chấm đỏ để chép tọa độ (dạng 21.02851, 105.85420) rồi dán vào đây.' : 'Không đọc được tọa độ. Dán link Google Maps đầy đủ, hoặc hai số cách nhau dấu phẩy.';
+    rerender();
+  });
   root.addEventListener('click', async (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     const g = getState().gios.find((x) => x.id === params.id);
+    if (act === 'tn-gps') {
+      t0(e).disabled = true; toast('Đang lấy vị trí…');
+      try { const p = await currentPosition(); Object.assign(tn.form, { gLat: p.lat, gLng: p.lng, locErr: '' }); toast(p.acc > 50 ? `Đã lấy vị trí (sai số khoảng ${p.acc} m — ra chỗ thoáng để chính xác hơn)` : 'Đã lấy vị trí mộ'); }
+      catch (err) { tn.form.locErr = err.code === 'denied' ? 'App chưa được phép dùng vị trí. Vào Cài đặt điện thoại → Ứng dụng → Lịch Âm → Quyền → Vị trí.' : 'Chưa lấy được vị trí. Bật định vị (GPS), ra chỗ thoáng rồi thử lại.'; }
+      rerender(); return;
+    }
+    if (act === 'tn-noloc') { Object.assign(tn.form, { gLat: '', gLng: '' }); rerender(); return; }
+    if (act === 'tn-nogphoto') { tn.form.gPhoto = ''; rerender(); return; }
     if (act === 'tn-edit') { tn.edit = true; tn.form = null; rerender(); return; }
     if (act === 'tn-nophoto') { tn.form.photo = ''; rerender(); return; }
     if (act === 'tn-save') {
       const f = tn.form;
-      const memo = { photo: f.photo, born: Number(f.born) || '', died: Number(f.died) || '', home: f.home.trim(), grave: f.grave.trim(), bio: f.bio.trim(), words: f.words.trim() };
+      const old = g.memo || {};
+      let photo; let gPhoto;
+      try { photo = await commitPhoto(f.photo, old.photo); gPhoto = await commitPhoto(f.gPhoto, old.gPhoto); } catch { toast('Không lưu được ảnh — bộ nhớ máy có thể đã đầy'); return; }
+      const memo = { photo, born: Number(f.born) || '', died: Number(f.died) || '', home: f.home.trim(), grave: f.grave.trim(), bio: f.bio.trim(), words: f.words.trim(), gLat: f.gLat || '', gLng: f.gLng || '', gPhoto };
       try { saveGio({ ...g, memo }); } catch { toast('Bộ nhớ đầy — thử ảnh nhỏ hơn'); return; }
       tn.edit = false; tn.form = null;
       toast('Đã lưu trang tưởng nhớ');
@@ -407,7 +453,7 @@ export function mountMemorial(root, rerender, params) {
     }
     if (act === 'tn-share') {
       const m = g.memo || {};
-      const lines = [`Tưởng nhớ ${g.rel ? g.rel + ' ' : ''}${g.name}`, m.born || m.died ? `${m.born || '?'} – ${m.died || '?'}` : '', `Ngày giỗ: ${g.day}/${g.month}${g.cal === 'duong' ? '' : ' âm lịch'}`, m.home ? 'Quê quán: ' + m.home : '', m.grave ? 'Nơi an táng: ' + m.grave : '', m.bio ? '\n' + m.bio : '', m.words ? `\n“${m.words}”` : ''].filter(Boolean);
+      const lines = [`Tưởng nhớ ${g.rel ? g.rel + ' ' : ''}${g.name}`, m.born || m.died ? `${m.born || '?'} – ${m.died || '?'}` : '', `Ngày giỗ: ${g.day}/${g.month}${g.cal === 'duong' ? '' : ' âm lịch'}`, m.home ? 'Quê quán: ' + m.home : '', m.grave ? 'Nơi an táng: ' + m.grave : '', m.gLat ? 'Vị trí mộ: ' + viewUrl(m.gLat, m.gLng) : '', m.bio ? '\n' + m.bio : '', m.words ? `\n“${m.words}”` : ''].filter(Boolean);
       shareText(lines.join('\n'), 'Tưởng nhớ ' + g.name);
     }
   });
@@ -417,31 +463,72 @@ export function mountMemorial(root, rerender, params) {
 const gp = { form: null, key: '' };
 const lifeText = (p) => (p.born || p.died ? `${p.born || '?'}${p.died ? ' – ' + p.died : ''}` : '');
 
+const PRINT = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>';
+const GP_VIEWS = [['sodo', 'Sơ đồ'], ['ds', 'Danh sách'], ['doi', 'Theo đời']];
+const gpz = { z: 0 }; // độ phóng sơ đồ (0 = tự vừa màn hình lần đầu; giữ khi quay lại)
+
 export function renderGiapha(params) {
   if (params.id) return renderPersonForm(params);
   const st = getState();
   const ppl = st.people;
+  const view = GP_VIEWS.some(([k]) => k === st.settings.gpView) ? st.settings.gpView : 'sodo';
   const spousesOf = (id) => ppl.filter((p) => p.spouseOf === id);
   const kids = (id) => ppl.filter((p) => p.parentId === id && !p.spouseOf).sort((a, b) => (Number(a.born) || 9999) - (Number(b.born) || 9999));
+  const childrenOf = (p) => kids(p.id).concat(spousesOf(p.id).flatMap((s) => kids(s.id)));
   const roots = ppl.filter((p) => !p.parentId && !p.spouseOf);
-  let maxGen = 0;
-  const node = (p, gen) => {
-    maxGen = Math.max(maxGen, gen);
-    const sp = spousesOf(p.id);
-    const ch = kids(p.id).concat(sp.flatMap((s) => kids(s.id)));
-    const card = (x, main) => `<a class="gp-person ${x.gender === 'nu' ? 'nu' : 'nam'} ${x.died ? 'mat' : ''} ${params.focus === x.id ? 'focus' : ''}" href="#/giapha/${x.id}">
-      <span class="gp-av">${x.born ? giap(chiOfYear(Number(x.born)), 30) : (x.gender === 'nu' ? '♀' : '♂')}</span>
-      <span class="col"><b>${esc(x.name)}</b><span class="small muted">${main ? '' : 'Vợ/chồng · '}${lifeText(x)}${x.died ? ' · đã mất' : ''}</span></span></a>`;
-    return `<li><div class="gp-row">${card(p, true)}${sp.map((s) => card(s, false)).join('')}</div>
-      <div class="gp-acts"><a class="gp-add" href="#/giapha/new?parent=${p.id}">+ Con</a><a class="gp-add" href="#/giapha/new?spouse=${p.id}">+ Vợ/chồng</a></div>
-      ${ch.length ? `<ul>${ch.map((c) => node(c, gen + 1)).join('')}</ul>` : ''}</li>`;
-  };
-  const tree = roots.map((r) => node(r, 1)).join('');
+  // Đời của từng người (vợ/chồng cùng đời)
+  const gen = {}; let maxGen = 0;
+  const walk = (p, g) => { gen[p.id] = g; maxGen = Math.max(maxGen, g); spousesOf(p.id).forEach((s) => { gen[s.id] = g; }); childrenOf(p).forEach((c) => walk(c, g + 1)); };
+  roots.forEach((r) => walk(r, 1));
+  const av = (x, n) => `<span class="gp-av">${x.born ? giap(chiOfYear(Number(x.born)), n) : (x.gender === 'nu' ? '♀' : '♂')}</span>`;
+  const cls = (x) => `${x.gender === 'nu' ? 'nu' : 'nam'} ${x.died ? 'mat' : ''} ${params.focus === x.id ? 'focus' : ''}`;
+  const parentName = (x) => { const pr = ppl.find((q) => q.id === x.parentId); return pr ? pr.name : ''; };
+
+  let body = '';
+  if (view === 'ds') {
+    const node = (p) => {
+      const sp = spousesOf(p.id); const ch = childrenOf(p);
+      const card = (x, main) => `<a class="gp-person ${cls(x)}" href="#/giapha/${x.id}">${av(x, 30)}
+        <span class="col"><b>${esc(x.name)}</b><span class="small muted">${main ? '' : 'Vợ/chồng · '}${lifeText(x)}${x.died ? ' · đã mất' : ''}</span></span></a>`;
+      return `<li><div class="gp-row">${card(p, true)}${sp.map((s) => card(s, false)).join('')}</div>
+        <div class="gp-acts"><a class="gp-add" href="#/giapha/new?parent=${p.id}">+ Con</a><a class="gp-add" href="#/giapha/new?spouse=${p.id}">+ Vợ/chồng</a></div>
+        ${ch.length ? `<ul>${ch.map(node).join('')}</ul>` : ''}</li>`;
+    };
+    body = `<section class="card pad gp-tree" aria-label="Cây gia phả dạng danh sách"><ul class="gp-root">${roots.map(node).join('')}</ul></section>`;
+  } else if (view === 'doi') {
+    const rows = [];
+    for (let g = 1; g <= maxGen; g++) {
+      const inGen = ppl.filter((x) => gen[x.id] === g && !x.spouseOf);
+      rows.push(`<section class="col gp-gen" style="gap:8px" aria-label="Đời thứ ${g}">
+        <div class="h2row"><h2 class="h"><span class="gp-gnum">${g}</span>Đời thứ ${g}</h2><span class="small muted">${ppl.filter((x) => gen[x.id] === g).length} người</span></div>
+        <div class="card list">${inGen.map((x) => {
+          const sp = spousesOf(x.id);
+          return `<a class="item gp-gi ${cls(x)}" href="#/giapha/${x.id}">${av(x, 30)}<span class="col grow"><span class="t">${esc(x.name)}${sp.length ? ` <span class="muted" style="font-weight:500">& ${sp.map((y) => esc(y.name)).join(', ')}</span>` : ''}</span>
+            <span class="s">${[lifeText(x), x.died ? 'đã mất' : '', g > 1 && parentName(x) ? 'con của ' + esc(parentName(x)) : '', childrenOf(x).length ? childrenOf(x).length + ' con' : ''].filter(Boolean).join(' · ')}</span></span>${ICON.next(18)}</a>`;
+        }).join('')}</div></section>`);
+    }
+    body = rows.join('');
+  } else {
+    // Sơ đồ cây từ trên xuống: mỗi ô là một cặp vợ chồng, đường nối rẽ nhánh xuống các con
+    const node = (p) => {
+      const sp = spousesOf(p.id); const ch = childrenOf(p);
+      const one = (x) => `<a class="gpc-p ${cls(x)}" href="#/giapha/${x.id}" aria-label="${esc(x.name)}${lifeText(x) ? ', ' + lifeText(x) : ''}${x.died ? ', đã mất' : ''}">${av(x, 34)}<b>${esc(x.name)}</b><span>${lifeText(x) || '&nbsp;'}</span></a>`;
+      return `<li><div class="gpc-node${sp.length ? ' cp' : ''}">${one(p)}${sp.map((s) => `<span class="gpc-amp" aria-hidden="true">♥</span>${one(s)}`).join('')}</div>
+        ${ch.length ? `<ul>${ch.map(node).join('')}</ul>` : ''}</li>`;
+    };
+    body = `<div class="gpc-tools" role="group" aria-label="Phóng to thu nhỏ sơ đồ">
+        <button type="button" class="icon-btn plain" data-gpz="-1" aria-label="Thu nhỏ">−</button>
+        <button type="button" class="chip" data-gpz="0">Vừa màn hình</button>
+        <button type="button" class="icon-btn plain" data-gpz="1" aria-label="Phóng to">+</button></div>
+      <section class="card gpc-wrap" aria-label="Sơ đồ cây gia phả, vuốt để xem hết"><div class="gpc" style="zoom:${gpz.z || 1}">${roots.map((r) => `<ul class="gpc-root">${node(r)}</ul>`).join('')}</div></section>`;
+  }
+
   return `<div class="screen has-fab" data-screen="giapha">
-  ${backHeader('Gia phả', '#/tienich', ppl.length ? `${ppl.length} người · ${maxGen} đời` : 'Cây gia đình nhiều đời', ppl.length ? `<button type="button" class="icon-btn plain" data-act="gp-share" aria-label="Gửi gia phả cho người thân">${ICON.share(20)}</button>` : '')}
+  ${backHeader('Gia phả', '#/tienich', ppl.length ? `${ppl.length} người · ${maxGen} đời` : 'Cây gia đình nhiều đời', ppl.length ? `<a class="icon-btn plain" href="#/ingiapha" aria-label="In gia phả, xuất ảnh hoặc PDF">${PRINT}</a><button type="button" class="icon-btn plain" data-act="gp-share" aria-label="Gửi gia phả dạng chữ cho người thân">${ICON.share(20)}</button>` : '')}
   <main class="body">
-    ${ppl.length ? `<section class="card pad gp-tree" aria-label="Cây gia phả"><ul class="gp-root">${tree}</ul></section>
-      <span class="small muted center">Bấm vào tên để sửa, nối với ngày giỗ và trang tưởng nhớ. Người đã mất có viền xám.</span>`
+    ${ppl.length ? `<div class="seg" role="group" aria-label="Cách xem gia phả">${GP_VIEWS.map(([k, l]) => `<button type="button" data-gpview="${k}" aria-pressed="${view === k}">${l}</button>`).join('')}</div>
+      ${body}
+      <span class="small muted center">${view === 'sodo' ? 'Vuốt ngang/dọc để xem hết cây. ' : ''}Bấm vào tên để sửa, thêm con, vợ/chồng. Viền xanh: nam · hồng: nữ · nền xám ✿: đã mất.</span>`
       : `<section class="card empty-art">${ILL.tree().replace('width="34" height="34"', 'width="96" height="96"')}<b>Bắt đầu từ ông bà</b><span>Thêm người đời đầu tiên mà gia đình còn nhớ, rồi thêm con cháu và vợ/chồng của từng người.</span></section>`}
   </main>
   <a class="fab" href="#/giapha/new" aria-label="${ppl.length ? 'Thêm nhánh mới (người đời đầu)' : 'Thêm người đầu tiên'}">${ICON.plus()} ${ppl.length ? 'Thêm nhánh' : 'Thêm người'}</a>
@@ -471,7 +558,9 @@ function renderPersonForm(params) {
     ${gios.length ? `<div class="field"><label class="lb" for="gp-gio">Nối với ngày giỗ</label><select id="gp-gio" class="input" data-gp="gioId"><option value="">— Không —</option>${gios.map((x) => `<option value="${x.id}" ${f.gioId === x.id ? 'selected' : ''}>${esc(titleOf(x))}${x.rel ? ' (' + esc(x.rel) + ')' : ''}</option>`).join('')}</select>
       <span class="small muted">Để mở nhanh trang tưởng nhớ và văn khấn từ gia phả</span></div>` : ''}
     <div class="field"><label class="lb" for="gp-note">Ghi chú</label><input id="gp-note" class="input" maxlength="120" placeholder="Ví dụ: Con trưởng, sống ở Hà Nội" value="${esc(f.note)}" data-gp="note"></div>
+    ${f.id ? `<div class="row" style="gap:8px;flex-wrap:wrap">${f.spouseOf ? '' : `<a class="chip" href="#/giapha/new?parent=${f.id}">${ICON.plus(16)} Thêm con</a><a class="chip" href="#/giapha/new?spouse=${f.id}">${ICON.plus(16)} Thêm vợ/chồng</a>`}${f.spouseOf ? `<a class="chip" href="#/giapha/new?parent=${f.spouseOf}">${ICON.plus(16)} Thêm con chung</a>` : ''}</div>` : ''}
     ${f.gioId ? `<a class="note occ" href="#/tuongnho/${f.gioId}" style="text-decoration:none;color:var(--ink)"><span class="pastel sm butter">${ILL.frame()}</span><span class="grow"><b>Trang tưởng nhớ</b><br><span class="small muted">Ảnh, tiểu sử, nơi an táng</span></span>${ICON.next(18)}</a>` : ''}
+    ${f.id ? storiesSection(st.people.find((p) => p.id === f.id)) : '<span class="small muted">Lưu người này trước, rồi mở lại để ghi âm lời kể, lời dặn.</span>'}
     ${f.error ? `<p class="err" role="alert">${esc(f.error)}</p>` : ''}
     ${f.id ? `<button type="button" class="btn danger" data-act="gp-del" ${hasKids ? 'disabled' : ''}>${ICON.trash()} Xóa người này</button>${hasKids ? '<span class="small muted center">Cần xóa con cháu, vợ/chồng của người này trước</span>' : ''}` : ''}
   </main>
@@ -480,19 +569,33 @@ function renderPersonForm(params) {
 }
 
 export function mountGiapha(root, rerender, params) {
-  const fx = params.focus && root.querySelector('.gp-person.focus');
-  if (fx) fx.scrollIntoView({ block: 'center' });
+  const fx = params.focus && root.querySelector('.gp-person.focus, .gpc-p.focus, .gp-gi.focus');
+  const wrap = root.querySelector('.gpc-wrap'); const chart = root.querySelector('.gpc');
+  const fit = (min = .45) => { if (!wrap || !chart) return; chart.style.zoom = 1; const w = chart.scrollWidth; gpz.z = Math.max(min, Math.min(1, Math.floor((wrap.clientWidth - 8) / w * 100) / 100)); chart.style.zoom = gpz.z; };
+  if (wrap && !gpz.z) fit(.75); // lần đầu: vừa màn hình nhưng không nhỏ quá khó đọc
+  requestAnimationFrame(() => {
+    if (fx) fx.scrollIntoView({ block: 'center', inline: 'center' });
+    else if (wrap) wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2; // gốc cây ở giữa
+  });
+  if (params.id && params.id !== 'new') mountStories(root, rerender, params.id);
   root.addEventListener('input', (e) => { const k = e.target.dataset?.gp; if (k && gp.form) gp.form[k] = e.target.value; });
   root.addEventListener('change', (e) => { if (e.target.dataset?.gp === 'gioId') { gp.form.gioId = e.target.value; rerender(); } });
   root.addEventListener('click', async (e) => {
-    const t = e.target.closest('[data-gender],[data-act]');
+    const t = e.target.closest('[data-gender],[data-act],[data-gpview],[data-gpz]');
     if (!t) return;
+    if (t.dataset.gpview) { updateSettings({ gpView: t.dataset.gpview }); return; }
+    if (t.dataset.gpz !== undefined) {
+      const d = Number(t.dataset.gpz);
+      if (d === 0) fit(); else { gpz.z = Math.max(.45, Math.min(1.4, Math.round((gpz.z + d * .15) * 100) / 100)); chart.style.zoom = gpz.z; }
+      return;
+    }
     const f = gp.form || {};
     if (t.dataset.gender) { f.gender = t.dataset.gender; rerender(); return; }
     if (t.dataset.act === 'gp-save') {
       f.name = f.name.trim();
       if (!f.name) { f.error = 'Vui lòng nhập tên'; rerender(); root.querySelector('#gp-name')?.focus(); return; }
-      const rec = { id: f.id || uid(), name: f.name, gender: f.gender, born: Number(f.born) || '', died: Number(f.died) || '', parentId: f.parentId || '', spouseOf: f.spouseOf || '', gioId: f.gioId || '', note: (f.note || '').trim() };
+      const prevRecs = getState().people.find((p) => p.id === f.id)?.recs;
+      const rec = { ...(prevRecs ? { recs: prevRecs } : {}), id: f.id || uid(), name: f.name, gender: f.gender, born: Number(f.born) || '', died: Number(f.died) || '', parentId: f.parentId || '', spouseOf: f.spouseOf || '', gioId: f.gioId || '', note: (f.note || '').trim() };
       setState((s) => ({ ...s, people: s.people.some((p) => p.id === rec.id) ? s.people.map((p) => (p.id === rec.id ? rec : p)) : [...s.people, rec] }));
       gp.form = null; gp.key = '';
       toast('Đã lưu vào gia phả');
@@ -515,6 +618,7 @@ export function mountGiapha(root, rerender, params) {
     if (t.dataset.act === 'gp-del') {
       if (!(await confirmSheet({ title: `Xóa ${f.name} khỏi gia phả?`, ok: 'Xóa', danger: true }))) return;
       const id = f.id;
+      await deleteStories(getState().people.find((p) => p.id === id));
       setState((s) => ({ ...s, people: s.people.filter((p) => p.id !== id) }));
       gp.form = null; gp.key = '';
       navDone('#/giapha');

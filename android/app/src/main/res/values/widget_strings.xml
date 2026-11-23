@@ -6,4 +6,5 @@
     <string name="widget_countdown_desc">Đếm ngược tới Tết hoặc ngày giỗ bạn chọn</string>
     <string name="widget_icon_desc">Biểu tượng ngày hôm nay — tự đổi số theo ngày của máy</string>
     <string name="widget_tip_desc">Linh vật nhắc ngày giỗ, rằm, ngày chay, Tết sắp tới</string>
+    <string name="widget_clock_desc">Đồng hồ tự chạy kèm ngày âm, giờ hoàng đạo và việc sắp tới</string>
 </resources>
