@@ -5,6 +5,9 @@ import { esc, ICON, backHeader } from './ui/common.js';
 import { ILL, mascot } from './ui/art.js';
 
 export const WHATS_NEW = [
+  { v: '1.15.1', items: [
+    ['Sẵn sàng cho iPhone', 'Chuẩn bị bản iPhone theo quy định App Store và TestFlight', '#/canhan', 'star']
+  ] },
   { v: '1.15.0', items: [
     ['Đến giờ cúng, app đọc văn khấn', 'Thông báo có nút "Đọc văn khấn"; bấm thông báo đúng ngày cúng là mở bài và đọc to — giọng người nhà nếu đã ghi âm', '#/settings', 'book'],
     ['Mỗi widget một nội dung', 'Android: widget Đếm ngược chọn riêng mốc (Tết, giỗ ông…), widget Đồng hồ chọn riêng kiểu — khi thêm hoặc nhấn giữ widget → Cấu hình lại', '#/settings', 'cal']

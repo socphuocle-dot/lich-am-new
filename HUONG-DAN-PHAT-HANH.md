@@ -89,12 +89,19 @@ Muốn khách Android nhận bản mới: tạo release mới với tag lớn h�
 
 ---
 
-## Cập nhật lên phiên bản mới (ví dụ 1.15.0)
+## Cập nhật lên phiên bản mới (ví dụ 1.15.1)
 
 1. Giải nén bản mã nguồn mới, **chép đè** vào thư mục repo `lich-am-new` trên máy (giữ nguyên thư mục `.git`).
-2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.15.0` → **Commit to main** → **Push origin**.
-3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.15.0` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.15.0` → **Publish release**.
+2. Mở **GitHub Desktop** → thấy danh sách file thay đổi → ô Summary gõ `Bản 1.15.1` → **Commit to main** → **Push origin**.
+3. Vào repo trên GitHub → **Releases** → **Draft a new release** → **Choose a tag** gõ `v1.15.1` → **Create new tag** → Title `Lịch Âm & Nhắc Giỗ 1.15.1` → **Publish release**.
 4. Đợi tab **Actions** chạy xanh (~10 phút). Link tải APK cố định không đổi, khách tải lại là có bản mới (cài đè, giữ nguyên dữ liệu vì cùng khóa ký).
+
+## Có gì mới ở 1.15.1 — chuẩn bị bản iPhone
+- Xem **HUONG-DAN-IOS.md**: tài khoản Apple, đăng ký mã app + App Group, khóa API, Secrets trên GitHub, TestFlight.
+- Bước **ios** trên GitHub: build theo kênh cửa hàng (`VITE_CHANNEL=store`, `VITE_CULTURE=off`), kiểm tra Xcode ≥ 26, số phiên bản lấy từ package.json, số build = số lần chạy. Có đủ 4 Secret Apple (`APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8`) thì tự ký và gửi lên TestFlight; chưa có thì build `.ipa` chưa ký. Lỗi biên dịch được lọc ra trang tóm tắt và artifact `ios-build-log`.
+- Bước ios chỉ chạy khi gắn tag, bấm chạy tay hoặc Pull Request (máy Mac của GitHub hay thiếu chỗ); lỗi/hủy ở iOS không làm hỏng bản phát hành Android.
+- Thêm `PrivacyInfo.xcprivacy` (app + widget), `ITSAppUsesNonExemptEncryption = NO`.
+- Bản cửa hàng (Google Play, App Store): màn ủng hộ bỏ chọn mức tiền, thay bằng nút **Đánh giá 5 sao** (Play / App Store theo máy; App Store cần Variable `APPSTORE_ID`) và **Giới thiệu app**.
 
 ## Có gì mới ở 1.15.0 — kiểm tra tự động, Google Play, widget chọn riêng, đọc văn khấn đúng giờ
 - **Kiểm tra tự động mỗi lần đẩy mã** (`.github/workflows/build.yml`): ngoài kiểm thử mã, nay chạy cả 40 kịch bản bấm thử giao diện và kiểm tra trợ năng trên GitHub; build Android + iOS; chạy **Android Lint** (bắt lỗi widget, quyền…) và ghi số lỗi ra trang tóm tắt của lần chạy, báo cáo trong artifact `lint-report`. Pull Request cũng được kiểm tra (build bản thử không cần khóa ký). Chạy tại máy: `npm run check`.

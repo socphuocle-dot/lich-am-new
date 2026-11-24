@@ -152,28 +152,98 @@ jobs:
 
   ios:
     needs: test
-    runs-on: macos-latest
-    # Bản iOS lỗi không chặn bản Android; lỗi vẫn hiện đỏ để biết mà sửa
-    continue-on-error: ${{ github.event_name == 'pull_request' }}
+    # Máy Mac của GitHub hay thiếu chỗ (báo "not acquired by Runner"): chỉ build iPhone khi gắn tag phát hành,
+    # khi bấm chạy tay (Actions → Build & Publish → Run workflow) hoặc ở Pull Request — không build mỗi lần đẩy mã.
+    # Bị hủy vì thiếu máy: vào lần chạy → Re-run jobs → Re-run failed jobs.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    runs-on: macos-15
+    timeout-minutes: 60
+    # Bản iOS lỗi không chặn bản Android (APK vẫn phát hành); lỗi vẫn hiện để biết mà sửa
+    continue-on-error: true
+    env:
+      # Bản iPhone theo quy định App Store: không mã QR chuyển khoản, không link tải APK, ẩn tab Văn hóa mặc định
+      VITE_CHANNEL: store
+      VITE_CULTURE: 'off'
+      VITE_APPSTORE_ID: ${{ vars.APPSTORE_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
+      # Apple bắt buộc build bằng Xcode 26 / iOS 26 SDK trở lên (từ 28/4/2026)
       - uses: maxim-lobanov/setup-xcode@v1
         with: { xcode-version: latest-stable }
+      - name: Kiểm tra phiên bản Xcode
+        run: |
+          xcodebuild -version
+          V=$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)
+          [ "$V" -ge 26 ] || { echo "::error::Cần Xcode 26 trở lên (đang là $V)"; exit 1; }
       - run: npm ci
       - run: npm run build
       - run: npx cap sync ios
-      - name: Build .ipa (chưa ký)
+      - name: Số phiên bản
+        id: ver
         run: |
+          echo "marketing=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "build=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+      - name: Kiểm tra khóa Apple (App Store Connect API)
+        id: asc
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ] && [ -n "$APPLE_TEAM_ID" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            mkdir -p ~/private_keys
+            printf '%s\n' "$ASC_KEY_P8" > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+            echo "signed=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "Chưa có khóa Apple → chỉ build bản chưa ký (.ipa) để kiểm tra biên dịch. Xem HUONG-DAN-IOS.md"
+            echo "signed=0" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build .ipa (chưa ký)
+        if: steps.asc.outputs.signed == '0'
+        run: |
+          set -o pipefail
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+            MARKETING_VERSION=${{ steps.ver.outputs.marketing }} CURRENT_PROJECT_VERSION=${{ steps.ver.outputs.build }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build | tee xcodebuild.log | grep -E "error:|warning: .*Swift|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" xcodebuild.log || { grep -E "error:" xcodebuild.log | head -30; exit 1; }
           mkdir -p Payload out
           cp -R build/Build/Products/Release-iphoneos/App.app Payload/
           zip -qry out/LichAm-NhacGio-unsigned.ipa Payload
+      - name: Ký và gửi lên TestFlight
+        if: steps.asc.outputs.signed == '1'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -o pipefail
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey_$ASC_KEY_ID.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/App.xcarchive \
+            DEVELOPMENT_TEAM=$APPLE_TEAM_ID CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION=${{ steps.ver.outputs.marketing }} CURRENT_PROJECT_VERSION=${{ steps.ver.outputs.build }} \
+            $AUTH archive | tee xcodebuild.log | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
+          grep -q "ARCHIVE SUCCEEDED" xcodebuild.log || { grep -E "error:" xcodebuild.log | head -30; exit 1; }
+          # Tùy chọn xuất: gửi thẳng lên App Store Connect (TestFlight)
+          plutil -create xml1 ExportOptions.plist
+          plutil -insert method -string app-store-connect ExportOptions.plist
+          plutil -insert destination -string upload ExportOptions.plist
+          plutil -insert teamID -string "$APPLE_TEAM_ID" ExportOptions.plist
+          plutil -insert signingStyle -string automatic ExportOptions.plist
+          plutil -insert uploadSymbols -bool true ExportOptions.plist
+          plutil -insert manageAppVersionAndBuildNumber -bool false ExportOptions.plist
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/export $AUTH
+          echo "### Đã gửi bản ${{ steps.ver.outputs.marketing }} (${{ steps.ver.outputs.build }}) lên TestFlight — Apple xử lý 10–30 phút" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
+        if: steps.asc.outputs.signed == '0'
         with: { name: ios, path: out/*.ipa }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: ios-build-log, path: xcodebuild.log, if-no-files-found: ignore }
 
   # Bản web chạy ngay trên trình duyệt: https://<tên-tài-khoản>.github.io/<tên-kho>/
   web:

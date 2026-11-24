@@ -28,6 +28,8 @@
 		21B7D069FCF84F449B7056CE /* BeVietnamPro-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A58D908920F742E8A033C547 /* BeVietnamPro-SemiBold.ttf */; };
 		C5FB46C4FB2846B4AF55EB57 /* BeVietnamPro-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F19FB8C44D114F1CBD4A6125 /* BeVietnamPro-Bold.ttf */; };
 		31845405B930495E8BF9B4EC /* NotoSerifDigits.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BDE5017478D04CA28F648518 /* NotoSerifDigits.ttf */; };
+		A17000000000000000000011 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A17000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		A17000000000000000000012 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A17000000000000000000002 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +59,8 @@
 		A58D908920F742E8A033C547 /* BeVietnamPro-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BeVietnamPro-SemiBold.ttf; sourceTree = "<group>"; };
 		F19FB8C44D114F1CBD4A6125 /* BeVietnamPro-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BeVietnamPro-Bold.ttf; sourceTree = "<group>"; };
 		BDE5017478D04CA28F648518 /* NotoSerifDigits.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = NotoSerifDigits.ttf; sourceTree = "<group>"; };
+		A17000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A17000000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +116,7 @@
 				BFC4E3624C7745EE9F7341C6 /* WidgetBridgePlugin.swift */,
 				3828E0AB03D142A0BF8BB267 /* MainViewController.swift */,
 				9624EE7EBBA840D09570E97D /* App.entitlements */,
+				A17000000000000000000001 /* PrivacyInfo.xcprivacy */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -126,6 +131,7 @@
 				A16000000000000000000002 /* WidgetArt */,
 				0B3BB4F8EA0A4D6F8B76B18C /* Info.plist */,
 				21A291CD139647F4858DCF63 /* LichAmWidget.entitlements */,
+				A17000000000000000000002 /* PrivacyInfo.xcprivacy */,
 				4F55F511A9764B4B8A76E68D /* BeVietnamPro-Regular.ttf */,
 				A58D908920F742E8A033C547 /* BeVietnamPro-SemiBold.ttf */,
 				F19FB8C44D114F1CBD4A6125 /* BeVietnamPro-Bold.ttf */,
@@ -228,6 +234,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				A17000000000000000000011 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,6 +248,7 @@
 				21B7D069FCF84F449B7056CE /* BeVietnamPro-SemiBold.ttf in Resources */,
 				C5FB46C4FB2846B4AF55EB57 /* BeVietnamPro-Bold.ttf in Resources */,
 				31845405B930495E8BF9B4EC /* NotoSerifDigits.ttf in Resources */,
+				A17000000000000000000012 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,7 +420,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.15.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = vn.lichamnhacgio.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -435,7 +443,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.15.1;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.lichamnhacgio.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -457,7 +465,7 @@
 				INFOPLIST_FILE = LichAmWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.15.1;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.lichamnhacgio.app.LichAmWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -482,7 +490,7 @@
 				INFOPLIST_FILE = LichAmWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.15.1;
 				PRODUCT_BUNDLE_IDENTIFIER = vn.lichamnhacgio.app.LichAmWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

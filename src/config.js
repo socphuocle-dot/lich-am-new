@@ -5,12 +5,17 @@ export const CHANNEL = import.meta.env.VITE_CHANNEL === 'store' ? 'store' : 'dir
 // Ẩn tab Văn hóa mặc định khi build cho App Store (VITE_CULTURE=off)
 export const CULTURE_DEFAULT = import.meta.env.VITE_CULTURE !== 'off';
 
+// Link đánh giá trên cửa hàng: Android mở Google Play; iPhone cần mã App Store (số trong link apps.apple.com/app/id…),
+// điền qua biến VITE_APPSTORE_ID khi build — chưa có thì ẩn nút đánh giá, chỉ còn nút giới thiệu app.
+export const PLAY_ID = 'vn.lichamnhacgio.app';
+export const APPSTORE_ID = import.meta.env.VITE_APPSTORE_ID || '';
+
 export const DONATE_ACCOUNTS = [
   { id: 'momo', tab: 'MoMo', bank: 'Ví MoMo', number: '*******166', copy: '', qr: './qr/momo.png' },
   { id: 'vcb', tab: 'Vietcombank', bank: 'Vietcombank', number: '0371000405296', copy: '0371000405296', qr: './qr/vcb.png' }
 ];
 export const DONATE_NAME = 'LE HUU PHUOC';
-export const APP_VERSION = '1.15.0';
+export const APP_VERSION = '1.15.1';
 
 // Link tải APK mới nhất (GitHub Releases) — workflow tự điền khi build bản web
 export const APK_URL = import.meta.env.VITE_APK_URL || 'https://github.com/socphuocle-dot/lich-am-new/releases/latest/download/LichAm-NhacGio.apk';

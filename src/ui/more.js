@@ -1,10 +1,11 @@
+import { Capacitor } from '@capacitor/core';
 import { isAbroad, deviceZone, diffText, vnMoment } from '../lib/tz.js';
 import { exportFull, restoreFull, sizeText } from '../backup.js';
 import { NEEDS } from './needs.js';
 import { logEvent } from '../errlog.js';
 import { resetTo } from '../nav.js';
 import { getState, updateSettings, exportData, importData, resetAll, storageInfo } from '../store.js';
-import { CHANNEL, DONATE_ACCOUNTS, DONATE_NAME, APP_VERSION, WEB_URL, CONTACT_PHONE, ZALO_URL } from '../config.js';
+import { CHANNEL, DONATE_ACCOUNTS, DONATE_NAME, APP_VERSION, WEB_URL, CONTACT_PHONE, ZALO_URL, PLAY_ID, APPSTORE_ID } from '../config.js';
 import { updateSupported, checkUpdate, cmpVersion } from '../update.js';
 import { mascot, mascotName, MASCOTS } from './art.js';
 import { esc, ICON, sw, backHeader, toast, timeSelect } from './common.js';
@@ -21,6 +22,13 @@ const fmtTime = (iso) => new Date(iso).toLocaleString('vi-VN', { hour: '2-digit'
 const dn = { acct: 0, tip: 1 };
 const TIPS = [['Ly cà phê', '25.000đ'], ['Bữa sáng', '50.000đ'], ['Mâm cơm', '100.000đ']];
 
+/** Link mở trang đánh giá trên cửa hàng của máy đang dùng ('' nếu chưa có) */
+function rateUrl() {
+  const pf = Capacitor.getPlatform();
+  if (pf === 'ios') return APPSTORE_ID ? `https://apps.apple.com/app/id${APPSTORE_ID}?action=write-review` : '';
+  return `https://play.google.com/store/apps/details?id=${PLAY_ID}`;
+}
+
 export function renderDonate() {
   const a = DONATE_ACCOUNTS[dn.acct];
   const payment = CHANNEL === 'direct'
@@ -31,16 +39,18 @@ export function renderDonate() {
         ${a.copy ? `<button type="button" class="chip" data-copy="${a.copy}">${ICON.copy()} Sao chép số tài khoản</button>` : ''}
         <span class="small muted center">Mở app ngân hàng hoặc MoMo, quét mã và nhập số tiền ${TIPS[dn.tip][1]}.<br>Nội dung gợi ý: <b style="color:var(--ink)">Ung ho Lich Am</b></span>
       </section>`
-    : `<section class="card pad col" style="gap:8px"><b>Cảm ơn bạn đã dùng app!</b><span class="small muted" style="line-height:1.6">Nếu thấy hữu ích, hãy đánh giá 5 sao trên cửa hàng và giới thiệu cho người thân, bạn bè. Đó là sự ủng hộ lớn nhất để app luôn miễn phí, không quảng cáo.</span></section>`;
+    : `<section class="card pad col" style="gap:10px"><b>Cảm ơn bạn đã dùng app!</b><span class="small muted" style="line-height:1.6">Nếu thấy hữu ích, hãy đánh giá 5 sao trên cửa hàng và giới thiệu cho người thân, bạn bè. Đó là sự ủng hộ lớn nhất để app luôn miễn phí, không quảng cáo.</span>
+        ${rateUrl() ? `<a class="btn" style="height:50px" href="${rateUrl()}" rel="noopener" data-test="rate">★ Đánh giá 5 sao</a>` : ''}
+        <button type="button" class="btn ghost" style="height:50px" data-act="share-app">${ICON.share(18)} Giới thiệu app cho người thân</button></section>`;
   return `<div class="screen" data-screen="donate">
   ${backHeader(CHANNEL === 'direct' ? 'Ủng hộ tác giả' : 'Đánh giá app', '#/canhan', '', `<span class="donate-m">${mascot('cake', 64, mascotName() + ' cảm ơn bạn')}</span>`)}
   <main class="body">
     <section class="card col" style="padding:16px;gap:12px">
       <b class="serif" style="font-size:1.2rem;line-height:1.35">Một người làm, miễn phí cho mọi nhà.</b>
-      <span class="muted" style="font-size:.92rem;line-height:1.5">Nếu app giúp bạn không quên ngày giỗ, ngày rằm, một ly cà phê sẽ giúp mình có thêm động lực cập nhật.</span>
+      <span class="muted" style="font-size:.92rem;line-height:1.5">${CHANNEL === 'direct' ? 'Nếu app giúp bạn không quên ngày giỗ, ngày rằm, một ly cà phê sẽ giúp mình có thêm động lực cập nhật.' : 'Nếu app giúp bạn không quên ngày giỗ, ngày rằm, một lời đánh giá sẽ giúp mình có thêm động lực cập nhật.'}</span>
       ${['Không quảng cáo', 'Không thu thập dữ liệu, không cần tài khoản', 'Chạy hoàn toàn trên máy, không cần mạng'].map((t) => `<span class="check"><span style="color:var(--accent)">${ICON.check()}</span>${t}</span>`).join('')}
     </section>
-    <div class="grid3" role="group" aria-label="Chọn mức ủng hộ">${TIPS.map(([l, p], i) => `<button type="button" class="tip" data-tip="${i}" aria-pressed="${i === dn.tip}"><span style="font-size:.9rem;font-weight:600">${l}</span><b>${p}</b></button>`).join('')}</div>
+    ${CHANNEL !== 'direct' ? '' : `<div class="grid3" role="group" aria-label="Chọn mức ủng hộ">${TIPS.map(([l, p], i) => `<button type="button" class="tip" data-tip="${i}" aria-pressed="${i === dn.tip}"><span style="font-size:.9rem;font-weight:600">${l}</span><b>${p}</b></button>`).join('')}</div>`}
     ${payment}
     <p class="small muted center" style="margin:0">Cảm ơn bạn rất nhiều! 🙏</p>
     <p class="small muted center" style="margin:4px 0 0">Liên hệ tác giả: <a class="link" href="tel:${CONTACT_PHONE}">${CONTACT_PHONE.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')}</a> · <a class="link" href="${ZALO_URL}" ${isNative() ? '' : 'target="_blank"'} rel="noopener">Zalo</a></p>
@@ -54,6 +64,16 @@ export function mountDonate(root, rerender) {
     if (a) { dn.acct = Number(a.dataset.acct); rerender(); return; }
     const t = e.target.closest('[data-tip]');
     if (t) { dn.tip = Number(t.dataset.tip); rerender(); return; }
+    if (e.target.closest('[data-act="share-app"]')) {
+      const text = 'App Lịch Âm & Nhắc Giỗ: nhắc ngày giỗ, rằm, văn khấn, gia phả — miễn phí, không quảng cáo.';
+      const url = Capacitor.getPlatform() === 'ios' ? (APPSTORE_ID ? `https://apps.apple.com/app/id${APPSTORE_ID}` : WEB_URL) : `https://play.google.com/store/apps/details?id=${PLAY_ID}`;
+      try {
+        if (Capacitor.isNativePlatform()) { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Lịch Âm & Nhắc Giỗ', text, url, dialogTitle: 'Giới thiệu qua…' }); }
+        else if (navigator.share) await navigator.share({ title: 'Lịch Âm & Nhắc Giỗ', text, url });
+        else { await navigator.clipboard.writeText(text + ' ' + url); toast('Đã sao chép lời giới thiệu'); }
+      } catch { /* người dùng hủy */ }
+      return;
+    }
     const c = e.target.closest('[data-copy]');
     if (c) {
       try { await navigator.clipboard.writeText(c.dataset.copy); toast('Đã sao chép số tài khoản'); }
